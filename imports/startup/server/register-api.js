@@ -1,7 +1,7 @@
-import '../../api/languages/methods.js';
-import '../../api/doichain/methods.js';
-import '../../api/recipients/server/publications.js';
-import '../../api/opt-ins/methods.js';
-import '../../api/version/publications.js';
-import '../../api/opt-ins/server/publications.js';
+import '../../api/languages/methods';
+import '../../api/doichain/methods';
+import '../../api/recipients/server/publications'
+import '../../api/opt-ins/methods';
+import '../../api/meta/meta';
+import '../../api/opt-ins/server/publications';
 

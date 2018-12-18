@@ -3,7 +3,7 @@ import { Roles } from 'meteor/alanning:roles';
 import {Meta} from '../../api/meta/meta.js'
 Meteor.startup(() => {
 
-  let version=Assets.getText("version.json");
+  let version=Assets.getText("private/version.json");
 
   if(Meta.find({key:"version"}).count() > 0){
     Meta.remove({key:"version"});
