@@ -1,9 +1,9 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.0.7',
+  version: '0.0.8',
   summary: 'Provides a Doichain REST API & webfrontend to an installed Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
-  documentation: null
+  documentation: 'README.md'
 });
 
 Npm.depends({
@@ -57,11 +57,11 @@ Package.onUse(function(api) {
   api.use('rwatts:uuid@0.1.0');
   api.use('sakulstra:aggregate@1.4.3');
   api.use('session@1.2.0');
-  api.use('std:accounts-ui@1.3.3');
+  //api.use('std:accounts-ui@1.3.3');
   api.use('tracker@1.2.0');
   api.use('universe:i18n@1.20.1');
   api.use('vsivsi:job-collection@1.4.0');
-  api.use('zetoff:accounts-material-ui@0.0.15');
+  //api.use('zetoff:accounts-material-ui@0.0.15');
     api.use('aldeed:collection2@3.0.1');
     api.use('aldeed:schema-deny@2.0.1');
     api.use('aldeed:schema-index@3.0.0');
