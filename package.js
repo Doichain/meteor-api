@@ -50,8 +50,32 @@ Package.onUse(function(api) {
 });
 
 Npm.depends({
-    '@babel/runtime': '7.2.0',
-    'emailjs-mime-codec':'2.0.7'
+    '@babel/runtime':'7.2.0',
+    'bcrypt': '1.0.3',
+    'bitcore-message': '1.0.4',
+    'bs58': '4.0.1',
+    'chrome': '0.1.0',
+    'classnames': '2.2.6',
+    'crypto': '1.0.1',
+    'crypto-js': '3.1.9-1',
+    'fs': '0.0.1-security',
+    'hashids': '1.2.2',
+    'hoek': '5.0.3',
+    'material-ui': '0.20.2',
+    'meteor-node-stubs': '0.3.3',
+    'mocha': '5.2.0',
+    'namecoin': '0.1.4',
+    'prop-types': '15.6.2',
+    'react': '16.6.3',
+    'react-addons-css-transition-group': '15.6.2',
+    'react-dom': '16.6.3',
+    'react-router': '3.2.1',
+    'react-router-private-route': '0.0.3',
+    'scribe-js': '2.0.4',
+    'secp256k1': '3.5.0',
+    'simpl-schema': '1.5.0',
+    'standard-ecies': '1.0.0',
+    'uuid': '3.3.2'
 });
 
 Package.onTest(function(api) {
