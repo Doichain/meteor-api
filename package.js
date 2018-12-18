@@ -1,9 +1,9 @@
 Package.describe({
-  name: 'doichain-meteor-api',
-  version: '0.0.6',
+  name: 'doichain:doichain-meteor-api',
+  version: '0.0.7',
   summary: 'Provides a Doichain REST API & webfrontend to an installed Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
-  documentation: 'README.md'
+  documentation: null
 });
 
 Npm.depends({
@@ -54,8 +54,8 @@ Package.onUse(function(api) {
   api.use('planettraining:material-design-icons-font@2.2.3');
   api.use('practicalmeteor:chai@2.1.0_1');
   api.use('react-meteor-data@0.2.17');
-  api.use('rwatts:uuid');
-  api.use('sakulstra:aggregate');
+  api.use('rwatts:uuid@0.1.0');
+  api.use('sakulstra:aggregate@1.4.3');
   api.use('session@1.2.0');
   api.use('std:accounts-ui@1.3.3');
   api.use('tracker@1.2.0');
@@ -68,9 +68,4 @@ Package.onUse(function(api) {
   api.mainModule('doichain-api.js');
 });
 
-Package.onTest(function(api) {
-  api.use('ecmascript');
-  api.use('tinytest');
-  api.use('doichain-meteor-api');
-  api.mainModule('doichain-api-tests.js');
-});
+
