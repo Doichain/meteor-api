@@ -53,7 +53,7 @@ Package.onUse(function(api) {
   api.use('nimble:restivus@0.8.12');
   api.use('planettraining:material-design-icons-font@2.2.3');
   api.use('practicalmeteor:chai@2.1.0_1');
-  api.use('react-meteor-data@0.2.17');
+  api.use('react-meteor-data@0.2.16');
   api.use('rwatts:uuid@0.1.0');
   api.use('sakulstra:aggregate@1.4.3');
   api.use('session@1.2.0');

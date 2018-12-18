@@ -4,7 +4,7 @@ This meteor project adds the Doichain (see https://doichain.org) REST API to you
 
 1. Prerequisites
     - running Doichain Node (manual installation see: https://github.com/Doichain/core/tree/master/doc)
-    - or via Docker-Hub ``docker run doichain/node-only``
+    - or via Docker-Hub ``docker run -it doichain/node-only``
 
 2. Installation
     - ```meteor add doichain:doichain-meteor-api```
