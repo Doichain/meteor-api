@@ -36,57 +36,57 @@ OptIns.schema = new SimpleSchema({
   recipient: {
     type: String,
     optional: true,
-    denyUpdate: true,
+ //   denyUpdate: true, //TODO enable this when this package works again see meta
   },
   sender: {
     type: String,
     optional: true,
-    denyUpdate: true,
+//    denyUpdate: true,
   },
   data: {
     type: String,
     optional: true,
-    denyUpdate: false,
+ //   denyUpdate: false,
   },
   index: {
     type: SimpleSchema.Integer,
     optional: true,
-    denyUpdate: false,
+  //  denyUpdate: false,
   },
   nameId: {
     type: String,
     optional: true,
-    denyUpdate: false,
+  //  denyUpdate: false,
   },
   txId: {
       type: String,
       optional: true,
-      denyUpdate: false,
+   //   denyUpdate: false,
   },
   masterDoi: {
       type: String,
       optional: true,
-      denyUpdate: false,
+  //    denyUpdate: false,
   },
   createdAt: {
     type: Date,
-    denyUpdate: true,
+//    denyUpdate: true,
   },
   confirmedAt: {
     type: Date,
     optional: true,
-    denyUpdate: false,
+ //   denyUpdate: false,
   },
   confirmedBy: {
     type: String,
     regEx: SimpleSchema.RegEx.IP,
     optional: true,
-    denyUpdate: false
+ //   denyUpdate: false
   },
   confirmationToken: {
     type: String,
     optional: true,
-    denyUpdate: false
+  //  denyUpdate: false
   },
   ownerId:{
     type: String,
@@ -96,7 +96,7 @@ OptIns.schema = new SimpleSchema({
   error:{
       type: String,
       optional: true,
-      denyUpdate: false
+   //   denyUpdate: false
   }
 });
 

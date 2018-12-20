@@ -7,36 +7,48 @@ Package.describe({
 });
 
 Package.onUse(function(api) {
-  api.versionsFrom('1.8.0.1');
-  api.addFiles('private/version.json', 'server', { isAsset: true });
-  api.use('ecmascript');
-  api.use('es5-shim');
-  api.use('babel-runtime');
-  api.use('vsivsi:job-collection@1.4.0','server');
-  api.use('alanning:roles@1.2.16','server');
-  api.use('aldeed:collection2@3.0.1','server');
-  api.use('aldeed:schema-deny@2.0.1','server');
-  api.use('aldeed:schema-index','server');
-  api.use('universe:i18n@1.20.1');
 
-    api.use('underscore@1.0.10',['client', 'server']);
-    api.use('accounts-password@1.5.1',['client', 'server']);
 
-    api.use('ddp-rate-limiter@1.0.7','server');
-    api.use('email@1.2.3','server');
-    api.use('http@1.4.2','server');
-    api.use('less@2.8.0','client');
-    api.use('mdg:validated-method@1.2.0');
-    api.use('nimble:restivus@0.8.12','server');
-    api.use('planettraining:material-design-icons-font@2.2.3','client');
+    const use   = [
+            'ecmascript',
+            'mongo',
+            'aldeed:collection2@3.0.1',
+            'alanning:roles@1.2.16',
+            'mdg:validated-method@1.2.0',
+            'universe:i18n@1.20.1',
+            'underscore@1.0.10',
+            'vsivsi:job-collection@1.4.0',
+            'nimble:restivus@0.8.12',
+            'http@1.4.2'
+        ],
+        imply = [
+            'mongo'
+        ];
 
-    api.use('react-meteor-data@0.2.16','server');
-    api.use('rwatts:uuid@0.1.0','server');
-    api.use('sakulstra:aggregate@1.4.3','server');
-    api.use('session@1.2.0');
+    api.versionsFrom('1.6.1');
+    api.use(use);
+    api.imply(imply);
+
+  //api.versionsFrom('1.8.0.1');
+    api.addFiles('private/version.json', 'server', { isAsset: true });
+    //api.use('underscore@1.0.10',['client', 'server']);
+  //api.use('aldeed:schema-index@3.0.0');
+ //   api.use('aldeed:schema-deny@2.0.1','server');
+
+  //api.use('accounts-password@1.5.1',['client', 'server']);
+
+  //api.use('ddp-rate-limiter@1.0.7','server');
+  //api.use('email@1.2.3','server');
+  //api.use('http@1.4.2','server');
+  //api.use('less@2.8.0','client');
+
+  //api.use('planettraining:material-design-icons-font@2.2.3','client');
+
+  //api.use('react-meteor-data@0.2.16','server');
+  //api.use('rwatts:uuid@0.1.0','server');
+  //api.use('sakulstra:aggregate@1.4.3','server');
+  //api.use('session@1.2.0');
   //api.use('std:accounts-ui@1.3.3');
-
-
   //api.use('zetoff:accounts-material-ui@0.0.15');
   api.mainModule('doichain-api.js', 'server');
   //  api.mainModule('client_main.js', 'client');

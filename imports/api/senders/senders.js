@@ -34,12 +34,12 @@ Senders.schema = new SimpleSchema({
   },
   email: {
     type: String,
-    index: true,
-    denyUpdate: true,
+    //index: true,   //TODO enable this when this package works again see meta
+    //denyUpdate: true,
   },
   createdAt: {
     type: Date,
-    denyUpdate: true,
+    //denyUpdate: true,
   }
 });
 
