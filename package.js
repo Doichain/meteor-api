@@ -29,8 +29,10 @@ Package.onUse(function(api) {
     api.use(use);
     api.imply(imply);
 
-  //api.versionsFrom('1.8.0.1');
     api.addFiles('private/version.json', 'server', { isAsset: true });
+    api.mainModule('doichain-client-api.js', 'client');
+    api.mainModule('doichain-server-api.js', 'server');
+   // api.export('Doichain');
     //api.use('underscore@1.0.10',['client', 'server']);
   //api.use('aldeed:schema-index@3.0.0');
  //   api.use('aldeed:schema-deny@2.0.1','server');
@@ -50,17 +52,15 @@ Package.onUse(function(api) {
   //api.use('session@1.2.0');
   //api.use('std:accounts-ui@1.3.3');
   //api.use('zetoff:accounts-material-ui@0.0.15');
-  api.mainModule('doichain-api.js', 'server');
-  //  api.mainModule('client_main.js', 'client');
-  //  api.mainModule('client_main.js', 'client');
-  api.export('Doichain');
 });
 
 
 Npm.depends({
     '@babel/runtime':'7.2.0',
-    'simpl-schema':'1.5.3',
-    'bcrypt': '1.0.3',
+    'simpl-schema':'1.5.3'
+});
+/*
+'bcrypt': '1.0.3',
     'bitcore-message': '1.0.4',
     'bs58': '4.0.1',
     'classnames': '2.2.6',
@@ -82,8 +82,7 @@ Npm.depends({
     'scribe-js': '2.0.4',
     'secp256k1': '3.5.0',
     'standard-ecies': '1.0.0',
-    'uuid': '3.3.2'
-});
+    'uuid': '3.3.2' */
 
 Package.onTest(api => {
      api.use('practicalmeteor:chai@2.1.0_1');

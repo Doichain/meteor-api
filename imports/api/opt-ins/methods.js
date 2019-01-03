@@ -29,7 +29,6 @@ const add = new ValidatedMethod({
 const OPTIONS_METHODS = _.pluck([
   add
 ], 'name');
-
 if (Meteor.isServer) {
   // Only allow 5 opt-in operations per connection per second
   DDPRateLimiter.addRule({

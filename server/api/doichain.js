@@ -1,9 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logConfirm, logError} from "../../imports/startup/server/log-configuration";
 
-
 const NAMESPACE = 'e/';
-
 
 export function getWif(client, address) {
   if(!address){
