@@ -38,7 +38,17 @@ Package.onUse(function(api) {
 Npm.depends({
     '@babel/runtime':'7.2.0',
     'simpl-schema':'1.5.3',
-    'scribe-js':'2.0.4'
+    'scribe-js':'2.0.4',
+    'bitcore-lib': '^0.16.0',
+    "bs58": "^4.0.1",
+    "combined-stream2": "^1.1.2",
+    "compression": "^1.7.3",
+    "connect": "^3.6.6",
+    "cookie-parser": "^1.4.3",
+    "crypto-js": "^3.1.9-1",
+    "decimal.js": "^10.0.2",
+    "ejson": "^2.1.2",
+    "bitcore-message": "^1.0.4",
 });
 
 
