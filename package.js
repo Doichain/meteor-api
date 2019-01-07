@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.0.16',
+  version: '0.0.17',
   summary: 'Provides a Doichain REST API & webfrontend to an installed Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
@@ -37,7 +37,8 @@ Package.onUse(function(api) {
 
 Npm.depends({
     '@babel/runtime':'7.2.0',
-    'simpl-schema':'1.5.3'
+    'simpl-schema':'1.5.3',
+    'scribe-js':'2.0.4'
 });
 
 
