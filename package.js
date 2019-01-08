@@ -18,8 +18,7 @@ Package.onUse(function(api) {
             'universe:i18n@1.20.1',
             'underscore@1.0.10',
             'vsivsi:job-collection@1.4.0',
-            'nimble:restivus@0.8.12',
-            'http@1.4.2'
+            'nimble:restivus@0.8.12'
         ],
         imply = [
             'mongo'
@@ -39,21 +38,12 @@ Npm.depends({
     '@babel/runtime':'7.2.0',
     'simpl-schema':'1.5.3',
     'scribe-js':'2.0.4',
-    "bs58": "4.0.1",
-    "combined-stream2": "1.1.2",
-    "compression": "1.7.3",
-    "connect": "3.6.6",
-    "cookie-parser": "1.4.3",
-    "crypto-js": "3.1.9-1",
-    "decimal.js": "10.0.2",
-    "ejson": "2.1.2",
-    "bitcore-message": "1.0.4",
-    "namecoin": "0.1.4",
-    "fibers": "3.1.1",
-    "hashids": "1.2.2",
-    "secp256k1": "3.6.1",
-    "standard-ecies": "1.0.0",
-    "qs-middleware": "1.0.3"
+    'namecoin': '0.1.4',
+    'secp256k1':'3.6.1',
+    'crypto-js':'3.1.9-1',
+    'standard-ecies':'1.0.0',
+    'bs58':'4.0.1',
+    'hashids':'1.2.2'
 });
 
 
