@@ -1,6 +1,5 @@
 import { Meteor } from 'meteor/meteor';
 import { Roles } from 'meteor/alanning:roles';
-
 import { OptIns } from '../opt-ins.js';
 
 Meteor.publish('opt-ins.all', function OptInsAll() {

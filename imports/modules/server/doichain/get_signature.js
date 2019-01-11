@@ -1,7 +1,9 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
-import bitcore from 'bitcore-lib';
-import Message from 'bitcore-message';
+const bitcore = require('bitcore-lib');
+delete global._bitcore;
+const Message = require('bitcore-message');
+
 
 const GetSignatureSchema = new SimpleSchema({
   message: {

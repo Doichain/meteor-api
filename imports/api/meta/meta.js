@@ -33,8 +33,9 @@ Meta.schema = new SimpleSchema({
   },
   key: {
     type: String,
-    index: true,
-    denyUpdate: true
+  //  index: true, //TODO doesn't work inside a backage aldeed:schema-index@3.0.0
+      // TODO see https://github.com/aldeed/meteor-collection2/issues/378
+  //  denyUpdate: true //TODO aldeed:schema-deny@2.0.1
   },
   value: {
     type: String

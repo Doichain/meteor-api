@@ -32,31 +32,31 @@ DoichainEntries.schema = new SimpleSchema({
   },
   name: {
     type: String,
-    index: true,
-    denyUpdate: true
+    //index: true,
+    //denyUpdate: true
   },
   value: {
     type: String,
-    denyUpdate: false
+    //denyUpdate: false
   },
   address: {
     type: String,
-    denyUpdate: false
+    //denyUpdate: false
   },
   masterDoi: {
         type: String,
         optional: true,
-        index: true,
-        denyUpdate: true
+    //    index: true,
+    //    denyUpdate: true //TODO doesn't work inside a backage aldeed:schema-index@3.0.0
   },
   index: {
         type: SimpleSchema.Integer,
-        optional: true,
-        denyUpdate: true
+        //optional: true,
+       // denyUpdate: true
   },
   txId: {
     type: String,
-    denyUpdate: false
+    //denyUpdate: false
   }
 });
 

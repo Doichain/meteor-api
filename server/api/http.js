@@ -48,9 +48,7 @@ function _post(url, data, callback) {
 
 function _put(url, updateData, callback) {
     const ourUrl = url;
-    const ourData = {
-        data: updateData
-    }
+    const ourData =  data;
 
     HTTP.put(ourUrl, ourData, function(err, ret) {
       callback(err, ret);

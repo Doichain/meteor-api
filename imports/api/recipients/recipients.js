@@ -34,22 +34,22 @@ Recipients.schema = new SimpleSchema({
   },
   email: {
     type: String,
-    index: true,
-    denyUpdate: true,
+   // index: true,
+   // denyUpdate: true,
   },
   privateKey: {
     type: String,
-    unique: true,
-    denyUpdate: true,
+  //  unique: true,
+   // denyUpdate: true,
   },
   publicKey: {
     type: String,
-    unique: true,
-    denyUpdate: true,
+   // unique: true,
+   // denyUpdate: true,
   },
   createdAt: {
     type: Date,
-    denyUpdate: true,
+    //denyUpdate: true,
   }
 });
 
