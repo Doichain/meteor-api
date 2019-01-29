@@ -1,20 +1,9 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
-//import bitcore from 'bitcore-lib';
-//import Message from 'bitcore-message';
-const bitcore = require('bitcore-lib');
-delete global._bitcore;
-const Message = require('bitcore-message');
+var bitcore = require('bitcore');
+import Message from 'bitcore-message';
 
 import {logError, logVerify} from "../../../startup/server/log-configuration";
-const NETWORK = bitcore.Networks.add({
-  name: 'doichain',
-  alias: 'doichain',
-  pubkeyhash: 0x34,
-  privatekey: 0xB4,
-  scripthash: 13,
-  networkMagic: 0xf9beb4fe,
-});
 
 const VerifySignatureSchema = new SimpleSchema({
   data: {
@@ -28,12 +17,21 @@ const VerifySignatureSchema = new SimpleSchema({
   }
 });
 
+const NETWORK = bitcore.Networks.add({
+  name: 'doichain',
+  alias: 'doichain',
+  pubkeyhash: 0x34,
+  privatekey: 0xB4,
+  scripthash: 13,
+  networkMagic: 0xf9beb4fe,
+});
+
 const verifySignature = (data) => {
   try {
     const ourData = data;
     logVerify('verifySignature:',ourData);
     VerifySignatureSchema.validate(ourData);
-    const address = bitcore.Address.fromPublicKey(new bitcore.PublicKey(ourData.publicKey), NETWORK);
+    const address = Message.bitcore.Address.fromPublicKey(new Message.bitcore.PublicKey(ourData.publicKey), NETWORK);
     try {
       return Message(ourData.data).verify(address, ourData.signature);
     } catch(error) { logError(error)}

@@ -44,8 +44,7 @@ Npm.depends({
     'standard-ecies':'1.0.0',
     'bs58':'4.0.1',
     'hashids':'1.2.2',
-    'bitcore-message':'1.0.4',
-    'bitcore-lib':'0.16.0'
+    'bitcore-message':'0.12.0'
 });
 
 
