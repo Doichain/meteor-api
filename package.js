@@ -19,7 +19,8 @@ Package.onUse(function(api) {
             'underscore@1.0.10',
             'vsivsi:job-collection@1.4.0',
             'nimble:restivus@0.8.12',
-            'http@1.4.2'
+            'http@1.4.2',
+            'accounts-base@1.4.3'
         ],
         imply = [
             'mongo'
