@@ -46,7 +46,7 @@ function _post(url, data, callback) {
     });
 }
 
-function _put(url, updateData, callback) {
+function _put(url, data, callback) {
     const ourUrl = url;
     const ourData =  data;
 

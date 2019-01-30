@@ -51,7 +51,7 @@ DoichainEntries.schema = new SimpleSchema({
   },
   index: {
         type: SimpleSchema.Integer,
-        //optional: true,
+        optional: true,
        // denyUpdate: true
   },
   txId: {

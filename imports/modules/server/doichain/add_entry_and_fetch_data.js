@@ -38,7 +38,7 @@ const addDoichainEntry = (entry) => {
 
     const ety = DoichainEntries.findOne({name: ourEntry.name});
     if(ety !== undefined){
-        logSend('returning locally saved entry with _id:'+ety._id);
+        logConfirm('returning locally saved entry with _id:'+ety._id);
         return ety._id;
     }
 
@@ -47,17 +47,17 @@ const addDoichainEntry = (entry) => {
     if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably allready handeled correctly anyways this is not so cool as it seems.
     const wif = getWif(CONFIRM_CLIENT, CONFIRM_ADDRESS);
     const privateKey = getPrivateKeyFromWif({wif: wif});
-    logSend('got private key (will not show it here)');
+      logConfirm('got private key (will not show it here)');
 
     const domain = decryptMessage({privateKey: privateKey, message: value.from});
-    logSend('decrypted message from domain: ',domain);
+      logConfirm('decrypted message from domain: ',domain);
 
     const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
-    logSend('namePos:',namePos);
+      logConfirm('namePos:',namePos);
     const masterDoi = (namePos!=-1)?ourEntry.name.substring(0,namePos):undefined;
-    logSend('masterDoi:',masterDoi);
+      logConfirm('masterDoi:',masterDoi);
     const index = masterDoi?ourEntry.name.substring(namePos+1):undefined;
-    logSend('index:',index);
+      logConfirm('index:',index);
 
     const id = DoichainEntries.insert({
         name: ourEntry.name,
@@ -70,14 +70,14 @@ const addDoichainEntry = (entry) => {
         expired: ourEntry.expired
     });
 
-    logSend('DoichainEntry added on Bob:', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
+    logConfirm('DoichainEntry added on Bob:', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
 
     if(!masterDoi){
         addFetchDoiMailDataJob({
             name: ourEntry.name,
             domain: domain
         });
-        logSend('New entry added: \n'+
+        logConfirm('New entry added: \n'+
             'NameId='+ourEntry.name+"\n"+
             'Address='+ourEntry.address+"\n"+
             'TxId='+ourEntry.txId+"\n"+

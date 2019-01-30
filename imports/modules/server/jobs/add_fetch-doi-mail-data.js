@@ -16,6 +16,7 @@ const addFetchDoiMailDataJob = (data) => {
   try {
     const ourData = data;
     AddFetchDoiMailDataJobSchema.validate(ourData);
+    console.log('fetching email');
     const job = new Job(DAppJobs, 'fetchDoiMailData', ourData);
     job.retry({retries: 5, wait: 1*10*1000 }).save(); //check every 10 secs 5 times
   } catch (exception) {

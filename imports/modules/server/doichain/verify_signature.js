@@ -31,7 +31,7 @@ const verifySignature = (data) => {
     const ourData = data;
     logVerify('verifySignature:',ourData);
     VerifySignatureSchema.validate(ourData);
-    const address = Message.bitcore.Address.fromPublicKey(new Message.bitcore.PublicKey(ourData.publicKey), NETWORK);
+    const address = bitcore.Address.fromPublicKey(new bitcore.PublicKey(ourData.publicKey), NETWORK);
     try {
       return Message(ourData.data).verify(address, ourData.signature);
     } catch(error) { logError(error)}

@@ -13,4 +13,4 @@ This meteor project adds the Doichain (see https://doichain.org) REST API to you
     - run meteor ```meteor run --settings settings.json```
 3. Test
     - authenticate via REST e.g. via ```curl -H "Content-Type: application/json" -X POST -d '{"username":"admin","password":"password"}' http://localhost:3000/api/v1/login ```
-    - request a basic doi via ```curl -X POST -H 'X-User-Id: >userId from above>' -H 'X-Auth-Token: <x-auth-token-from-above>' -i 'http://localhost:3000/api/v1/opt-in?recipient_mail=<your-customer-email@example.com>&sender_mail=info@doichain.org'```
+    - request a basic doi via ```curl -X POST -H 'X-User-Id: <userId from above>' -H 'X-Auth-Token: <x-auth-token-from-above>' -i 'http://localhost:3000/api/v1/opt-in?recipient_mail=<your-customer-email@example.com>&sender_mail=info@doichain.org'```
