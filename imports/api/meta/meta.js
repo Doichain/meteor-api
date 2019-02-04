@@ -48,4 +48,7 @@ Meta.attachSchema(Meta.schema);
 // to the client. If we add secret properties to Meta objects, don't list
 // them here to keep them private to the server.
 Meta.publicFields = {
+  _id: 1,
+  key: 1,
+  value: 1
 };

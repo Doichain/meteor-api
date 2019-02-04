@@ -1,9 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logConfirm, logError} from "../../imports/startup/server/log-configuration";
 
-
 const NAMESPACE = 'e/';
-
 
 export function getWif(client, address) {
   if(!address){
@@ -43,6 +41,7 @@ export function getNewAddress(client, accout) {
     const syncFunc = Meteor.wrapAsync(doichain_getnewaddress);
     return syncFunc(client, accout);
 }
+
 function doichain_getnewaddress(client, account, callback) {
     const ourAccount = account;
     client.cmd('getnewaddresss', ourAccount, function(err, data) {
@@ -50,7 +49,6 @@ function doichain_getnewaddress(client, account, callback) {
         callback(err, data);
     });
 }
-
 
 export function signMessage(client, address, message) {
     const syncFunc = Meteor.wrapAsync(doichain_signMessage);

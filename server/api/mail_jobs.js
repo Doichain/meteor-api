@@ -3,9 +3,6 @@ import { JobCollection, Job } from 'meteor/vsivsi:job-collection';
 export const MailJobs = JobCollection('emails');
 import sendMail from '../../imports/modules/server/emails/send.js';
 import {logMain} from "../../imports/startup/server/log-configuration";
-import {BlockchainJobs} from "./blockchain_jobs";
-
-
 
 MailJobs.processJobs('send', function (job, cb) {
   try {

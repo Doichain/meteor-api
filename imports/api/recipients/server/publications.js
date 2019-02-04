@@ -5,6 +5,7 @@ import { Recipients } from '../recipients.js';
 import { OptIns} from '../../opt-ins/opt-ins.js'
 Meteor.publish('recipients.byOwner',function recipientGet(){
   let pipeline=[];
+
   if(!Roles.userIsInRole(this.userId, ['admin'])){
     pipeline.push(
       {$redact:{
