@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logConfirm, logError} from "../../imports/startup/server/log-configuration";
 
 const NAMESPACE = 'e/';
+const DOI_FEE = '0.04';
 
 export function getWif(client, address) {
   if(!address){
@@ -87,7 +88,7 @@ export function feeDoi(client, address) {
 
 function doichain_feeDoi(client, address, callback) {
     const destAddress = address;
-    client.cmd('sendtoaddress', destAddress, '0.02', function(err, data) {
+    client.cmd('sendtoaddress', destAddress, DOI_FEE, function(err, data) {
         callback(err, data);
     });
 }

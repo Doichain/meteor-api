@@ -19,4 +19,3 @@ export let httpGETdata = getHttpGETdata;
 export let httpPOST = getHttpPOST;
 export let httpPUT = getHttpPUT;
 export let testLog = testLogging;
-console.log('server running',MetaCollection.find().fetch());
