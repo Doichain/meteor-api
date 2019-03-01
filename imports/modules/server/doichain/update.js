@@ -31,6 +31,13 @@ const update = (data, job) => {
     const ourData = data;
 
     UpdateSchema.validate(ourData);
+    //in case confirmation happens if DOI doesn't even is registered as SOI we need to wait for the first block first
+    //so we re-run this job until we have an entry
+
+    //in case the confirmation happens if DOI has a registered DOI - the update can happen (but the second block still needs to be written)
+
+
+
 
     //stop this update until this name as at least 1 confirmation
     const name_data = nameShow(CONFIRM_CLIENT,ourData.nameId);
@@ -40,11 +47,15 @@ const update = (data, job) => {
         return;
     }
     const our_transaction = getTransaction(CONFIRM_CLIENT,name_data.txid);
-    if(our_transaction.confirmations===0){
-        rerun(job);
-        logConfirm('transaction has 0 confirmations - delaying name update',JSON.parse(ourData.value));
+
+    //if the doi is already safed in blockchain
+    if(name_data.value.indexOf('doiSignature')!=-1){
+        logConfirm('doiSignature found in DOI cancelling job',name_data);
+        job.cancel();
+        job.done();
         return;
     }
+
     logConfirm('updating blockchain with doiSignature:',JSON.parse(ourData.value));
     const wif = getWif(CONFIRM_CLIENT, CONFIRM_ADDRESS);
     const privateKey = getPrivateKeyFromWif({wif: wif});
@@ -54,7 +65,7 @@ const update = (data, job) => {
     const url = ourfromHostUrl+API_PATH+VERSION+"/"+DOI_CONFIRMATION_NOTIFY_ROUTE;
 
     logConfirm('creating signature with ADDRESS'+CONFIRM_ADDRESS+" nameId:",ourData.value);
-    const signature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, ourData.nameId); //TODO why here over nameID?
+    const signature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, ourData.nameId); //second signature here over nameId
     logConfirm('signature created:',signature);
 
     const updateData = {
@@ -65,9 +76,14 @@ const update = (data, job) => {
 
     try {
         const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
-        logConfirm('update transaction txid:',txid);
+        logConfirm('name_doi of transaction txid:',txid);
+
+        //alice needs to be informated about the confirmation
+        const response = getHttpPUT(url, updateData);
+        logConfirm('informed send dApp about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
+        job.done();
+
     }catch(exception){
-        //
         logConfirm('this nameDOI doesn´t have a block yet and will be updated with the next block and with the next queue start:',ourData.nameId);
         if(exception.toString().indexOf("there is already a registration for this doi name")==-1) {
             OptIns.update({nameId: ourData.nameId}, {$set: {error: JSON.stringify(exception.message)}});
@@ -78,9 +94,6 @@ const update = (data, job) => {
         //}
     }
 
-    const response = getHttpPUT(url, updateData);
-    logConfirm('informed send dApp about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
-    job.done();
   } catch(exception) {
     throw new Meteor.Error('doichain.update.exception', exception);
   }

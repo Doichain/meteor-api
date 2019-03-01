@@ -35,11 +35,13 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
-            const txid = params.tx;
+            const tx = params.tx;
 
             try {
-                checkNewTransaction(txid);
-                return {status: 'success',  data:'txid:'+txid+' was read from blockchain'};
+                logConfirm('checking transaction with tx:',{tx});
+                checkNewTransaction(tx,null);
+                logConfirm('checked transaction with tx:',{tx});
+                return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
             } catch(error) {
                 return {status: 'fail', error: error.message};
             }

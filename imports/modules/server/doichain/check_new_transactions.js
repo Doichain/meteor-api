@@ -12,9 +12,10 @@ const LAST_CHECKED_BLOCK_KEY = "lastCheckedBlock";
 const checkNewTransaction = (txid, job) => {
   try {
 
+      //TODO Security-Bug: Check if this transactions owner belongs to Bob's privateKey otherwise this interface could get used as backdoor for spam attacks
+      logConfirm('checkNewTransaction tx:',{txid});
       if(!txid){
           logConfirm("checkNewTransaction triggered when starting node - checking all confirmed blocks since last check for doichain address",CONFIRM_ADDRESS);
-
           try {
               var lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
               if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;

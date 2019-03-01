@@ -13,7 +13,6 @@ import {Roles} from "meteor/alanning:roles";
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
     authRequired: true,
-    //roleRequired: ['admin'],
     action: function() {
       const qParams = this.queryParams;
       const bParams = this.bodyParams;
