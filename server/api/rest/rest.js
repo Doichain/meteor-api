@@ -7,6 +7,7 @@ export const DOI_CONFIRMATION_NOTIFY_ROUTE = "opt-in";
 export const DOI_WALLETNOTIFY_ROUTE = "walletnotify";
 export const DOI_FETCH_ROUTE = "doi-mail";
 export const DOI_EXPORT_ROUTE = "export";
+export const DOI_MAILTEMPLATE_ROUTE = "template";
 export const API_PATH = "api/";
 export const VERSION = "v1";
 
@@ -21,5 +22,6 @@ if(isDebug()) require('./imports/debug.js');
 if(isAppType(SEND_APP)) require('./imports/send.js');
 if(isAppType(CONFIRM_APP)) require('./imports/confirm.js');
 if(isAppType(VERIFY_APP)) require('./imports/verify.js');
+require('./imports/template.js');
 require('./imports/user.js');
 require('./imports/status.js');
