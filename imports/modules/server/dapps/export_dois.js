@@ -1,8 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
-import { DOI_MAIL_FETCH_URL } from '../../../startup/server/email-configuration.js';
 import {logSend} from "../../../startup/server/log-configuration";
 import {OptIns} from "../../../api/opt-ins/opt-ins";
+import {DOI_EXPORT_ROUTE} from "../../../../server/api/rest/rest";
 
 const ExportDoisDataSchema = new SimpleSchema({
   status: {
@@ -48,7 +48,7 @@ const exportDois = (data) => {
     let exportDoiData;
     try {
         exportDoiData = optIns;
-        logSend('exportDoi url:',DOI_MAIL_FETCH_URL,JSON.stringify(exportDoiData));
+        logSend('exportDoi url:',DOI_EXPORT_ROUTE,JSON.stringify(exportDoiData));
       return exportDoiData
 
     } catch(error) {
