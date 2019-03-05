@@ -19,12 +19,11 @@ const ExportDoisDataSchema = new SimpleSchema({
   }
 });
 
-//TODO add sender and recipient email address to export
-
 const exportDois = (data) => {
   try {
     const ourData = data;
     ExportDoisDataSchema.validate(ourData);
+    //let pipeline=[];
     let pipeline=[{ $match: {"confirmedAt":{ $exists: true, $ne: null }} }];
     
     if(ourData.role!='admin'||ourData.userid!=undefined){
@@ -45,6 +44,7 @@ const exportDois = (data) => {
     //if(ourData.status==1) query = {"confirmedAt": { $exists: true, $ne: null }}
 
     let optIns =  OptIns.aggregate(pipeline);
+   // let optIns = OptIns.find({}).fetch();
     let exportDoiData;
     try {
         exportDoiData = optIns;

@@ -1,5 +1,6 @@
 import namecoin from 'namecoin';
 import { SEND_APP, CONFIRM_APP, VERIFY_APP, isAppType } from './type-configuration.js';
+import {validateAddress} from "../../../server/api/doichain";
 
 var sendSettings = Meteor.settings.send;
 var sendClient = undefined;
@@ -18,6 +19,14 @@ if(isAppType(CONFIRM_APP)) {
     throw new Meteor.Error("config.confirm.doichain", "Confirm app doichain settings not found")
   confirmClient = createClient(confirmSettings.doichain);
   confirmAddress = confirmSettings.doichain.address;
+  const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
+  console.log('validateAddressOutput:',validateAddressOutput);
+  if(validateAddressOutput === undefined ||
+      !validateAddressOutput ||
+      !validateAddressOutput.isvalid ||
+      !validateAddressOutput.ismine){
+    throw new Meteor.Error("config.confirm.doichain.address", "Confirm Address is not configured, invalid or not yours.")
+  }
 }
 export const CONFIRM_CLIENT = confirmClient;
 export const CONFIRM_ADDRESS = confirmAddress;

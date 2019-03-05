@@ -36,9 +36,6 @@ const update = (data, job) => {
 
     //in case the confirmation happens if DOI has a registered DOI - the update can happen (but the second block still needs to be written)
 
-
-
-
     //stop this update until this name as at least 1 confirmation
     const name_data = nameShow(CONFIRM_CLIENT,ourData.nameId);
     if(name_data === undefined){
@@ -75,23 +72,19 @@ const update = (data, job) => {
     };
 
     try {
-        const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
-        logConfirm('name_doi of transaction txid:',txid);
-
-        //alice needs to be informated about the confirmation
+        //TODO alice gets informed also in case something is wrong with the update
         const response = getHttpPUT(url, updateData);
         logConfirm('informed send dApp about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
-        job.done();
 
+        const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
+        logConfirm('name_doi of transaction txid:',txid);
+        job.done();
     }catch(exception){
         logConfirm('this nameDOI doesn´t have a block yet and will be updated with the next block and with the next queue start:',ourData.nameId);
         if(exception.toString().indexOf("there is already a registration for this doi name")==-1) {
             OptIns.update({nameId: ourData.nameId}, {$set: {error: JSON.stringify(exception.message)}});
         }
         throw new Meteor.Error('doichain.update.exception', exception);
-        //}else{
-        //    logConfirm('this nameDOI doesn´t have a block yet and will be updated with the next block and with the next queue start:',ourData.nameId);
-        //}
     }
 
   } catch(exception) {

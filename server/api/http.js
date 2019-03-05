@@ -49,7 +49,7 @@ function _put(url, data, callback) {
     const ourUrl = url;
     const ourData =  data;
 
-    HTTP.put(ourUrl, ourData, function(err, ret) {
-      callback(err, ret);
+    HTTP.put(ourUrl, { data: ourData }, function(err, ret) {
+            callback(err, ret);
     });
 }

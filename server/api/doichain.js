@@ -25,6 +25,19 @@ function doichain_dumpprivkey(client, address, callback) {
   });
 }
 
+export function validateAddress(client, address) {
+    const syncFunc = Meteor.wrapAsync(doichain_validateaddress);
+    return syncFunc(client, address);
+}
+
+function doichain_validateaddress(client, address, callback) {
+    const ourAddress = address;
+    client.cmd('validateaddress', ourAddress, function(err, data) {
+        if(err)  logError('validateaddress:',err);
+        callback(err, data);
+    });
+}
+
 export function getAddressesByAccount(client, accout) {
     const syncFunc = Meteor.wrapAsync(doichain_getaddressesbyaccount);
     return syncFunc(client, accout);
