@@ -20,11 +20,12 @@ if(isAppType(CONFIRM_APP)) {
   confirmClient = createClient(confirmSettings.doichain);
   confirmAddress = confirmSettings.doichain.address;
   const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
-  console.log('validateAddressOutput:',validateAddressOutput);
+
   if(validateAddressOutput === undefined ||
       !validateAddressOutput ||
       !validateAddressOutput.isvalid ||
       !validateAddressOutput.ismine){
+    console.log('validateAddressOutput:',validateAddressOutput);
     throw new Meteor.Error("config.confirm.doichain.address", "Confirm Address is not configured, invalid or not yours.")
   }
 }
