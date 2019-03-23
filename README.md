@@ -13,13 +13,11 @@ This meteor project adds the Doichain (see https://doichain.org) REST API to you
 ```
     {
     "app": {
-    "debug": "true", ,
+    "debug": "true",
     "host": "localhost",
     "port": "3000",
     "types": [
-      "send",
-      "confirm",
-      "verify"
+      "send"
     ]
       },
       "send": {
@@ -28,12 +26,17 @@ This meteor project adds the Doichain (see https://doichain.org) REST API to you
           "host": "localhost",
           "port": "8338",
           "username": "admin",
-          "password": "4c13d733d20fddde0440aca178ec8768dffa8df0925534a8a30d28ff3fe6"
+          "password": "***put-your-password-here***"
         }
       }
     }
 ``` 
     - run meteor ```meteor run --settings settings.json```
-3. Test
+
+
+3. Test REST-API
     - authenticate via REST e.g. via ```curl -H "Content-Type: application/json" -X POST -d '{"username":"admin","password":"password"}' http://localhost:3000/api/v1/login ```
     - request a basic doi via ```curl -X POST -H 'X-User-Id: <userId from above>' -H 'X-Auth-Token: <x-auth-token-from-above>' -i 'http://localhost:3000/api/v1/opt-in?recipient_mail=<your-customer-email@example.com>&sender_mail=info@doichain.org'```
+
+4. Use Javascript-Api
+    - request doi with 
