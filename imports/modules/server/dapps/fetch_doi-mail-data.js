@@ -63,10 +63,23 @@ const fetchDoiMailData = (data) => {
     logConfirm('generated confirmationHash:',confirmationHash);
     const confirmationUrl = getUrl()+API_PATH+VERSION+"/"+DOI_CONFIRMATION_ROUTE+"/"+encodeURIComponent(confirmationHash);
     logConfirm('confirmationUrl:'+confirmationUrl);
-
-    const template = parseTemplate({template: responseData.data.content, data: {
+    let template=null;
+    //Encoding needs to be considered before parsing
+    if(responseData.data.contentType == "json"){
+      let jsonContent = JSON.parse(responseData.data.content);
+      const templateText = parseTemplate({template: jsonContent.text, data: {
+        confirmation_url: confirmationUrl
+      }});
+      const templateHtml = parseTemplate({template: jsonContent.html, data: {
+        confirmation_url: confirmationUrl
+      }});
+      template=JSON.stringify({"text":templateText,"html":templateHtml}); 
+    }
+    else{
+    template = parseTemplate({template: responseData.data.content, data: {
       confirmation_url: confirmationUrl
     }});
+    }
 
     //logConfirm('we are using this template:',template);
 
@@ -75,6 +88,7 @@ const fetchDoiMailData = (data) => {
       to: responseData.data.recipient,
       subject: responseData.data.subject,
       message: template,
+      contentType: responseData.data.contentType,
       returnPath: responseData.data.returnPath
     });
   } catch (exception) {
