@@ -9,6 +9,7 @@ import { getHttpGET } from '../../../../server/api/http.js';
 import { DOI_MAIL_FETCH_URL } from '../../../startup/server/email-configuration.js';
 import { logSend } from "../../../startup/server/log-configuration";
 import { Accounts } from 'meteor/accounts-base'
+import {getUrl} from "../../../startup/server/dapp-configuration";
 
 const GetDoiMailDataSchema = new SimpleSchema({
   name_id: {
@@ -84,15 +85,22 @@ const getDoiMailData = (data) => {
     try {
 
       doiMailData = getHttpGET(DOI_MAIL_FETCH_URL, "").data;
+      let redirectUrl = doiMailData.data.redirect;
+
+      if(!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")){
+          redirectUrl = getUrl()+"templates/pages/"+redirectUrl;
+          logSend('redirectUrl:',redirectUrl);
+      }
+
       let defaultReturnData = {
         "recipient": recipient.email,
         "content": doiMailData.data.content,
-        "redirect": doiMailData.data.redirect,
+        "redirect": redirectUrl,
         "subject": doiMailData.data.subject,
-        "contentType": "html",
+        "contentType": doiMailData.data.contentType,
         "returnPath": doiMailData.data.returnPath
       }
-      //TODO: get contentType of default form/make default form text version;
+
     let returnData = defaultReturnData;
 
     try{
