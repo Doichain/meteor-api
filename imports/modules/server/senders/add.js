@@ -9,7 +9,7 @@ const AddSenderSchema = new SimpleSchema({
   }
 });
 
-const addSender = (sender) => {
+const   addSender = (sender) => {
   try {
     const ourSender = sender;
     AddSenderSchema.validate(ourSender);
