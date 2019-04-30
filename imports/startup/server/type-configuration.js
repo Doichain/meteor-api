@@ -1,10 +1,10 @@
-import { Meteor } from 'meteor/meteor';
 export const SEND_APP = "send";
 export const CONFIRM_APP = "confirm";
 export const VERIFY_APP = "verify";
+
+import { getSettings} from "meteor/doichain:settings";
+
 export function isAppType(type) {
-  if(Meteor.settings === undefined || Meteor.settings.app === undefined) throw "No settings found!"
-  const types = Meteor.settings.app.types;
-  if(types !== undefined) return types.includes(type);
-  return false;
+  const types = getSettings('app.types',[SEND_APP,VERIFY_APP]); //by default only enable send and verify mode
+  return _.contains(types, type);
 }

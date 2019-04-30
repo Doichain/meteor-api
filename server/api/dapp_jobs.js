@@ -2,7 +2,6 @@ import { JobCollection, Job } from 'meteor/vsivsi:job-collection';
 import fetchDoiMailData from '../../imports/modules/server/dapps/fetch_doi-mail-data.js';
 import { Meteor } from 'meteor/meteor';
 import {logMain} from "../../imports/startup/server/log-configuration";
-import {BlockchainJobs} from "./blockchain_jobs";
 
 export const DAppJobs = JobCollection('dapp');
 

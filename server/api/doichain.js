@@ -2,7 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logConfirm, logError} from "../../imports/startup/server/log-configuration";
 
 const NAMESPACE = 'e/';
-const DOI_FEE = '0.04';
+const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
   if(!address){

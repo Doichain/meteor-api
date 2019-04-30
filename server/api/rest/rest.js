@@ -17,7 +17,6 @@ export const Api = new Restivus({
   useDefaultAuth: true,
   prettyJson: true
 });
-
 if(isDebug()) require('./imports/debug.js');
 if(isAppType(SEND_APP)) require('./imports/send.js');
 if(isAppType(CONFIRM_APP)) require('./imports/confirm.js');

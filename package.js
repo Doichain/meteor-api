@@ -20,7 +20,8 @@ Package.onUse(function(api) {
             'vsivsi:job-collection@1.4.0',
             'nimble:restivus@0.8.12',
             'http@1.4.2',
-            'accounts-base@1.4.3'
+            'accounts-base@1.4.3',
+            'doichain:settings@0.1.5'
         ],
         imply = [
             'mongo'
