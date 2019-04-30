@@ -1,6 +1,8 @@
 # Doichain Meteor API
 
-This meteor project adds the Doichain (see https://doichain.org) REST API to your web project.
+# Doichain Meteor API
+
+## This meteor project adds the Doichain (see https://doichain.org) REST API to your web project.
 
 1. Prerequisites
     - running Doichain Node in Mainnet or Testnet (manual installation see: https://github.com/Doichain/core/tree/master/doc)
