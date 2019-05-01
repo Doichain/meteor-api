@@ -35,7 +35,7 @@ export const CONFIRM_ADDRESS = confirmAddress;
 
 var verifyClient = undefined;
 if(isAppType(VERIFY_APP)) {
-    verifyClient = createClient(getSettings('verify.doichain.address'));
+    verifyClient = createClient(VERIFY_APP);
 }
 
 export const VERIFY_CLIENT = verifyClient;

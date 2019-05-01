@@ -37,7 +37,7 @@ if(isAppType(CONFIRM_APP)) {
    }
    logConfirm('using MAIL_URL:',process.env.MAIL_URL);
 
-   if(confirmSettings.smtp.NODE_TLS_REJECT_UNAUTHORIZED!==undefined)
+   if(smtp_NODE_TLS_REJECT_UNAUTHORIZED!==undefined)
        process.env.NODE_TLS_REJECT_UNAUTHORIZED = smtp_NODE_TLS_REJECT_UNAUTHORIZED; //0
   });
 }
