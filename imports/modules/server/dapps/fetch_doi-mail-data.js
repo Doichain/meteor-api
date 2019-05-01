@@ -12,6 +12,7 @@ import generateDoiHash from '../emails/generate_doi-hash.js';
 import addOptIn from '../opt-ins/add.js';
 import addSendMailJob from '../jobs/add_send_mail.js';
 import {logConfirm, logError} from "../../../startup/server/log-configuration";
+import updateDoichainEntry from "../opt-ins/update_doichain_entry";
 
 const FetchDoiMailDataSchema = new SimpleSchema({
   name: {
@@ -22,7 +23,12 @@ const FetchDoiMailDataSchema = new SimpleSchema({
   }
 });
 
-
+/**
+ * Is called when a doichain doi transaction hits the dApp in confirmation mode. (Bob)
+ *  - requests the template from the dApp in send mode (Alice) (getHttpGet)
+ *
+ * @param data
+ */
 const fetchDoiMailData = (data) => {
   try {
     const ourData = data;
@@ -34,7 +40,7 @@ const fetchDoiMailData = (data) => {
 
     /**
       TODO when running Send-dApp in Testnet behind NAT this URL will not be accessible from the internet
-      but even when we use the URL from localhost verify andn others will fails.
+      but even when we use the URL from localhost verify and others will fails.
      */
     const response = getHttpGET(url, query);
     if(response === undefined || response.data === undefined) throw "Bad response";
@@ -50,7 +56,12 @@ const fetchDoiMailData = (data) => {
       }
       throw responseData.error;
     }
-    logConfirm('DOI Mail data fetched.');
+    logConfirm('DOI Mail data fetched - for recipient:', responseData.data.recipient);
+
+    if(responseData.data.verifyLocalHash) //don't safe anything on fallback servers (nothing should arrive here)
+      updateDoichainEntry({name: ourData.name, verifyLocalHash: responseData.data.verifyLocalHash});
+
+    logConfirm('verifyLocalHash stored:',responseData.data.verifyLocalHash);
 
     const optInId = addOptIn({name: ourData.name});
     const optIn = OptIns.findOne({_id: optInId});
@@ -63,10 +74,23 @@ const fetchDoiMailData = (data) => {
     logConfirm('generated confirmationHash:',confirmationHash);
     const confirmationUrl = getUrl()+API_PATH+VERSION+"/"+DOI_CONFIRMATION_ROUTE+"/"+encodeURIComponent(confirmationHash);
     logConfirm('confirmationUrl:'+confirmationUrl);
-
-    const template = parseTemplate({template: responseData.data.content, data: {
+    let template=null;
+    //Encoding needs to be considered before parsing
+    if(responseData.data.contentType == "json"){
+      let jsonContent = JSON.parse(responseData.data.content);
+      const templateText = parseTemplate({template: jsonContent.text, data: {
+        confirmation_url: confirmationUrl
+      }});
+      const templateHtml = parseTemplate({template: jsonContent.html, data: {
+        confirmation_url: confirmationUrl
+      }});
+      template=JSON.stringify({"text":templateText,"html":templateHtml}); 
+    }
+    else{
+    template = parseTemplate({template: responseData.data.content, data: {
       confirmation_url: confirmationUrl
     }});
+    }
 
     //logConfirm('we are using this template:',template);
 
@@ -75,6 +99,7 @@ const fetchDoiMailData = (data) => {
       to: responseData.data.recipient,
       subject: responseData.data.subject,
       message: template,
+      contentType: responseData.data.contentType,
       returnPath: responseData.data.returnPath
     });
   } catch (exception) {

@@ -18,7 +18,7 @@ ddp-common@1.4.0
 ddp-rate-limiter@1.0.7
 ddp-server@2.3.0
 diff-sequence@1.1.1
-doichain:doichain-meteor-api@0.0.35
+doichain:doichain-meteor-api@0.0.36
 doichain:settings@0.1.5
 dynamic-import@0.5.1
 ecmascript@0.12.7
@@ -32,7 +32,7 @@ geojson-utils@1.0.10
 http@1.4.2
 id-map@1.1.0
 inter-process-messaging@0.1.0
-local-test:doichain:doichain-meteor-api@0.0.35
+local-test:doichain:doichain-meteor-api@0.0.36
 localstorage@1.2.0
 logging@1.1.20
 mdg:validated-method@1.2.0

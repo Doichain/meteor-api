@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import { OptIns } from '../../../api/opt-ins/opt-ins.js';
 import { Recipients } from '../../../api/recipients/recipients.js';
+import { Senders } from '../../../api/senders/senders.js';
 import getOptInProvider from '../dns/get_opt-in-provider.js';
 import getOptInKey from '../dns/get_opt-in-key.js';
 import verifySignature from '../doichain/verify_signature.js';
@@ -9,6 +10,8 @@ import { getHttpGET } from '../../../../server/api/http.js';
 import { DOI_MAIL_FETCH_URL } from '../../../startup/server/email-configuration.js';
 import { logSend } from "../../../startup/server/log-configuration";
 import { Accounts } from 'meteor/accounts-base'
+import {getUrl} from "../../../startup/server/dapp-configuration";
+import getDataHash from "../doichain/get_data-hash";
 
 const GetDoiMailDataSchema = new SimpleSchema({
   name_id: {
@@ -43,11 +46,15 @@ const userProfileSchema = new SimpleSchema({
 
 const getDoiMailData = (data) => {
   try {
+
     const ourData = data;
     GetDoiMailDataSchema.validate(ourData);
     const optIn = OptIns.findOne({nameId: ourData.name_id});
     if(optIn === undefined) throw "Opt-In with name_id: "+ourData.name_id+" not found";
     logSend('Opt-In found',optIn);
+
+    const sender = Senders.findOne({_id: optIn.sender});
+    if(sender === undefined) throw "Sender not found";
 
     const recipient = Recipients.findOne({_id: optIn.recipient});
     if(recipient === undefined) throw "Recipient not found";
@@ -55,13 +62,16 @@ const getDoiMailData = (data) => {
 
     const parts = recipient.email.split("@");
     const domain = parts[parts.length-1];
-
-    let publicKey = getOptInKey({ domain: domain});
+    let optInKeyData = getOptInKey({ domain: domain});
+    let publicKey = optInKeyData.key;
+    let optInType = optInKeyData.type;
 
     if(!publicKey){
       const provider = getOptInProvider({domain: ourData.domain });
       logSend("using doichain provider instead of directly configured publicKey:", { provider: provider });
-      publicKey = getOptInKey({ domain: provider}); //get public key from provider or fallback if publickey was not set in dns
+      optInKeyData = getOptInKey({ domain: provider}).key; //get public key from provider or fallback if publickey was not set in dns
+      publicKey = optInKeyData.key;
+      optInType = optInKeyData.type;
     }
 
     logSend('queried data: (parts, domain, provider, publicKey)', '('+parts+','+domain+','+publicKey+')');
@@ -84,22 +94,40 @@ const getDoiMailData = (data) => {
     try {
 
       doiMailData = getHttpGET(DOI_MAIL_FETCH_URL, "").data;
+      let redirectUrl = doiMailData.data.redirect;
+
+      if(!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")){
+          redirectUrl = getUrl()+"templates/pages/"+redirectUrl;
+          logSend('redirectUrl:',redirectUrl);
+      }
+
       let defaultReturnData = {
         "recipient": recipient.email,
         "content": doiMailData.data.content,
-        "redirect": doiMailData.data.redirect,
+        "redirect": redirectUrl,
         "subject": doiMailData.data.subject,
+        "contentType": doiMailData.data.contentType,
         "returnPath": doiMailData.data.returnPath
       }
+
+      //in case we don't send data to a fallback server, send sender email to destination fallback.
+      if(optInType === "default"){
+         defaultReturnData.verifyLocalHash = getDataHash({data: (sender.email+recipient.email) }); //verifyLocalHash = verifyLocalHash
+      }
+
+      logSend('defaultReturnData:',defaultReturnData);
 
     let returnData = defaultReturnData;
 
     try{
+
       let owner = Accounts.users.findOne({_id: optIn.ownerId});
       let mailTemplate = owner.profile.mailTemplate;
       let redirParamString=null;
       let templParamString=null;
+
       try{
+
         let optinData = JSON.parse(optIn.data);
         let redirParam = optinData.redirectParam ? optinData.redirectParam:null;
         let templParam = optinData.templateParam ? optinData.templateParam:null;
@@ -131,11 +159,37 @@ const getDoiMailData = (data) => {
       //Appends parameter to redirect-url
       let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?")==-1 ? mailTemplate["redirect"]+"?"+redirParamString : mailTemplate["redirect"]+"&"+redirParamString)):null;
       let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?")==-1 ? mailTemplate["templateURL"]+"?"+templParamString : mailTemplate["templateURL"]+"&"+templParamString)):null;
-
+      
       returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
       returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
       returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
-      returnData["content"] = tmpTemplate ? (getHttpGET(tmpTemplate).content || defaultReturnData["content"]) : defaultReturnData["content"];
+      let templateResult = getHttpGET(tmpTemplate);
+      let message = false;
+      let contentType=templateResult.headers["content-type"];
+      switch (contentType.split(";")[0]) {
+        case "text/plain":
+        contentType="text"
+        message=templateResult.content;
+        break;
+        case "text/html":
+        contentType="html"
+        message=templateResult.content;
+        break;
+        case "application/json":
+        //check if json has fields text and html
+        if(templateResult.data && templateResult.data.text && templateResult.data.html){
+          //console.log(templateResult.data.html);
+          message=templateResult.content;
+          contentType="json";
+        }
+        break;
+        default:
+          break;
+      }
+      logSend("contentType",contentType);
+      //returnData["content"] = tmpTemplate ? (templateResult.content || defaultReturnData["content"]) : defaultReturnData["content"];
+      returnData["content"] = tmpTemplate ? (message || defaultReturnData["content"]) : defaultReturnData["content"];
+      returnData["contentType"] = contentType&&message ? contentType:"html";
       logSend("Redirect Url set to:",returnData["redirect"]);
       logSend("Template Url set to:",(tmpTemplate ? tmpTemplate : "Default"));
 

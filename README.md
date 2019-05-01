@@ -1,7 +1,5 @@
 # Doichain Meteor API
 
-# Doichain Meteor API
-
 ## This meteor project adds the Doichain (see https://doichain.org) REST API to your web project.
 
 1. Prerequisites

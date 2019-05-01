@@ -18,6 +18,9 @@ const SendMailSchema = new SimpleSchema({
   message: {
     type: String,
   },
+  contentType: {
+    type: String,
+  },
   returnPath: {
     type: String,
     regEx: SimpleSchema.RegEx.Email
@@ -33,16 +36,39 @@ const sendMail = (mail) => {
     logConfirm('sending email with data:',{to:mail.to, subject:mail.subject});
     SendMailSchema.validate(ourMail);
     //TODO: Text fallback
-    Email.send({
+    let emailToSend={
       from: mail.from,
       to: mail.to,
       subject: mail.subject,
-      html: mail.message,
       headers: {
         'Return-Path': mail.returnPath,
       }
-    });
-
+    }
+    
+    switch (mail.contentType) {
+      case "text":
+        emailToSend.text=mail.message;
+        break;
+      case "html":
+        emailToSend.html=mail.message;
+        break;
+        case "json":
+        let mailParts=JSON.parse(mail.message);
+        emailToSend.text=mailParts.text;
+        emailToSend.html=mailParts.html;
+        break;
+      default:
+        break;
+    }
+    if(!emailToSend.html&&!emailToSend.text){
+      throw new Meteor.Error('No email message provided');
+    }
+    if(emailToSend){
+      Email.send(emailToSend);
+    }
+    else{
+      throw new Meteor.Error('Error creating email');
+    }
   } catch (exception) {
     throw new Meteor.Error('emails.send.exception', exception);
   }

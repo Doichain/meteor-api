@@ -2,10 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import { VERIFY_CLIENT } from '../../../startup/server/doichain-configuration.js';
 import { nameShow } from '../../../../server/api/doichain.js';
-import getOptInProvider from '../dns/get_opt-in-provider.js';
-import getOptInKey from '../dns/get_opt-in-key.js';
 import verifySignature from '../doichain/verify_signature.js';
-import {logVerify} from "../../../startup/server/log-configuration";
 import getPublicKeyAndAddress from "../doichain/get_publickey_and_address_by_domain";
 
 const VerifyOptInSchema = new SimpleSchema({

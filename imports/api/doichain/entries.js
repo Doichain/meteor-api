@@ -57,6 +57,10 @@ DoichainEntries.schema = new SimpleSchema({
   txId: {
     type: String,
     //denyUpdate: false
+  },
+  verifyLocalHash: {
+    type: String,
+    optional: true,
   }
 });
 

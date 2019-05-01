@@ -29,8 +29,9 @@ const getOptInKey = (data) => {
     const key = resolveTxt(ourOPT_IN_KEY, ourData.domain);
     logSend('DNS TXT configured public key of recipient email domain and confirmation dapp',{foundKey:key, domain:ourData.domain, dnskey:ourOPT_IN_KEY});
 
-    if(key === undefined) return useFallback(ourData.domain);
-    return key;
+    if(key === undefined) return {type: 'fallback', key: useFallback(ourData.domain)} ;
+    return {type: 'default', key: key}
+
   } catch (exception) {
     throw new Meteor.Error('dns.getOptInKey.exception', exception);
   }
