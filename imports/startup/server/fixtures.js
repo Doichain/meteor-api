@@ -13,7 +13,7 @@ Meteor.startup(() => {
   if(Meteor.users.find().count() === 0) {
     const id = Accounts.createUser({
       username: 'admin',
-      email: 'admin@sendeffect.de',
+      email: 'admin@doichain.org',
       password: 'password'
     });
     Roles.addUsersToRoles(id, 'admin');

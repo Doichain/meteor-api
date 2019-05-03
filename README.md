@@ -2,6 +2,7 @@
 
 ## This meteor project adds the Doichain (see https://doichain.org) REST API to your web project.
 
+# Installation
 1. Prerequisites
     - running Doichain Node in Mainnet or Testnet (manual installation see: https://github.com/Doichain/core/tree/master/doc)
     - (Mainnet) or via Docker-Hub ``docker run -it -e RPC_PASSWORD=<my-rpc-password> -p 8339:8339 doichain/node-only``
