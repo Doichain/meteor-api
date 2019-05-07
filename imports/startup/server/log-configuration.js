@@ -1,11 +1,10 @@
 import {isDebug} from "./dapp-configuration";
 
-const scribe = false;
+var scribe = false;
 if(scribe){
     require('scribe-js')();
     export const console = process.console;
 }
-
 export const sendModeTagColor = {msg : 'send-mode', colors : ['yellow', 'inverse']};
 export const confirmModeTagColor = {msg : 'confirm-mode', colors : ['blue', 'inverse']};
 export const verifyModeTagColor = {msg : 'verify-mode', colors : ['green', 'inverse']};

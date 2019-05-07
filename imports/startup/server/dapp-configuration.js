@@ -1,16 +1,20 @@
 import { Meteor } from 'meteor/meteor';
 import { getSettings} from "meteor/doichain:settings";
+import {getInfo} from "../../../server/api/doichain";
+import {CONFIRM_CLIENT, SEND_CLIENT} from "./doichain-configuration";
 
 export function isDebug() {
     return getSettings('app.debug',true);
 }
 
 export function isRegtest() {
-    return getSettings('app.regtest',false);
+    const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
+    return data.chain === "regtest";
 }
 
 export function isTestnet() {
-    return getSettings('app.testnet',false);
+    const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
+    return data.chain === "testnet";
 }
 
 export function getUrl() {
