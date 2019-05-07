@@ -16,7 +16,7 @@
     - *Remark: in case you want to test the full DOI workflow on testnet (or mainnet) over your local development environment you might have to forward the a remote port for Bob's callback to your local machine via e.g. ``ssh -R 4000:localhost:3000 your@your-remote-ssh-server`` in 
       such a case you also have to change the host entry inside settings.json (see below)*
    
-2.  Funding
+2. Funding
     - Buy Doicoin from https://bisq.network 
     - (mainnet) Transfer it to your new Doichain Node Address you create with ```curl --user admin:nico --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getnewaddress", "params": [] }' -H 'content-type: text/plain;' http://localhost:8339```
     - (testnet) Transfer it to your new Doichain Node Address you create with ```curl --user admin:nico --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getnewaddress", "params": [] }' -H 'content-type: text/plain;' http://localhost:18339```
@@ -51,5 +51,5 @@
 
 
 4. Test REST-API
-    - authenticate via REST e.g. via ```curl -H "Content-Type: application/json" -X POST -d '{"username":"admin","password":"password"}' http://localhost:3000/api/v1/login ```
+    - authenticate via REST e.g. via ```curl -H "Content-Type: application/json" -X POST -d '{"username":"admin","password":"password"}' http://localhost:3000/api/v1/login```
     - request a basic doi via ```curl -X POST -H 'X-User-Id: <userId from above>' -H 'X-Auth-Token: <x-auth-token-from-above>' -i 'http://localhost:3000/api/v1/opt-in?recipient_mail=<your-customer-email@example.com>&sender_mail=info@doichain.org'```
