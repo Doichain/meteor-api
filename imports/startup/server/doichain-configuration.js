@@ -5,18 +5,16 @@ import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
 var sendClient = undefined;
-if(isAppType(SEND_APP)) {
-  sendClient = createClient(SEND_APP);
-  logMain('created client for send-mode',sendClient);
+if(isAppType(SEND_APP) && Meteor.settings.send) {
+  sendClient = createClient(Meteor.settings.send.doichain);
 }
 export const SEND_CLIENT = sendClient;
 
 var confirmClient = undefined;
 var confirmAddress = undefined;
-if(isAppType(CONFIRM_APP)) {
-  //if(!confirmSettings || !confirmSettings.doichain) //TODO report error to dApp
-  //&&  throw new Meteor.Error("config.confirm.doichain", "Confirm app doichain settings not found")
-  confirmClient = createClient(CONFIRM_APP);
+
+if(isAppType(CONFIRM_APP) && Meteor.settings.confirm) {
+  confirmClient = createClient(Meteor.settings.confirm.doichain);
   confirmAddress = getSettings('confirm.doichain.address');
   const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
 
@@ -35,17 +33,17 @@ export const CONFIRM_ADDRESS = confirmAddress;
 
 
 var verifyClient = undefined;
-if(isAppType(VERIFY_APP)) {
-    verifyClient = createClient(VERIFY_APP);
+if(isAppType(VERIFY_APP) && Meteor.settings.verify) {
+    verifyClient = createClient(Meteor.settings.verify.doichain);
 }
 
 export const VERIFY_CLIENT = verifyClient;
 
 function createClient(settings) {
   return new namecoin.Client({
-    host: getSettings(settings+'.doichain.host'),
-    port: getSettings(settings+'.doichain.port'),
-    user: getSettings(settings+'.doichain.username'),
-    pass: getSettings(settings+'.doichain.password')
+    host: settings.host,
+    port: settings.port,
+    user: settings.username,
+    pass: settings.password
   });
 }
