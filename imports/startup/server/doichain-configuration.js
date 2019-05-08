@@ -7,6 +7,7 @@ import { getSettings} from "meteor/doichain:settings";
 var sendClient = undefined;
 if(isAppType(SEND_APP)) {
   sendClient = createClient(SEND_APP);
+  logMain('created client for send-mode',sendClient);
 }
 export const SEND_CLIENT = sendClient;
 
