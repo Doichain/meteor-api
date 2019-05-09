@@ -14,7 +14,7 @@ export function isRegtest() {
 
 export function isTestnet() {
     const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
-    return data.chain === "testnet";
+    return data.chain === "test";
 }
 
 export function getUrl() {

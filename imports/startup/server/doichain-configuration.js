@@ -17,7 +17,7 @@ if(isAppType(CONFIRM_APP) && Meteor.settings.confirm) {
   confirmClient = createClient(Meteor.settings.confirm.doichain);
   confirmAddress = getSettings('confirm.doichain.address');
   const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
-
+  console.log('bla',confirmClient);
   if(validateAddressOutput === undefined ||
       !validateAddressOutput ||
       !validateAddressOutput.isvalid ||
