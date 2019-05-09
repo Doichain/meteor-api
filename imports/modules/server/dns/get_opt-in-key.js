@@ -34,15 +34,17 @@ const getOptInKey = (data) => {
       //try delegatedKey
       const provider = getOptInProvider({domain: ourData.domain});
       logSend("Using doichain delegated provider instead of directly configured publicKey:",{provider:provider});
-      const delegatedKey = resolveTxt(ourOPT_IN_KEY, ourData.domain);
+      const delegatedKey = resolveTxt(ourOPT_IN_KEY, provider);
       if(delegatedKey) return  {type: 'delegated', key: delegatedKey} ;
 
       //use fallback
       if(key===undefined && delegatedKey===undefined){
-        if(domain === FALLBACK_PROVIDER) throw new Meteor.Error("Fallback has no key defined!");
-        logSend("Key not defined. Using fallback: ",FALLBACK_PROVIDER);
         const fallbackKey = resolveTxt(ourOPT_IN_KEY, FALLBACK_PROVIDER);
-        if(fallbackKey === undefined) return {type: 'fallback', key: fallbackKey} ;
+        if(fallbackKey) return {type: 'fallback', key: fallbackKey}
+        else{
+          logSend("Key not defined. Using fallback: ",FALLBACK_PROVIDER);
+          throw new Meteor.Error("Fallback has no key defined!");
+        }
       }
     }
     else
