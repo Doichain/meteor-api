@@ -24,12 +24,15 @@ if(isAppType(CONFIRM_APP)) {
     const smtpPassword = getSettings('confirm.smtp.password');
     const smtpServer = getSettings('confirm.smtp.server','localhost');
     const smtpPort = getSettings('confirm.smtp.port',25);
+    const smtps = getSettings('confirm.smtp.smtps',true);
     const smtp_NODE_TLS_REJECT_UNAUTHORIZED = getSettings('confirm.smtp.NODE_TLS_REJECT_UNAUTHORIZED');
 
+
+
     if(smtpUsername === undefined){
-       process.env.MAIL_URL = 'smtp://' +encodeURIComponent(smtpServer) +':' +smtpPort;
+       process.env.MAIL_URL = (smtps?'smtps://':'smtp://')+encodeURIComponent(smtpServer) +':' +smtpPort;
    }else{
-       process.env.MAIL_URL = 'smtp://' +
+       process.env.MAIL_URL = (smtps?'smtps://':'smtp://') +
            encodeURIComponent(smtpUsername) +
            ':' + encodeURIComponent(smtpPassword) +
            '@' + encodeURIComponent(smtpServer) +

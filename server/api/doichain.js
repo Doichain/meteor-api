@@ -33,7 +33,7 @@ export function validateAddress(client, address) {
 function doichain_validateaddress(client, address, callback) {
     const ourAddress = address;
     client.cmd('validateaddress', ourAddress, function(err, data) {
-        if(err)  logError('validateaddress:',err);
+        if(err)  logError('validateaddress:',{address:address,err:err,client:client});
         callback(err, data);
     });
 }

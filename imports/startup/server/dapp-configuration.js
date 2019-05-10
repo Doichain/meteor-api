@@ -29,3 +29,4 @@ export function getUrl() {
 
   return Meteor.absoluteUrl();
 }
+console.log('dapp-configuration initizalized');
