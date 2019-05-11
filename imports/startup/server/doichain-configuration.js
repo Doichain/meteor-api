@@ -11,19 +11,26 @@ export const SEND_CLIENT = sendClient;
 
 var confirmClient = undefined;
 var confirmAddress = undefined;
-confirmClient = createClient("confirm");
-confirmAddress = getSettings('confirm.doichain.address');
-  const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
-  if(validateAddressOutput === undefined ||
-      !validateAddressOutput ||
-      !validateAddressOutput.isvalid ||
-      !validateAddressOutput.ismine){
+if(isAppType(CONFIRM_APP) && Meteor.settings.confirm) {
+  confirmClient = createClient("confirm");
+  confirmAddress = getSettings('confirm.doichain.address',undefined);
 
-    logError('validateAddressOutput:',validateAddressOutput);
-    //TODO report to dAPP!
-    //throw new Meteor.Error("config.confirm.doichain.address", "Confirm Address is not configured, invalid or not yours.")
+  try{
+    //TODO find a better place to validate this address in future
+    const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
+    if(validateAddressOutput === undefined ||
+        !validateAddressOutput ||
+        !validateAddressOutput.isvalid ||
+        !validateAddressOutput.ismine){
+
+      logError('validateAddressOutput:',validateAddressOutput);
+      //TODO report to dAPP!
+      //throw new Meteor.Error("config.confirm.doichain.address", "Confirm Address is not configured, invalid or not yours.")
+    }
+  }catch(ex){
+    logError('validateAddress:',ex);
   }
-//}
+}
 export const CONFIRM_CLIENT = confirmClient;
 export const CONFIRM_ADDRESS = confirmAddress;
 
@@ -41,5 +48,3 @@ function createClient(settings) {
     pass: getSettings(settings+'.doichain.password')
   });
 }
-
-console.log('doichain-config initizalized',sendClient);
