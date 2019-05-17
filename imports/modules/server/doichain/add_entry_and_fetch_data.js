@@ -44,10 +44,15 @@ const addDoichainEntry = (entry) => {
 
     const value = JSON.parse(ourEntry.value);
     //logSend("value:",value);
-    if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably allready handeled correctly anyways this is not so cool as it seems.
+    if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably already handled correctly anyways this is not so cool as it seems.
+
+    //TODO confirm address here? Is it really need to configure? since inside the
+    // transaction the address is already given. no need to configure it at all!
+    // take out this address and get private key!
     const wif = getWif(CONFIRM_CLIENT, CONFIRM_ADDRESS);
+
     const privateKey = getPrivateKeyFromWif({wif: wif});
-      logConfirm('got private key (will not show it here)');
+    logConfirm('got private key (will not show it here)');
 
     const domain = decryptMessage({privateKey: privateKey, message: value.from});
       logConfirm('decrypted message from domain: ',domain);

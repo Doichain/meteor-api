@@ -3,7 +3,7 @@ import {Meteor} from 'meteor/meteor';
 import {Accounts} from 'meteor/accounts-base'
 import SimpleSchema from 'simpl-schema';
 import {Roles} from "meteor/alanning:roles";
-import {logMain} from "../../../../imports/startup/server/log-configuration";
+import {logMain, logSend} from "../../../../imports/startup/server/log-configuration";
 
 const mailTemplateSchema = new SimpleSchema({
     subject: {
@@ -12,7 +12,7 @@ const mailTemplateSchema = new SimpleSchema({
     },
     redirect: {
         type: String,
-        regEx: "@(https?|ftp)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
+   //    regEx: "@(https?|http)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
         optional:true 
     },
     returnPath: {
@@ -22,7 +22,7 @@ const mailTemplateSchema = new SimpleSchema({
     },
     templateURL:{
         type: String,
-        regEx: "@(https?|ftp)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
+    //    regEx: "@(https?|http)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
         optional:true 
     }
 });
@@ -45,6 +45,7 @@ const createUserSchema = new SimpleSchema({
         optional:true 
     }
   });
+
   const updateUserSchema = new SimpleSchema({
     mailTemplate:{
         type: mailTemplateSchema
@@ -110,9 +111,12 @@ const collectionOptions =
                             throw Error("No Permission");
                         }
                     }
+                    logSend('received params to update user:'+uid,params);
                     updateUserSchema.validate(params);
-                    if(!Meteor.users.update(this.urlParams.id,{$set:{"profile.mailTemplate":params.mailTemplate}})){
-                        throw Error("Failed to update user");
+
+                    const retValue = Meteor.users.update(this.urlParams.id,{$set:{"profile.mailTemplate":params.mailTemplate}});
+                    if(!retValue){
+                        throw Error("Failed to update user - user "+uid+" not found?");
                     }
                     return {status: 'success', data: {userid: this.urlParams.id, mailTemplate:params.mailTemplate}};
                 } catch(error) {
