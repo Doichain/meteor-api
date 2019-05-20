@@ -1,14 +1,23 @@
 import { Meteor } from 'meteor/meteor';
 import { Roles } from 'meteor/alanning:roles';
 import {Meta} from '../../api/meta/meta.js'
+import fs from 'fs';
+
 Meteor.startup(() => {
 
-  let version=Assets.getText("private/version.json");
+//  let version=Assets.getText("../../private/version.json");  //reads it only from the current package (please read from the app)
+
+  const rd = process.env.PWD;
+  console.log('directory:',rd);
+  const version = fs.readFileSync(`${rd}/private/version.json`).toString();
+
 
   if(Meta.find({key:"version"}).count() > 0){
     Meta.remove({key:"version"});
   }
-   Meta.insert({key:"version",value:version});
+
+  console.log("version from file: ",version)
+   Meta.insert({key:"version", value: version});
   
   if(Meteor.users.find().count() === 0) {
     const id = Accounts.createUser({

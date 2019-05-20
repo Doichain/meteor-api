@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.2.17',
+  version: '0.2.19',
   summary: 'Provides a Doichain REST API & webfrontend to an installed Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
@@ -30,7 +30,7 @@ Package.onUse(function(api) {
     api.use(use);
     api.imply(imply);
 
-    api.addFiles('private/version.json', 'server', { isAsset: true });
+   // api.addFiles('private/version.json', 'server', { isAsset: true });
     api.mainModule('doichain-client-api.js', 'client');
     api.mainModule('doichain-server-api.js', 'server');
 });
