@@ -52,18 +52,35 @@ const createUserSchema = new SimpleSchema({
     }
 });
 
-//TODO: collection options separate
+console.log('test')
 const collectionOptions =
   {
     path:"users",
     routeOptions:
     {
         authRequired : true
-        //,roleRequired : "admin"
     },
     excludedEndpoints: ['patch','deleteAll'],
     endpoints:
     {
+        get:
+        {
+            roleRequired : "admin",
+            action: function(){
+                const qParams = this.queryParams;
+                const bParams = this.bodyParams;
+                let params = {};
+                if(qParams !== undefined) params = {...qParams}
+                if(bParams !== undefined) params = {...params, ...bParams}
+
+                try{
+                    const userList = Meteor.users.find().fetch()
+                    return {status: 'success', data: userList};
+                } catch(error) {
+                    return {statusCode: 400, body: {status: 'fail', message: error.message}};
+                }
+            }
+        },
         delete:{roleRequired : "admin"},
         post:
         {
