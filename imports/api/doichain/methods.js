@@ -13,6 +13,7 @@ const getKeyPair = new ValidatedMethod({
   },
 });
 
+/**TODO this can be removed - if not longer important since we import balance durinng blocknotify and status call from outside*/
 const getBalance = new ValidatedMethod({
   name: 'doichain.getBalance',
   validate: null,

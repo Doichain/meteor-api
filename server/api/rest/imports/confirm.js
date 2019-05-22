@@ -1,6 +1,6 @@
-import { Api, DOI_WALLETNOTIFY_ROUTE, DOI_CONFIRMATION_ROUTE } from '../rest.js';
+import { Api, DOI_CONFIRMATION_ROUTE } from '../rest.js';
 import confirmOptIn from '../../../../imports/modules/server/opt-ins/confirm.js'
-import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions";
+
 import {logConfirm} from "../../../../imports/startup/server/log-configuration";
 //doku of meteor-restivus https://github.com/kahmali/meteor-restivus
 Api.addRoute(DOI_CONFIRMATION_ROUTE+'/:hash', {authRequired: false}, {
@@ -28,23 +28,4 @@ Api.addRoute(DOI_CONFIRMATION_ROUTE+'/:hash', {authRequired: false}, {
       }
     }
   }
-});
-
-Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {
-    get: {
-        authRequired: false,
-        action: function() {
-            const params = this.queryParams;
-            const tx = params.tx;
-
-            try {
-                logConfirm('checking transaction with tx:',{tx});
-                checkNewTransaction(tx,null);
-                logConfirm('checked transaction with tx:',{tx});
-                return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
-            } catch(error) {
-                return {status: 'fail', error: error.message};
-            }
-        }
-    }
 });
