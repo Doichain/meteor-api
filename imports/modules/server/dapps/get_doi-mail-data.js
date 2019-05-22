@@ -89,9 +89,10 @@ const getDoiMailData = (data) => {
         "content": doiMailData.data.content,
         "redirect": doiMailData.data.redirect,
         "subject": doiMailData.data.subject,
+        "contentType": "html",
         "returnPath": doiMailData.data.returnPath
       }
-
+      //TODO: get contentType of default form/make default form text version;
     let returnData = defaultReturnData;
 
     try{
@@ -131,11 +132,37 @@ const getDoiMailData = (data) => {
       //Appends parameter to redirect-url
       let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?")==-1 ? mailTemplate["redirect"]+"?"+redirParamString : mailTemplate["redirect"]+"&"+redirParamString)):null;
       let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?")==-1 ? mailTemplate["templateURL"]+"?"+templParamString : mailTemplate["templateURL"]+"&"+templParamString)):null;
-
+      
       returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
       returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
       returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
-      returnData["content"] = tmpTemplate ? (getHttpGET(tmpTemplate).content || defaultReturnData["content"]) : defaultReturnData["content"];
+      let templateResult = getHttpGET(tmpTemplate);
+      let message = false;
+      let contentType=templateResult.headers["content-type"];
+      switch (contentType.split(";")[0]) {
+        case "text/plain":
+        contentType="text"
+        message=templateResult.content;
+        break;
+        case "text/html":
+        contentType="html"
+        message=templateResult.content;
+        break;
+        case "application/json":
+        //check if json has fields text and html
+        if(templateResult.data && templateResult.data.text && templateResult.data.html){
+          //console.log(templateResult.data.html);
+          message=templateResult.content;
+          contentType="json";
+        }
+        break;
+        default:
+          break;
+      }
+      logSend("contentType",contentType);
+      //returnData["content"] = tmpTemplate ? (templateResult.content || defaultReturnData["content"]) : defaultReturnData["content"];
+      returnData["content"] = tmpTemplate ? (message || defaultReturnData["content"]) : defaultReturnData["content"];
+      returnData["contentType"] = contentType&&message ? contentType:"html";
       logSend("Redirect Url set to:",returnData["redirect"]);
       logSend("Template Url set to:",(tmpTemplate ? tmpTemplate : "Default"));
 
