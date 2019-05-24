@@ -52,7 +52,6 @@ const createUserSchema = new SimpleSchema({
     }
 });
 
-console.log('test')
 const collectionOptions =
   {
     path:"users",

@@ -1,19 +1,22 @@
 import namecoin from 'namecoin';
 import { SEND_APP, CONFIRM_APP, VERIFY_APP, isAppType } from './type-configuration.js';
-import {validateAddress} from "../../../server/api/doichain";
+import {getNewAddress, validateAddress} from "../../../server/api/doichain";
 import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
-var sendClient = undefined;
-sendClient = createClient("send");
 
+var sendClient = createClient("send");
+/*var sendClient = undefined;
+if(isAppType(SEND_APP)) {
+
+}*/
 export const SEND_CLIENT = sendClient;
 
 var confirmClient = undefined;
 var confirmAddress = undefined;
-if(isAppType(CONFIRM_APP) && Meteor.settings.confirm) {
+//if(isAppType(CONFIRM_APP)) {
   confirmClient = createClient("confirm");
-  confirmAddress = getSettings('confirm.doichain.address',undefined);
+  confirmAddress = getSettings('confirm.doichain.address',getNewAddress(confirmClient,""));
 
   try{
     //TODO find a better place to validate this address in future
@@ -30,13 +33,12 @@ if(isAppType(CONFIRM_APP) && Meteor.settings.confirm) {
   }catch(ex){
     logError('validateAddress:',ex);
   }
-}
+//}
 export const CONFIRM_CLIENT = confirmClient;
 export const CONFIRM_ADDRESS = confirmAddress;
 
 
-var verifyClient = undefined;
-verifyClient = createClient("verify");
+var verifyClient = createClient("verify");
 
 export const VERIFY_CLIENT = verifyClient;
 

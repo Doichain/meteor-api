@@ -1,10 +1,12 @@
-import { Api } from '../rest.js';
-import {getBalance, getInfo} from "../../doichain";
-import { CONFIRM_CLIENT,SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
-import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest";
-import {logConfirm} from "../../../../imports/startup/server/log-configuration";
-import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions";
-import {Meta} from "../../../../imports/api/meta/meta";
+import { Api } from '../rest.js'
+import {getBalance, getInfo} from "../../doichain"
+import { CONFIRM_CLIENT,SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration"
+import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest"
+import {logConfirm} from "../../../../imports/startup/server/log-configuration"
+import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions"
+import storeMeta from "../../../../imports/modules/server/doichain/store_meta"
+
+export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = "unconfirmed_balance"
 
 Api.addRoute('status', {authRequired: false}, {
   get: {
@@ -19,7 +21,7 @@ Api.addRoute('status', {authRequired: false}, {
   }
 });
 
-Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {
+Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
   get: {
     authRequired: false,
     action: function() {
@@ -38,47 +40,37 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {
   }
 });
 
-function storeMeta(blockchainInfoVal,data) {
-    let val = data;
-    if(val instanceof Object) val = data[blockchainInfoVal];
-    if(Meta.find({key:blockchainInfoVal}).count() > 0){
-        Meta.remove({key:blockchainInfoVal});
-    }
-  console.log("updating meta:"+blockchainInfoVal,val)
-  if(!data[blockchainInfoVal]){
-    console.log(data)
-  }
-  Meta.insert({key:blockchainInfoVal, value: val});
-}
-
-Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {
+Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {authRequired: false},{
   get: {
     authRequired: false,
     action: function() {
       try {
-          logConfirm('new block has arrrived','');
-          const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
+          logConfirm('new block has arrrived','')
+          const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT)
 
-          const BLOCKCHAIN_INFO_VAL_CHAIN = "chain";
-          storeMeta(BLOCKCHAIN_INFO_VAL_CHAIN,data);
+          const BLOCKCHAIN_INFO_VAL_CHAIN = "chain"
+          storeMeta(BLOCKCHAIN_INFO_VAL_CHAIN,data)
 
-          const BLOCKCHAIN_INFO_VAL_DIFFICULTY = "difficulty";
-          storeMeta(BLOCKCHAIN_INFO_VAL_DIFFICULTY,data);
+          const BLOCKCHAIN_INFO_VAL_DIFFICULTY = "difficulty"
+          storeMeta(BLOCKCHAIN_INFO_VAL_DIFFICULTY,data)
 
-          const BLOCKCHAIN_INFO_VAL_BLOCKS = "blocks";
-          storeMeta(BLOCKCHAIN_INFO_VAL_BLOCKS,data);
+          const BLOCKCHAIN_INFO_VAL_BLOCKS = "blocks"
+          storeMeta(BLOCKCHAIN_INFO_VAL_BLOCKS,data)
 
-          const BLOCKCHAIN_INFO_VAL_SIZE = "size_on_disk";
+          const BLOCKCHAIN_INFO_VAL_SIZE = "size_on_disk"
           storeMeta(BLOCKCHAIN_INFO_VAL_SIZE,data);
 
-          const BLOCKCHAIN_INFO_VAL_BALANCE = "balance";
+          const BLOCKCHAIN_INFO_VAL_BALANCE = "balance"
           const balance=getBalance(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
-          storeMeta(BLOCKCHAIN_INFO_VAL_BALANCE,balance);
+          storeMeta(BLOCKCHAIN_INFO_VAL_BALANCE,balance)
+
+          const unconfirmedBalance=0 //TODO if a new block comes in unconfirmed balance is usually 0 (but not always)  //getBalance(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
+          storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,unconfirmedBalance)
 
 
-        return {status: 'success',  data:data};
+        return {status: 'success',  data:data}
       } catch(error) {
-        return {status: 'fail', error: error.message};
+        return {status: 'fail', error: error.message}
       }
     }
   }

@@ -51,15 +51,15 @@ function doichain_getaddressesbyaccount(client, account, callback) {
     });
 }
 
-export function getNewAddress(client, accout) {
+export function getNewAddress(client, account) {
     const syncFunc = Meteor.wrapAsync(doichain_getnewaddress);
-    return syncFunc(client, accout);
+    return syncFunc(client, account);
 }
 
 function doichain_getnewaddress(client, account, callback) {
     const ourAccount = account;
-    client.cmd('getnewaddresss', ourAccount, function(err, data) {
-        if(err)  logError('getnewaddresss:',err);
+    client.cmd('getnewaddress', ourAccount, function(err, data) {
+        if(err)  logError('getnewaddress:',err);
         callback(err, data);
     });
 }

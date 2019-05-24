@@ -9,7 +9,6 @@ Meteor.startup(() => {
   const rd = process.env.PWD;
   const version = fs.readFileSync(`${rd}/private/version.json`).toString();
 
-
   if(Meta.find({key:"version"}).count() > 0){
     Meta.remove({key:"version"});
   }

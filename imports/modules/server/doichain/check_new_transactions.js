@@ -5,6 +5,9 @@ import addDoichainEntry from './add_entry_and_fetch_data.js'
 import { Meta } from '../../../api/meta/meta.js';
 import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import {logConfirm} from "../../../startup/server/log-configuration";
+import storeMeta from "./store_meta";
+import {validateAddress} from "../../../../server/api/doichain";
+import {BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../../server/api/rest/imports/status";
 
 const TX_NAME_START = "e/";
 const LAST_CHECKED_BLOCK_KEY = "lastCheckedBlock";
@@ -13,7 +16,7 @@ const checkNewTransaction = (txid, job) => {
   try {
 
       //TODO Security-Bug: Check if this transactions owner belongs to Bob's privateKey otherwise this interface could get used as backdoor for spam attacks
-      logConfirm('checkNewTransaction tx:',{txid});
+      //logConfirm('checkNewTransaction tx:',{txid});
       if(!txid){
           logConfirm("checkNewTransaction triggered when starting node - checking all confirmed blocks since last check for doichain address",CONFIRM_ADDRESS);
           try {
@@ -48,7 +51,7 @@ const checkNewTransaction = (txid, job) => {
                       logConfirm("couldn't find name - obviously not (yet?!) confirmed in blockchain:", ety);
                       return;
                   }
-                  addTx(txName, ety.value,tx.address,tx.txid); //TODO ety.value.from is maybe NOT existing because of this its  (maybe) ont working...
+                  addNameTx(txName, ety.value,tx.address,tx.txid); //TODO ety.value.from is maybe NOT existing because of this its  (maybe) ont working...
               });
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
               logConfirm("Transactions updated - lastCheckedBlock:",lastCheckedBlock);
@@ -67,7 +70,6 @@ const checkNewTransaction = (txid, job) => {
               logConfirm("txid "+txid+' does not contain transaction details or transaction not found.');
               return;
           }
-         // logConfirm('now checking raw transactions with filter:',txs);
 
           const addressTxs = txs.filter(tx =>
               tx.scriptPubKey !== undefined
@@ -77,11 +79,17 @@ const checkNewTransaction = (txid, job) => {
               && tx.scriptPubKey.nameOp.name !== undefined
               && tx.scriptPubKey.nameOp.name.startsWith(TX_NAME_START)
           );
-
-          //logConfirm("found name_op transactions:", addressTxs);
           addressTxs.forEach(tx => {
-              addTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
+              addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
           });
+
+          const coinTxs = txs.filter(tx =>
+              tx.scriptPubKey !== undefined && tx.scriptPubKey.nameOp === undefined
+          );
+          coinTxs.forEach(tx => {
+              addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
+          });
+
       }
   } catch(exception) {
     throw new Meteor.Error('doichain.checkNewTransactions.exception', exception);
@@ -90,7 +98,7 @@ const checkNewTransaction = (txid, job) => {
 };
 
 
-function addTx(name, value, address, txid) {
+function addNameTx(name, value, address, txid) {
     const txName = name.substring(TX_NAME_START.length);
 
     addDoichainEntry({
@@ -99,6 +107,18 @@ function addTx(name, value, address, txid) {
         address: address,
         txId: txid
     });
+}
+
+function addCoinTx(value,address, txid) {
+    logConfirm("unconfirmed Doicoin "+value+" was arriving for address "+address+" by txid:",txid);
+    const addressValid = validateAddress(CONFIRM_CLIENT,address)
+    if(!addressValid.ismine) return
+    const valueCount = Meta.find({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).count();
+    if(valueCount> 0){
+        const oldValue =  parseFloat(Meta.findOne({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).value);
+        value += oldValue;
+    }
+    storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,value);
 }
 
 export default checkNewTransaction;
