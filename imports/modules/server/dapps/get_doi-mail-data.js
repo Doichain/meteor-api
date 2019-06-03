@@ -98,8 +98,8 @@ const getDoiMailData = (data) => {
 
       if(!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")){
           redirectUrl = getUrl()+"templates/pages/"+redirectUrl;
-          logSend('redirectUrl:',redirectUrl);
       }
+      logSend('redirectUrl:',redirectUrl);
 
       let defaultReturnData = {
         "recipient": recipient.email,

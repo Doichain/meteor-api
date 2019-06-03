@@ -20,14 +20,14 @@ export function isTestnet() {
 
 export function getUrl() {
 
-  let ssl = getSettings('app.ssl',true); //default true!
+  let ssl = getSettings('app.ssl',false); //default true!
   let port = getSettings('app.port',3000);
   let host = getSettings('app.host','localhost');
-  let protocol = "https://";
-  if(!ssl) protocol = "http://";
-
+  let protocol = "http://";
+  if(ssl===true) protocol = "https://";
+  console.log("ssl:",ssl)
+  console.log('url:',protocol+host+":"+port+"/")
   if(host!==undefined) return protocol+host+":"+port+"/";
 
   return Meteor.absoluteUrl();
 }
-console.log('dapp-configuration initizalized');

@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import {logConfirm} from "../../../startup/server/log-configuration";
-import { DOI_MAIL_DEFAULT_EMAIL_FROM } from '../../../startup/server/email-configuration.js';
+import { getSettings} from "meteor/doichain:settings";
 
 const SendMailSchema = new SimpleSchema({
   from: {
@@ -30,10 +30,10 @@ const SendMailSchema = new SimpleSchema({
 const sendMail = (mail) => {
   try {
 
-    mail.from = DOI_MAIL_DEFAULT_EMAIL_FROM;
+    mail.from = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
 
     const ourMail = mail;
-    logConfirm('sending email with data:',{to:mail.to, subject:mail.subject});
+    logConfirm('sending email with data:',{from: mail.from, to:mail.to, subject:mail.subject});
     SendMailSchema.validate(ourMail);
     //TODO: Text fallback
     let emailToSend={
