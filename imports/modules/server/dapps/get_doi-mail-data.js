@@ -106,7 +106,7 @@ const getDoiMailData = (data) => {
         "content": doiMailData.data.content,
         "redirect": redirectUrl,
         "subject": doiMailData.data.subject,
-        "contentType": doiMailData.data.contentType,
+        "contentType": doiMailData.data.contentType || 'html',
         "returnPath": doiMailData.data.returnPath
       }
 
