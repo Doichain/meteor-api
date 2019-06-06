@@ -3,6 +3,10 @@ import dns from 'dns';
 import {logSend} from "../../imports/startup/server/log-configuration";
 
 export function resolveTxt(key, domain) {
+  /*dns.setServers([
+    '91.217.137.37',
+  ]);*/
+  console.log('dns-servers:',dns.getServers())
   const syncFunc = Meteor.wrapAsync(dns_resolveTxt);
   try {
     const records = syncFunc(key, domain);
