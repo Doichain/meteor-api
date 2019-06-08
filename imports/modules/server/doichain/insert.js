@@ -52,11 +52,11 @@ const insert = (data) => {
     const nameDoiTx = nameDoi(SEND_CLIENT, ourData.nameId, nameValue, publicKeyAndAddress.destAddress);
     logBlockchain('name_doi added blockchain. txid:', nameDoiTx);
 
-    OptIns.update({nameId: ourData.nameId}, {$set: {txId:nameDoiTx}});
+    OptIns.update({nameId: ourData.nameId}, {$set: {txId:nameDoiTx}, $push: {status:'transaction sent'}});
     logBlockchain('updating OptIn locally with:', {nameId: ourData.nameId, txId: nameDoiTx});
 
   } catch(exception) {
-      OptIns.update({nameId: ourData.nameId}, {$set: {error:JSON.stringify(exception.message)}});
+      OptIns.update({nameId: ourData.nameId}, {$push: {error:JSON.stringify(exception.message)}});
     throw new Meteor.Error('doichain.insert.exception', exception); //TODO update opt-in in local db to inform user about the error! e.g. Insufficient funds etc.
   }
 };

@@ -28,6 +28,7 @@ OptIns.deny({
   remove() { return true; },
 });
 
+
 OptIns.schema = new SimpleSchema({
   _id: {
     type: String,
@@ -93,6 +94,7 @@ OptIns.schema = new SimpleSchema({
     optional: true,
     regEx: SimpleSchema.RegEx.Id
   },
+  status: [String],
   error:{
       type: String,
       optional: true,
@@ -118,5 +120,6 @@ OptIns.publicFields = {
   confirmedAt: 1,
   confirmedBy: 1,
   ownerId: 1,
+  status:1,
   error: 1
 };

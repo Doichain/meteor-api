@@ -66,7 +66,8 @@ const addOptIn = (optIn) => {
       index: ourOptIn.index,
       masterDoi : ourOptIn.master_doi,
       data: ourOptIn.data,
-      ownerId: ourOptIn.ownerId
+      ownerId: ourOptIn.ownerId,
+      status: ['stored locally']
     });
     logSend("optIn (index:"+ourOptIn.index+" added to local db with optInId",optInId);
 
