@@ -1,6 +1,6 @@
 import namecoin from 'namecoin';
 import { SEND_APP, CONFIRM_APP, VERIFY_APP, isAppType } from './type-configuration.js';
-import {getNewAddress, validateAddress} from "../../../server/api/doichain";
+import {getAddressesByAccount, getNewAddress, validateAddress} from "../../../server/api/doichain";
 import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
@@ -16,7 +16,9 @@ var confirmClient = undefined;
 var confirmAddress = undefined;
 //if(isAppType(CONFIRM_APP)) {
   confirmClient = createClient("confirm");
-  confirmAddress = getSettings('confirm.doichain.address',getNewAddress(confirmClient,""));
+  const addressesOfAccount = getAddressesByAccount(confirmClient);
+  if(addressesOfAccount.length>0)   confirmAddress = getSettings('confirm.doichain.address',addressesOfAccount[0]);
+  else confirmAddress = getSettings('confirm.doichain.address',getNewAddress(confirmClient,""));
 
   try{
     //TODO find a better place to validate this address in future

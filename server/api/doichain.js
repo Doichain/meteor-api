@@ -38,9 +38,10 @@ function doichain_validateaddress(client, address, callback) {
     });
 }
 
-export function getAddressesByAccount(client, accout) {
+export function getAddressesByAccount(client, account) {
     const syncFunc = Meteor.wrapAsync(doichain_getaddressesbyaccount);
-    return syncFunc(client, accout);
+    const our_account = account!==undefined?account:"";
+    return syncFunc(client, our_account);
 }
 
 function doichain_getaddressesbyaccount(client, account, callback) {
@@ -179,6 +180,21 @@ function doichain_getbalance(client, callback) {
         if(err) { logError('doichain_getbalance:',err);}
         callback(err, data);
     });
+}
+
+export function doichainSendToAddress(client, address, amount) {
+   // console.log(` address:${address} amount:${amount} `)
+    console.log("doichainSendToAddress now "+address+" to",amount)
+    const syncFunc = Meteor.wrapAsync(doichain_send_to_address);
+    return syncFunc(client, address, amount);
+}
+
+function doichain_send_to_address(client, address, amount, callback) {
+    console.log("doichain_send_to_address now "+address+" to",amount)
+   /* client.cmd('sendtoaddress', address, amount, function(err, data) {
+        if(err) { logError('doichain_send_to_address:',err);}
+        callback(err, data);
+    });*/
 }
 
 export function getInfo(client) {

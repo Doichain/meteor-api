@@ -95,11 +95,8 @@ OptIns.schema = new SimpleSchema({
     regEx: SimpleSchema.RegEx.Id
   },
   status: [String],
-  error:{
-      type: String,
-      optional: true,
-  //    denyUpdate: false
-  }
+  error: { type: Array,optional: true },
+  'error.$': { type: String,optional: true }
 });
 
 OptIns.attachSchema(OptIns.schema);

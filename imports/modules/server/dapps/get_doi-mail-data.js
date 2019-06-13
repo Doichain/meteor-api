@@ -193,6 +193,7 @@ const getDoiMailData = (data) => {
       logSend("Redirect Url set to:",returnData["redirect"]);
       logSend("Template Url set to:",(tmpTemplate ? tmpTemplate : "Default"));
 
+      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
     }
     catch(error) {
       returnData=defaultReturnData;
@@ -207,6 +208,7 @@ const getDoiMailData = (data) => {
     }
 
   } catch(exception) {
+    OptIns.update({_id: optIn._id},{$push:{status:'problem during parameter fetch', error: exception}})
     throw new Meteor.Error('dapps.getDoiMailData.exception', exception);
   }
 };

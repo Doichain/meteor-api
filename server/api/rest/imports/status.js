@@ -1,10 +1,11 @@
 import { Api } from '../rest.js'
-import {getBalance, getInfo} from "../../doichain"
+import {getAddressesByAccount, getBalance, getInfo} from "../../doichain"
 import { CONFIRM_CLIENT,SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration"
 import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest"
 import {logConfirm} from "../../../../imports/startup/server/log-configuration"
 import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions"
 import storeMeta from "../../../../imports/modules/server/doichain/store_meta"
+import initMeta from "../../../../imports/modules/server/doichain/init_meta";
 
 export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = "unconfirmed_balance"
 
@@ -46,28 +47,7 @@ Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {authRequired: false},{
     action: function() {
       try {
           logConfirm('new block has arrrived','')
-          const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT)
-
-          const BLOCKCHAIN_INFO_VAL_CHAIN = "chain"
-          storeMeta(BLOCKCHAIN_INFO_VAL_CHAIN,data)
-
-          const BLOCKCHAIN_INFO_VAL_DIFFICULTY = "difficulty"
-          storeMeta(BLOCKCHAIN_INFO_VAL_DIFFICULTY,data)
-
-          const BLOCKCHAIN_INFO_VAL_BLOCKS = "blocks"
-          storeMeta(BLOCKCHAIN_INFO_VAL_BLOCKS,data)
-
-          const BLOCKCHAIN_INFO_VAL_SIZE = "size_on_disk"
-          storeMeta(BLOCKCHAIN_INFO_VAL_SIZE,data);
-
-          const BLOCKCHAIN_INFO_VAL_BALANCE = "balance"
-          const balance=getBalance(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
-          storeMeta(BLOCKCHAIN_INFO_VAL_BALANCE,balance)
-
-          const unconfirmedBalance=0 //TODO if a new block comes in unconfirmed balance is usually 0 (but not always)  //getBalance(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
-          storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,unconfirmedBalance)
-
-
+          initMeta();
         return {status: 'success',  data:data}
       } catch(error) {
         return {status: 'fail', error: error.message}
