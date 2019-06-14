@@ -71,6 +71,8 @@ const update = (data, job) => {
         host: ourData.host
     };
 
+
+
     try {
         //TODO alice gets informed also in case something is wrong with the update
         const response = getHttpPUT(url, updateData);
@@ -78,6 +80,8 @@ const update = (data, job) => {
 
         const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
         logConfirm('name_doi of transaction txid:',txid);
+
+        OptIns.update({nameId: ourData.nameId}, {$push: {status: 'DOI written' }});
         job.done();
     }catch(exception){
         logConfirm('this nameDOI doesn´t have a block yet and will be updated with the next block and with the next queue start:',ourData.nameId);

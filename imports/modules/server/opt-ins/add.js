@@ -17,7 +17,8 @@ const addOptIn = (optIn) => {
         const optIns = OptIns.find({nameId: ourOptIn.name}).fetch();
         if (optIns.length > 0) return optIns[0]._id;
         const optInId = OptIns.insert({
-            nameId: ourOptIn.name
+            nameId: ourOptIn.name,
+            status: ['added']
         });
 
         return optInId;
