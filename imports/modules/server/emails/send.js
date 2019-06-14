@@ -59,7 +59,7 @@ const sendMail = (mail) => {
         emailToSend.html=mailParts.html;
         break;
       default:
-        emailToSend.text=mail.message;
+        emailToSend.html=mail.message; //fallback to 0.0.8
         break;
     }
     if(!emailToSend.html&&!emailToSend.text){
