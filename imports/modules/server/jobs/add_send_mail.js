@@ -20,6 +20,7 @@ const AddSendMailJobSchema = new SimpleSchema({
   },
   contentType: {
     type: String,
+    optional: true
   },
   returnPath: {
     type: String,

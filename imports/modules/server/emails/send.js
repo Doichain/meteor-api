@@ -20,6 +20,7 @@ const SendMailSchema = new SimpleSchema({
   },
   contentType: {
     type: String,
+    optional: true
   },
   returnPath: {
     type: String,
@@ -52,12 +53,13 @@ const sendMail = (mail) => {
       case "html":
         emailToSend.html=mail.message;
         break;
-        case "json":
+      case "json":
         let mailParts=JSON.parse(mail.message);
         emailToSend.text=mailParts.text;
         emailToSend.html=mailParts.html;
         break;
       default:
+        emailToSend.text=mail.message;
         break;
     }
     if(!emailToSend.html&&!emailToSend.text){
