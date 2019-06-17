@@ -6,14 +6,15 @@ Meteor.publish('opt-ins.all', function OptInsAll() {
   if(!this.userId) {
     return this.ready();
   }
-
   if(!Roles.userIsInRole(this.userId, ['admin'])){
     return OptIns.find({ownerId:this.userId}, {
       fields: OptIns.publicFields,
+      sort: {createdAt: -1}
     });
   }
 
   return OptIns.find({}, {
     fields: OptIns.publicFields,
+    sort: {createdAt: -1}
   });
 });

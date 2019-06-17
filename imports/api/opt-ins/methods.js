@@ -31,7 +31,6 @@ const remove = new ValidatedMethod({
   name: 'opt-ins.remove',
   validate: null,
   run(_id) {
-    console.log('deleting opt-in...',_id)
     if(!this.userId) {
       const error = "api.opt-ins.add.accessDenied";
       throw new Meteor.Error(error, i18n.__(error));

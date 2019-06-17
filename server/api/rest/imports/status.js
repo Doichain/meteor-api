@@ -1,10 +1,9 @@
 import { Api } from '../rest.js'
-import {getAddressesByAccount, getBalance, getInfo} from "../../doichain"
+import {getInfo} from "../../doichain"
 import { CONFIRM_CLIENT,SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration"
 import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest"
 import {logConfirm} from "../../../../imports/startup/server/log-configuration"
 import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions"
-import storeMeta from "../../../../imports/modules/server/doichain/store_meta"
 import initMeta from "../../../../imports/modules/server/doichain/init_meta";
 
 export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = "unconfirmed_balance"

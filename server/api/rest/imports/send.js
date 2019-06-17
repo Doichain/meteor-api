@@ -8,8 +8,6 @@ import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Roles} from "meteor/alanning:roles";
 
-//doku of meteor-restivus https://github.com/kahmali/meteor-restivus
-
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
     authRequired: true,

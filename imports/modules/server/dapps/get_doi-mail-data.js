@@ -193,19 +193,19 @@ const getDoiMailData = (data) => {
       logSend("Redirect Url set to:",returnData["redirect"]);
       logSend("Template Url set to:",(tmpTemplate ? tmpTemplate : "Default"));
 
-      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
     }
     catch(error) {
       returnData=defaultReturnData;
     }
 
       logSend('doiMailData and url:', DOI_MAIL_FETCH_URL, returnData);
-
       return returnData
 
     } catch(error) {
       throw "Error while fetching mail content: "+error;
     }
+
+    OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
 
   } catch(exception) {
     OptIns.update({_id: optIn._id},{$push:{status:'problem during parameter fetch', error: exception}})
