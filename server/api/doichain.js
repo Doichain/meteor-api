@@ -183,7 +183,6 @@ function doichain_getbalance(client, callback) {
 }
 
 export function doichainSendToAddress(client, address, amount) {
-   // console.log(` address:${address} amount:${amount} `)
     console.log("doichainSendToAddress now "+address+" to",amount)
     const syncFunc = Meteor.wrapAsync(doichain_send_to_address);
     return syncFunc(client, address, amount);
