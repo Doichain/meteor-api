@@ -5,6 +5,7 @@ import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest"
 import {logConfirm} from "../../../../imports/startup/server/log-configuration"
 import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions"
 import initMeta from "../../../../imports/modules/server/doichain/init_meta";
+import {Meta} from "../../../../imports/api/meta/meta";
 
 export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = "unconfirmed_balance"
 
@@ -47,7 +48,7 @@ Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {authRequired: false},{
       try {
           logConfirm('new block has arrrived','')
           initMeta();
-        return {status: 'success',  data:data}
+        return {status: 'success',  data: Meta.findOne({"key" : "blocks"}).value}
       } catch(error) {
         return {status: 'fail', error: error.message}
       }
