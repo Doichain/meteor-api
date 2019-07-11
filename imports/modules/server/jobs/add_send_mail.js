@@ -4,10 +4,6 @@ import SimpleSchema from 'simpl-schema';
 import { MailJobs } from '../../../../server/api/mail_jobs.js';
 
 const AddSendMailJobSchema = new SimpleSchema({
-  /*from: {
-    type: String,
-    regEx: SimpleSchema.RegEx.Email
-  },*/
   to: {
     type: String,
     regEx: SimpleSchema.RegEx.Email
@@ -25,6 +21,9 @@ const AddSendMailJobSchema = new SimpleSchema({
   returnPath: {
     type: String,
     regEx: SimpleSchema.RegEx.Email
+  },
+  nameId: {
+    type: String,
   }
 });
 

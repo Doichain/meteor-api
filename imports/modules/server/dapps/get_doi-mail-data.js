@@ -45,12 +45,16 @@ const userProfileSchema = new SimpleSchema({
 });
 
 const getDoiMailData = (data) => {
+
+  let  optIn
   try {
 
     const ourData = data;
     GetDoiMailDataSchema.validate(ourData);
-    const optIn = OptIns.findOne({nameId: ourData.name_id});
+    optIn = OptIns.findOne({nameId: ourData.name_id});
+
     if(optIn === undefined) throw "Opt-In with name_id: "+ourData.name_id+" not found";
+    OptIns.update({_id: optIn._id},{$push:{status:'template requested'}})
     logSend('Opt-In found',optIn);
 
     const sender = Senders.findOne({_id: optIn.sender});
@@ -86,7 +90,7 @@ const getDoiMailData = (data) => {
     if(!verifySignature({publicKey: publicKey, data: ourData.name_id, signature: ourData.signature})) {
       throw "signature incorrect - access denied";
     }
-    
+    OptIns.update({_id: optIn._id},{$push:{status:'signature verified'}})
     logSend('signature verified');
 
     //TODO: Query for language
@@ -114,7 +118,7 @@ const getDoiMailData = (data) => {
       if(optInType === "default"){
          defaultReturnData.verifyLocalHash = getDataHash({data: (sender.email+recipient.email) }); //verifyLocalHash = verifyLocalHash
       }
-
+      OptIns.update({_id: optIn._id},{$push:{status:'email configured'}})
       logSend('defaultReturnData:',defaultReturnData);
 
     let returnData = defaultReturnData;
@@ -198,6 +202,8 @@ const getDoiMailData = (data) => {
       returnData=defaultReturnData;
     }
 
+
+      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
       logSend('doiMailData and url:', DOI_MAIL_FETCH_URL, returnData);
       return returnData
 
@@ -205,12 +211,11 @@ const getDoiMailData = (data) => {
       throw "Error while fetching mail content: "+error;
     }
 
-    OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
-
   } catch(exception) {
-    OptIns.update({_id: optIn._id},{$push:{status:'problem during parameter fetch', error: exception}})
+    if(optIn!==undefined) OptIns.update({_id: optIn._id},{$push:{status:'problem template fetch', error: exception}})
     throw new Meteor.Error('dapps.getDoiMailData.exception', exception);
   }
+  if(optIn!==undefined) OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
 };
 
 export default getDoiMailData;

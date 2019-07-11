@@ -3,6 +3,7 @@ import { listSinceBlock, nameShow, getRawTransaction} from '../../../../server/a
 import { CONFIRM_CLIENT, CONFIRM_ADDRESS } from '../../../startup/server/doichain-configuration.js';
 import addDoichainEntry from './add_entry_and_fetch_data.js'
 import { Meta } from '../../../api/meta/meta.js';
+import { OptIns} from "../../../api/opt-ins/opt-ins";
 import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
@@ -35,27 +36,37 @@ const checkNewTransaction = (txid, job) => {
               }
 
               logConfirm("listSinceBlock",ret);
-
               const addressTxs = txs.filter(tx =>
-                  tx.address === CONFIRM_ADDRESS
-                  && tx.name !== undefined //since name_show cannot be read without confirmations
-                  && tx.name.startsWith("doi: "+TX_NAME_START)  //here 'doi: e/xxxx' is already written in the block
+                  tx.name !== undefined
+                  && tx.name.startsWith("doi: "+TX_NAME_START)
               );
               addressTxs.forEach(tx => {
-                  logConfirm("tx:",tx);
-                  var txName = tx.name.substring(("doi: "+TX_NAME_START).length);
-                  logConfirm("excuting name_show in order to get value of nameId:", txName);
-                  const ety = nameShow(CONFIRM_CLIENT, txName);
-                  logConfirm("nameShow: value",ety);
-                  if(!ety){
-                      logConfirm("couldn't find name - obviously not (yet?!) confirmed in blockchain:", ety);
-                      return;
+                  logConfirm("checking if tx was already processed...");
+
+                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:tx.address})
+                  console.log("isFoundMyAddress:",isFoundMyAddress!==undefined)
+
+                  const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
+                  console.log("processedTxInOptIns:",processedTxInOptIns!==undefined)
+
+                  if( isFoundMyAddress && !processedTxInOptIns ){
+
+                      const txName = tx.name.substring(("doi: "+TX_NAME_START).length);
+                      logConfirm("excuting name_show in order to get value of nameId:", txName);
+                      const ety = nameShow(CONFIRM_CLIENT, txName);
+                      logConfirm("nameShow: value",ety);
+                      if(ety)
+                          addNameTx(txName, ety.value,tx.address,tx.txid);
+                      else
+                          logConfirm("couldn't find name on blockchain - obviously not yet confirmed:", ety);
+
+                  }else{
+                      logConfirm("not using this tx because it was already processed in mempool transaction");
                   }
-                  addNameTx(txName, ety.value,tx.address,tx.txid); //TODO ety.value.from is maybe NOT existing because of this its  (maybe) ont working...
               });
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
-              logConfirm("Transactions updated - lastCheckedBlock:",lastCheckedBlock);
-              job.done();
+              logConfirm("transactions updated - lastCheckedBlock:",lastCheckedBlock);
+             // job.done();
           } catch(exception) {
               throw new Meteor.Error('namecoin.checkNewTransactions.exception', exception);
           }
@@ -75,12 +86,16 @@ const checkNewTransaction = (txid, job) => {
               tx.scriptPubKey !== undefined
               && tx.scriptPubKey.nameOp !== undefined
               && tx.scriptPubKey.nameOp.op === "name_doi"
-            //  && tx.scriptPubKey.addresses[0] === CONFIRM_ADDRESS //only own transaction should arrive here. - so check on own address unneccesary
               && tx.scriptPubKey.nameOp.name !== undefined
               && tx.scriptPubKey.nameOp.name.startsWith(TX_NAME_START)
           );
           addressTxs.forEach(tx => {
-              addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
+              tx.scriptPubKey.addresses.forEach(addr =>{
+                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:addr})
+                  console.log("tx was sent to one of my addresses:"+addr,isFoundMyAddress!==undefined)
+                  if(isFoundMyAddress!==undefined)
+                    addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
+              })
           });
 
           const coinTxs = txs.filter(tx =>

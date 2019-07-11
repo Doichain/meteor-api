@@ -9,5 +9,5 @@ Meteor.startup(() => {
   MailJobs.startJobServer();
   BlockchainJobs.startJobServer();
   DAppJobs.startJobServer();
-  if(isAppType(CONFIRM_APP)) addCheckNewTransactionsBlockchainJob();
+//  if(isAppType(CONFIRM_APP)) addCheckNewTransactionsBlockchainJob();
 });

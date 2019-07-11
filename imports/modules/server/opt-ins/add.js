@@ -18,7 +18,7 @@ const addOptIn = (optIn) => {
         if (optIns.length > 0) return optIns[0]._id;
         const optInId = OptIns.insert({
             nameId: ourOptIn.name,
-            status: ['added']
+            status: ['opt-in received']
         });
 
         return optInId;

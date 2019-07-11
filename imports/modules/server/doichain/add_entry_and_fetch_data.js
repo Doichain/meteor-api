@@ -7,6 +7,7 @@ import addFetchDoiMailDataJob from '../jobs/add_fetch-doi-mail-data.js';
 import getPrivateKeyFromWif from './get_private-key_from_wif.js';
 import decryptMessage from './decrypt_message.js';
 import {logConfirm, logSend} from "../../../startup/server/log-configuration";
+import {Meta} from "../../../api/meta/meta";
 
 const AddDoichainEntrySchema = new SimpleSchema({
   name: {
@@ -46,10 +47,18 @@ const addDoichainEntry = (entry) => {
     //logSend("value:",value);
     if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably already handled correctly anyways this is not so cool as it seems.
 
-    //TODO confirm address here? Is it really need to configure? since inside the
+    //TODO confirm address here? Is it really nessary to configure? since inside the
     // transaction the address is already given. no need to configure it at all!
     // take out this address and get private key!
-    const wif = getWif(CONFIRM_CLIENT, CONFIRM_ADDRESS);
+
+    let wif
+    const addressesByAccount  = Meta.findOne({key: "addresses_by_account"})
+    if(addressesByAccount !== undefined){
+              addressesByAccount.value.forEach(function (addr) {
+                  wif = getWif(CONFIRM_CLIENT, addr);
+              })
+    }
+
 
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here)');

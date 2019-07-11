@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import {logConfirm} from "../../../startup/server/log-configuration";
 import { getSettings} from "meteor/doichain:settings";
+import {OptIns} from "../../../api/opt-ins/opt-ins";
 
 const SendMailSchema = new SimpleSchema({
   from: {
@@ -25,6 +26,9 @@ const SendMailSchema = new SimpleSchema({
   returnPath: {
     type: String,
     regEx: SimpleSchema.RegEx.Email
+  },
+  nameId: {
+    type: String,
   }
 });
 
@@ -62,16 +66,25 @@ const sendMail = (mail) => {
         emailToSend.html=mail.message; //fallback to 0.0.8
         break;
     }
+
     if(!emailToSend.html&&!emailToSend.text){
-      throw new Meteor.Error('No email message provided');
+      const error = 'No email message provided'
+      OptIns.update({nameId: mail.nameId},{$push:{status:'error sending email', error: error}})
+      throw new Meteor.Error(error);
     }
+
     if(emailToSend){
       Email.send(emailToSend);
+      OptIns.update({nameId: mail.nameId},{$push:{status:'email sent'}});
     }
+
     else{
-      throw new Meteor.Error('Error creating email');
+      const error = 'Error creating email'
+      OptIns.update({nameId: mail.nameId},{$push:{status:'error fetching template', error:error }})
+      throw new Meteor.Error(error);
     }
   } catch (exception) {
+    OptIns.update({nameId: mail.nameId},{$push:{status:'error sending email', error:exception.toString()}})
     throw new Meteor.Error('emails.send.exception', exception);
   }
 };

@@ -2,8 +2,12 @@ import {getAddressesByAccount, getBalance, getInfo} from "../../../../server/api
 import {CONFIRM_CLIENT, SEND_CLIENT} from "../../../startup/server/doichain-configuration";
 import storeMeta from "./store_meta";
 import {BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../../server/api/rest/imports/status";
+import checkNewTransaction from "./check_new_transactions";
 
 function initMeta(){
+
+    checkNewTransaction(null,null);
+
     const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT)
 
     const BLOCKCHAIN_INFO_VAL_CHAIN = "chain"

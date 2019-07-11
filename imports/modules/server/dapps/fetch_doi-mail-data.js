@@ -48,14 +48,23 @@ const fetchDoiMailData = (data) => {
         logConfirm('response while getting getting email template from URL:', response.data.status);
 
         if (responseData.status !== "success") {
-            if (responseData.error === undefined) throw "Bad response";
+            if (responseData.error === undefined){
+                const error = "Bad response"
+                OptIns.update({nameId: ourData.name},{$push:{status:'error', error:error}})
+
+                throw error;
+            }
             if (responseData.error.includes("Opt-In not found")) {
                 //Do nothing and don't throw error so job is done
-                logError('response data from Send-dApp:', responseData.error);
+                const error = 'bad response from send dApp:'
+                OptIns.update({nameId: ourData.name},{$push:{status:'error', error:error+"\n"+responseData.error}})
+                logError('bad response from send dApp', responseData.error);
                 return;
             }
+            OptIns.update({nameId: ourData.name},{$push:{status:'error', error:responseData.error}})
             throw responseData.error;
         }
+        OptIns.update({nameId: ourData.name},{$push:{status:'mail data fetched'}});
         logConfirm('DOI Mail data fetched - for recipient:', responseData.data.recipient);
 
         if (responseData.data.verifyLocalHash) //don't safe anything on fallback servers (nothing should arrive here)
@@ -107,8 +116,10 @@ const fetchDoiMailData = (data) => {
             subject: responseData.data.subject,
             message: template,
             contentType: responseData.data.contentType,
-            returnPath: responseData.data.returnPath
+            returnPath: responseData.data.returnPath,
+            nameId: ourData.name
         });
+        OptIns.update({nameId: ourData.name},{$push:{status:'added to email queue'}});
     } catch (exception) {
         throw new Meteor.Error('dapps.fetchDoiMailData.exception', exception);
     }
