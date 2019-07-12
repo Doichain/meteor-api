@@ -19,7 +19,7 @@ const checkNewTransaction = (txid, job) => {
       //TODO Security-Bug: Check if this transactions owner belongs to Bob's privateKey otherwise this interface could get used as backdoor for spam attacks
       //logConfirm('checkNewTransaction tx:',{txid});
       if(!txid){
-          logConfirm("checkNewTransaction triggered when starting node - checking all confirmed blocks since last check for doichain address",CONFIRM_ADDRESS);
+          logConfirm("checkNewTransaction triggered (starting of node / or new block) - checking all confirmed blocks since last check");
           try {
               var lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
               if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;
@@ -29,27 +29,31 @@ const checkNewTransaction = (txid, job) => {
 
               const txs = ret.transactions;
               lastCheckedBlock = ret.lastblock;
-              if(!ret || !txs || !txs.length===0){
-                  logConfirm("transactions do not contain nameOp transaction details or transaction not found.", lastCheckedBlock);
+              if(!ret || !txs || txs.length===0){
+                  logConfirm("transactions do not contain nameOp transaction details" +
+                      " or transaction not found.", ret);
                   addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
+                 //TODO addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
                   return;
               }
 
-              logConfirm("listSinceBlock",ret);
+              logConfirm("listSinceBlock",txs.length);
               const addressTxs = txs.filter(tx =>
                   tx.name !== undefined
                   && tx.name.startsWith("doi: "+TX_NAME_START)
               );
-              addressTxs.forEach(tx => {
-                  logConfirm("checking if tx was already processed...");
 
+              addressTxs.forEach(tx => {
+                  logConfirm("checking if tx was already processed...",tx.address);
+
+                  //is this necessary because of security concerns and also because our own transactions hit us again - (we don't need them here)
                   const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:tx.address})
-                  console.log("isFoundMyAddress:",isFoundMyAddress!==undefined)
+                  console.log("isFoundMyAddress:"+tx.address,isFoundMyAddress!==undefined)
 
                   const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                   console.log("processedTxInOptIns:",processedTxInOptIns!==undefined)
 
-                  if( isFoundMyAddress && !processedTxInOptIns ){
+                  if(!processedTxInOptIns && isFoundMyAddress){
 
                       const txName = tx.name.substring(("doi: "+TX_NAME_START).length);
                       logConfirm("excuting name_show in order to get value of nameId:", txName);
@@ -114,7 +118,9 @@ const checkNewTransaction = (txid, job) => {
 
 
 function addNameTx(name, value, address, txid) {
-    const txName = name.substring(TX_NAME_START.length);
+
+    //cut away 'e/' in case it was delivered in a mempool transaction otherwise its not included.
+    const txName = name.startsWith(TX_NAME_START)?name.substring(TX_NAME_START.length):name;
 
     addDoichainEntry({
         name: txName,
@@ -125,7 +131,12 @@ function addNameTx(name, value, address, txid) {
 }
 
 function addCoinTx(value,address, txid) {
-    logConfirm("unconfirmed Doicoin "+value+" was arriving for address "+address+" by txid:",txid);
+
+    if(txid) //if a new block was arriving we do not use a txid here
+        logConfirm("unconfirmed Doicoin "+value+" was arriving for address "+address+" by txid:",txid);
+    else
+        logConfirm("confirmed Doicoin "+value+" was arriving for address "+address);
+
     const addressValid = validateAddress(CONFIRM_CLIENT,address)
     if(!addressValid.ismine) return
     const valueCount = Meta.find({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).count();

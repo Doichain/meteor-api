@@ -6,8 +6,6 @@ import checkNewTransaction from "./check_new_transactions";
 
 function initMeta(){
 
-    checkNewTransaction(null,null);
-
     const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT)
 
     const BLOCKCHAIN_INFO_VAL_CHAIN = "chain"
@@ -33,6 +31,8 @@ function initMeta(){
     const addresses_by_account=getAddressesByAccount(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
     console.log("ADDRESSES_BY_ACCOUNT",addresses_by_account.length)
     storeMeta(ADDRESSES_BY_ACCOUNT,addresses_by_account)
+
+    checkNewTransaction(null,null); //always put this to the end otherwise data might not yet got saved
 }
 
 export default initMeta
