@@ -15,7 +15,7 @@ export const DOI_MAIL_FETCH_URL = doiMailFetchUrl;
 var defaultFrom = undefined;
 if(isAppType(CONFIRM_APP)) {
 
-  //defaultFrom =  getSettings('confirm.smtp.defaultFrom','doichain@localhost');
+  defaultFrom =  getSettings('confirm.smtp.defaultFrom','doichain@localhost');
   logConfirm('sending with defaultFrom:',defaultFrom);
 
   Meteor.startup(() => {
@@ -26,8 +26,6 @@ if(isAppType(CONFIRM_APP)) {
     const smtpPort = getSettings('confirm.smtp.port',25);
     const smtps = getSettings('confirm.smtp.smtps',false);
     const smtp_NODE_TLS_REJECT_UNAUTHORIZED = getSettings('confirm.smtp.NODE_TLS_REJECT_UNAUTHORIZED');
-
-
 
     if(smtpUsername === undefined){
        process.env.MAIL_URL = (smtps?'smtps://':'smtp://')+encodeURIComponent(smtpServer) +':' +smtpPort;

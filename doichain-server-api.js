@@ -23,6 +23,7 @@ export let httpPOST = getHttpPOST;
 export let httpPUT = getHttpPUT;
 export let getServerUrl = getUrl;
 export let testLog = testLogging;
+export let regtest = isRegtest()
 
 Meteor.startup(() => {
     if (Meteor.isServer) {

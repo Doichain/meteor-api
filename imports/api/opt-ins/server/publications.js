@@ -6,15 +6,40 @@ Meteor.publish('opt-ins.all', function OptInsAll() {
   if(!this.userId) {
     return this.ready();
   }
+  const filter = {$and: [ {recipient: {$exists: true}}, {sender: {$exists: true}}]}
+
   if(!Roles.userIsInRole(this.userId, ['admin'])){
-    return OptIns.find({ownerId:this.userId}, {
+    filter.ownerId=this.userId
+    return OptIns.find(filter, {
       fields: OptIns.publicFields,
       sort: {createdAt: -1}
     });
   }
 
-  return OptIns.find({}, {
+  return OptIns.find(filter, {
     fields: OptIns.publicFields,
     sort: {createdAt: -1}
   });
 });
+
+Meteor.publish('confirmations.all', function OptInsAll() {
+
+  if(!this.userId) {
+    return this.ready();
+  }
+  const filter = {} //{$and: [ {recipient: {$exists: false}}, {sender: {$exists: false}}]}
+
+  if(!Roles.userIsInRole(this.userId, ['admin'])){
+    filter.ownerId=this.userId
+    return OptIns.find(filter, {
+      fields: OptIns.publicFields,
+      sort: {createdAt: -1}
+    });
+  }
+
+  return OptIns.find(filter, {
+    fields: OptIns.publicFields,
+    sort: {createdAt: -1}
+  });
+});
+

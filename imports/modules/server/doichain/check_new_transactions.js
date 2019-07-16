@@ -137,7 +137,7 @@ function addCoinTx(value,address, txid) {
     else
         logConfirm("confirmed Doicoin "+value+" was arriving for address "+address);
 
-    const addressValid = validateAddress(CONFIRM_CLIENT,address)
+    const addressValid = validateAddress(CONFIRM_CLIENT,address)  //TODO this should be not necessary at this point anymore
     if(!addressValid.ismine) return
     const valueCount = Meta.find({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).count();
     if(valueCount> 0){

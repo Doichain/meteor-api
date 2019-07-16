@@ -55,7 +55,7 @@ const addDoichainEntry = (entry) => {
     const addressesByAccount  = Meta.findOne({key: "addresses_by_account"})
     if(addressesByAccount !== undefined){
               addressesByAccount.value.forEach(function (addr) {
-                  wif = getWif(CONFIRM_CLIENT, addr);
+                  if(!wif) wif = getWif(CONFIRM_CLIENT, addr);
               })
     }
 

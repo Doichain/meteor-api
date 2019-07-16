@@ -61,7 +61,7 @@ const update = (data, job) => {
     logConfirm('decrypted fromHostUrl',ourfromHostUrl);
     const url = ourfromHostUrl+API_PATH+VERSION+"/"+DOI_CONFIRMATION_NOTIFY_ROUTE;
 
-    logConfirm('creating signature with ADDRESS'+CONFIRM_ADDRESS+" nameId:",ourData.value);
+    logConfirm('creating signature with ADDRESS'+CONFIRM_ADDRESS+" nameId:",ourData.value);  //TODO CONFIRM_ADDRESS should be the related to the public key configured in the DNS
     const signature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, ourData.nameId); //second signature here over nameId
     logConfirm('signature created:',signature);
 
@@ -70,8 +70,6 @@ const update = (data, job) => {
         signature: signature,
         host: ourData.host
     };
-
-
 
     try {
         //TODO alice gets informed also in case something is wrong with the update
@@ -102,9 +100,9 @@ function rerun(job){
     logConfirm('restart blockchain doi update','');
     job.restart(
         {
-            //repeats: 600,   // Only repeat this once
+            //repeats: 600,   //0 = only once - default forever
             // This is the default
-           // wait: 10000   // Wait 10 sec between repeats
+           //wait: 10000   // Wait 10 sec between repeats
                           // Default is previous setting
         },
         function (err, result) {
