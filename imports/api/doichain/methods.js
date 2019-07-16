@@ -15,7 +15,21 @@ const sendToAddress = new ValidatedMethod({
       const error = "api.doichain.sendToAddress.accessDenied";
       throw new Meteor.Error(error, i18n.__(error));
     }
-    return sendToAddressM(address,amount);
+    sendToAddressM(address,amount);
+    return "okey"
+  },
+});
+
+const requestEmailPermission = new ValidatedMethod({
+  name: 'doichain.requestEmailPermission',
+  validate: null,
+  run({email}) {
+    console.log(`requestEmailPermission address:${email}`)
+    if(!this.userId) {
+      const error = "api.doichain.requestEmailPermission.accessDenied";
+      throw new Meteor.Error(error, i18n.__(error));
+    }
+    return "okey"//sendToAddressM(address);
   },
 });
 
@@ -41,6 +55,7 @@ const getBalance = new ValidatedMethod({
 // Get list of all method names on doichain
 const OPTIONS_METHODS = _.pluck([
     sendToAddress,
+    requestEmailPermission,
     getKeyPair,
     getBalance], 'name');
 

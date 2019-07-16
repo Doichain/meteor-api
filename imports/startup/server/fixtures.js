@@ -5,7 +5,6 @@ import fs from 'fs';
 
 Meteor.startup(() => {
 
-//  let version=Assets.getText("../../private/version.json");  //reads it only from the current package (please read from the app)
   const rd = process.env.PWD;
   const version = fs.readFileSync(`${rd}/private/version.json`).toString();
 

@@ -190,10 +190,10 @@ export function doichainSendToAddress(client, address, amount) {
 
 function doichain_send_to_address(client, address, amount, callback) {
     console.log("doichain_send_to_address now "+address+" to",amount)
-   /* client.cmd('sendtoaddress', address, amount, function(err, data) {
+    client.cmd('sendtoaddress', address, amount, function(err, data) {
         if(err) { logError('doichain_send_to_address:',err);}
         callback(err, data);
-    });*/
+    });
 }
 
 export function getInfo(client) {
