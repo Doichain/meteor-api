@@ -144,6 +144,19 @@ function doichain_listSinceBlock(client, block, callback) {
     });
 }
 
+export function getBlockHash(client, height) {
+    const syncFunc = Meteor.wrapAsync(doichain_getblockhash);
+    return syncFunc(client, height);
+}
+
+function doichain_getblockhash(client, height, callback) {
+    client.cmd('getblockhash', height, function(err, data) {
+        if(err)  logError('doichain_getblockhash:',err);
+        callback(err, data);
+    });
+}
+
+
 export function getTransaction(client, txid) {
     const syncFunc = Meteor.wrapAsync(doichain_gettransaction);
     return syncFunc(client, txid);

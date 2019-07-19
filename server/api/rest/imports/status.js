@@ -7,8 +7,6 @@ import checkNewTransaction from "../../../../imports/modules/server/doichain/che
 import initMeta from "../../../../imports/modules/server/doichain/init_meta";
 import {Meta} from "../../../../imports/api/meta/meta";
 
-export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = "unconfirmed_balance"
-
 Api.addRoute('status', {authRequired: false}, {
   get: {
     action: function() {
@@ -32,7 +30,6 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       try {
         logConfirm('checking transaction with tx:',{tx});
         checkNewTransaction(tx,null);
-        //logConfirm('checked transaction with tx:',{tx});
         return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
       } catch(error) {
         return {status: 'fail', error: error.message};

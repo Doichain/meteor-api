@@ -95,7 +95,7 @@ const checkNewTransaction = (txid, job) => {
           );
           addressTxs.forEach(tx => {
               tx.scriptPubKey.addresses.forEach(addr =>{
-                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:addr})
+                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:addr})  //TODO use validataAddress (!)
                   console.log("tx was sent to one of my addresses:"+addr,isFoundMyAddress!==undefined)
                   if(isFoundMyAddress!==undefined)
                     addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
