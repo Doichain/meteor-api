@@ -11,7 +11,7 @@ import {validateAddress} from "../../../../server/api/doichain";
 import {BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../../server/api/rest/imports/status";
 
 const TX_NAME_START = "e/";
-const LAST_CHECKED_BLOCK_KEY = "lastCheckedBlock";
+import {LAST_CHECKED_BLOCK_KEY} from "../../../startup/both/constants"
 
 const checkNewTransaction = (txid, job) => {
   try {

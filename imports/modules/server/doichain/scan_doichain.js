@@ -4,7 +4,10 @@ import {getBlockHash, listSinceBlock, nameShow, validateAddress} from "../../../
 import storeMeta from "./store_meta";
 import {
   BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS,
-  BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS, BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS, BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS
+  BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS,
+  BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,
+  BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,
+  LAST_CHECKED_BLOCK_KEY
 } from "../../../../doichain-client-api";
 import {Meta} from "../../../api/meta/meta";
 
