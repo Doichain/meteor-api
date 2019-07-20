@@ -45,6 +45,10 @@ const addDoichainEntry = (entry) => {
 
     const value = JSON.parse(ourEntry.value);
     //logSend("value:",value);
+    if(value.doiSignature!==undefined){
+        logConfirm('seems like we are rescanning blockchain, this doi permission was has already a doi signuate (exiting):',value.doiSignature);
+        return
+    }
     if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably already handled correctly anyways this is not so cool as it seems.
 
     //TODO confirm address here? Is it really nessary to configure? since inside the

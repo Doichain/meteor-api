@@ -8,18 +8,19 @@ import {
   BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,
   BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,
   LAST_CHECKED_BLOCK_KEY
-} from "../../../../doichain-client-api";
+} from "../../../startup/both/constants";
 import {Meta} from "../../../api/meta/meta";
+//import {LAST_CHECKED_BLOCK_KEY} from "../../../startup/both/constants"
 
 
 const scan_Doichain = () => {
     
-  try {
+  //try {
 
     let firstBlock = getBlockHash(CONFIRM_CLIENT,0)
 
     if(!Meta.findOne({key: BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS})){
-        firstBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
+        firstBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY}).value;
     }else{
 
     }
@@ -67,9 +68,9 @@ const scan_Doichain = () => {
     storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,ourRequestedDois)
     storeMeta(BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,ourConfirmedDois)
 
-  } catch(exception) {
+ /* } catch(exception) {
     throw new Meteor.Error('doichain.scanDoichain.exception', exception);
-  }
+  }*/
   return true;
 };
 

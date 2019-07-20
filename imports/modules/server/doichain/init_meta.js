@@ -25,9 +25,10 @@ function initMeta(){
     const addresses_by_account=getAddressesByAccount(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
     storeMeta(ADDRESSES_BY_ACCOUNT,addresses_by_account)
 
+    checkNewTransaction(null,null); //always put this to the end otherwise data might not yet got saved
+
     scan_Doichain()
 
-    checkNewTransaction(null,null); //always put this to the end otherwise data might not yet got saved
 }
 
 export default initMeta
