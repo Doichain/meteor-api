@@ -95,6 +95,23 @@ OptIns.schema = new SimpleSchema({
     regEx: SimpleSchema.RegEx.Id
   },
   status: [String],
+  address:{
+    type: String,
+    optional: true
+  },
+  value:{
+    type: String,
+    optional: true
+  },
+  domain:{
+    type: String,
+    optional: true
+  },
+  confirmations: {
+    type: SimpleSchema.Integer,
+    optional: true,
+    //   denyUpdate: false,
+  },
   error: { type: Array,optional: true },
   'error.$': { type: String,optional: true }
 });
@@ -118,5 +135,9 @@ OptIns.publicFields = {
   confirmedBy: 1,
   ownerId: 1,
   status:1,
+  address:1,
+  value:1,
+  domain:1,
+  confirmations:1,
   error: 1
 };

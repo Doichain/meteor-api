@@ -44,7 +44,7 @@ const updateOptInStatus = (data) => {
 
     OptIns.update({_id : optIn._id},
         {
-            $set:{confirmedAt: new Date(), confirmedBy: ourData.host},
+            $set:{ confirmedAt: new Date(), confirmedBy: ourData.host},
             $push: {status: 'DOI confirmed' }
           },
         {$push:{status:'confirmed'}});

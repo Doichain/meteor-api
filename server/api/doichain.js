@@ -5,6 +5,7 @@ const NAMESPACE = 'e/';
 const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
+    console.log(address)
   if(!address){
         address = getAddressesByAccount("")[0];
         logBlockchain('address was not defined so getting the first existing one of the wallet:',address);
@@ -77,6 +78,20 @@ function doichain_signMessage(client, address, message, callback) {
         callback(err, data);
     });
 }
+export function nameList(client) {
+    const syncFunc = Meteor.wrapAsync(doichain_nameList);
+    return syncFunc(client);
+}
+
+function doichain_nameList(client, callback) {
+    client.cmd('name_list', function(err, data) {
+        if(err !== undefined && err !== null && err.message.startsWith("name not found")) {
+            err = undefined,
+                data = undefined
+        }
+        callback(err, data);
+    });
+}
 
 export function nameShow(client, id) {
   const syncFunc = Meteor.wrapAsync(doichain_nameShow);
@@ -85,7 +100,7 @@ export function nameShow(client, id) {
 
 function doichain_nameShow(client, id, callback) {
   const ourId = checkId(id);
-  logConfirm('doichain-cli name_show :',ourId);
+ // logConfirm('doichain-cli name_show :',ourId);
   client.cmd('name_show', ourId, function(err, data) {
     if(err !== undefined && err !== null && err.message.startsWith("name not found")) {
       err = undefined,
@@ -143,6 +158,18 @@ function doichain_listSinceBlock(client, block, callback) {
         callback(err, data);
     });
 }
+export function getBlockCount(client) {
+    const syncFunc = Meteor.wrapAsync(doichain_getblockcount);
+    return syncFunc(client);
+}
+
+function doichain_getblockcount(client, callback) {
+    client.cmd('getblockcount', function(err, data) {
+        if(err)  logError('doichain_getblockcount:',err);
+        callback(err, data);
+    });
+}
+
 
 export function getBlockHash(client, height) {
     const syncFunc = Meteor.wrapAsync(doichain_getblockhash);
@@ -156,6 +183,18 @@ function doichain_getblockhash(client, height, callback) {
     });
 }
 
+export function getBlock(client, blockhash) {
+    const syncFunc = Meteor.wrapAsync(doichain_getblock);
+    return syncFunc(client, blockhash);
+}
+
+function doichain_getblock(client, blockhash, callback) {
+    client.cmd('getblock', blockhash, function(err, data) {
+        if(err)  logError('doichain_getblock:',err);
+        callback(err, data);
+    });
+}
+
 
 export function getTransaction(client, txid) {
     const syncFunc = Meteor.wrapAsync(doichain_gettransaction);
@@ -163,7 +202,7 @@ export function getTransaction(client, txid) {
 }
 
 function doichain_gettransaction(client, txid, callback) {
-    logConfirm('doichain_gettransaction:',txid);
+   // logConfirm('doichain_gettransaction:',txid);
     client.cmd('gettransaction', txid, function(err, data) {
         if(err)  logError('doichain_gettransaction:',err);
         callback(err, data);
@@ -176,7 +215,7 @@ export function getRawTransaction(client, txid) {
 }
 
 function doichain_getrawtransaction(client, txid, callback) {
-    logBlockchain('doichain_getrawtransaction:',txid);
+   // logBlockchain('doichain_getrawtransaction:',txid);
     client.cmd('getrawtransaction', txid, 1, function(err, data) {
         if(err)  logError('doichain_getrawtransaction:',err);
         callback(err, data);

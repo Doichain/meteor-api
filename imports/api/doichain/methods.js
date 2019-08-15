@@ -7,6 +7,24 @@ import sendToAddressM from '../../modules/server/doichain/send_to_address';
 import {_i18n as i18n} from "meteor/universe:i18n";
 import addOptIn from "../../modules/server/opt-ins/add_and_write_to_blockchain";
 import {getSettings} from "meteor/doichain:settings";
+import {logConfirm} from "../../startup/server/log-configuration";
+import scan_Doichain from "../../modules/server/doichain/scan_doichain";
+
+
+
+const rescan = new ValidatedMethod({
+  name: 'doichain.rescan',
+  validate: null,
+  run() {
+    logConfirm("rescanning blockchain");
+    if(!Roles.userIsInRole(this.userId, ['admin'])) {
+      const error = "api.doichain.rescan.accessDenied";
+      throw new Meteor.Error(error, i18n.__(error));
+    }
+    scan_Doichain(true)
+    return "rescanning done"
+  },
+});
 
 const sendToAddress = new ValidatedMethod({
   name: 'doichain.sendToAddress',
@@ -68,6 +86,7 @@ const getBalance = new ValidatedMethod({
 
 // Get list of all method names on doichain
 const OPTIONS_METHODS = _.pluck([
+    rescan,
     sendToAddress,
     requestEmailPermission,
     getKeyPair,

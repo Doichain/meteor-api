@@ -90,7 +90,7 @@ const addDoichainEntry = (entry) => {
 
     logConfirm('DoichainEntry added on Bob:', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
 
-    if(!masterDoi){
+    if(!masterDoi && !ourEntry.expired){
         addFetchDoiMailDataJob({
             name: ourEntry.name,
             domain: domain

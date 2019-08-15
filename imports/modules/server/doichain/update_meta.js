@@ -9,8 +9,8 @@ import {
     BLOCKCHAIN_INFO_VAL_BALANCE, ADDRESSES_BY_ACCOUNT, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI
 } from "../../../startup/both/constants";
 
-function initMeta(){
-
+function updateMeta(){
+    console.log('updating meta data')
     const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT)
 
     storeMeta(BLOCKCHAIN_INFO_VAL_CHAIN,data)
@@ -31,4 +31,4 @@ function initMeta(){
 
 }
 
-export default initMeta
+export default updateMeta

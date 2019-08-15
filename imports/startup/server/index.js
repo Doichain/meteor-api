@@ -9,7 +9,5 @@ import './useraccounts-configuration.js';
 import './security.js';
 import './email-configuration.js';
 import './jobs.js';
-import initMeta from "../../modules/server/doichain/init_meta";
-
-
-initMeta();
+import updateMeta from "../../modules/server/doichain/update_meta";
+updateMeta();

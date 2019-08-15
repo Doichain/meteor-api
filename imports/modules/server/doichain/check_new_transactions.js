@@ -19,7 +19,7 @@ const checkNewTransaction = (txid, job) => {
       //TODO Security-Bug: Check if this transactions owner belongs to Bob's privateKey otherwise this interface could get used as backdoor for spam attacks
       //logConfirm('checkNewTransaction tx:',{txid});
       if(!txid){
-          logConfirm("checkNewTransaction triggered (starting of node / or new block) - checking all confirmed blocks since last check");
+          logConfirm("checkNewTransaction in memcache");
           try {
               var lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
               if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;
@@ -30,14 +30,14 @@ const checkNewTransaction = (txid, job) => {
               const txs = ret.transactions;
               lastCheckedBlock = ret.lastblock;
               if(!ret || !txs || txs.length===0){
-                  logConfirm("transactions do not contain nameOp transaction details" +
-                      " or transaction not found.", ret);
+                //  logConfirm("transactions do not contain nameOp transaction details" +
+                  //    " or transaction not found.", ret);
                   addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
-                 //TODO addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
+                  //addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
                   return;
               }
 
-              logConfirm("listSinceBlock",txs.length);
+             // logConfirm("listSinceBlock",txs.length);
               const addressTxs = txs.filter(tx =>
                   tx.name !== undefined
                   && tx.name.startsWith("doi: "+TX_NAME_START)
@@ -58,7 +58,7 @@ const checkNewTransaction = (txid, job) => {
                       const txName = tx.name.substring(("doi: "+TX_NAME_START).length);
                       logConfirm("excuting name_show in order to get value of nameId:", txName);
                       const ety = nameShow(CONFIRM_CLIENT, txName);
-                      logConfirm("nameShow: value",ety);
+                     // logConfirm("nameShow: value",ety);
                       if(ety)
                           addNameTx(txName, ety.value,tx.address,tx.txid);
                       else
@@ -76,9 +76,10 @@ const checkNewTransaction = (txid, job) => {
           }
 
       }else{
-          logConfirm("txid: "+txid+" was triggered by walletnotify for address:",CONFIRM_ADDRESS);
+          logConfirm("txid: "+txid+" new block arrived");
 
           const ret = getRawTransaction(CONFIRM_CLIENT, txid);
+
           const txs = ret.vout;
 
           if(!ret || !txs || !txs.length===0){
