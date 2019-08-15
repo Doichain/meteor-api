@@ -21,7 +21,7 @@ import {
 import {Meta} from "../../../api/meta/meta";
 import {OptIns} from "../../../api/opt-ins/opt-ins";
 import decryptMessage from "./decrypt_message";
-import {logConfirm} from "../../../startup/server/log-configuration";
+import {logMain} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 
 
@@ -48,14 +48,14 @@ const scan_Doichain = (rescan) => {
             })
         })
     }
-    console.log('scan doichain called. ')
+    console.log('scan doichain finished. ')
 }
 
 const scan_DoichainOwn = async (rescan,firstBlock) => {
     let lastBlockHeight = getBlock(CONFIRM_CLIENT,firstBlock).height
 
     if(rescan){
-        OptIns.remove({})
+       // OptIns.remove({})
         lastBlockHeight = 0;
     }
 
@@ -87,7 +87,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
 
                 if (!hasDoiSignature) {
                     const privateKey = getPrivateKeyFromWif({wif: wif}); //TODO it could happen that this privkey of this address doesn't have the correct key of the first address - should try all keys
-                    let i = 0
+                    let i = 1
                     while (!domain) {
                         try {
                             domain = decryptMessage({privateKey: privateKey, message: nameValue.from});
@@ -101,10 +101,12 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     }
                 }
 
-                logConfirm('decrypted opt-in from dapp url:' + domain, ourConfirmedDois);
+                logMain('decrypted opt-in from dapp url:' + domain, ourConfirmedDois);
+                const thisNameId = nameId.name.substring(2)
+                const foundExistingOptIn = OptIns.findOne({nameId:thisNameId})
                 const status = ['transaction sent']
                 const optInFound = {
-                    nameId: nameId.name,
+                    nameId: thisNameId,
                     address: address,
                     txId: nameId.txid,
                     createdAt: new Date(tx.time * 1000),
@@ -118,8 +120,12 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     optInFound.confirmedAt = new Date(tx.blocktime * 1000);
                     optInFound.status.push('DOI written')
                 }
+                if(foundExistingOptIn){
+                    OptIns.update({nameId:thisNameId},{$set:optInFound})
+                }
+                else //if database was corrupted or only private key is available
+                    OptIns.insert(optInFound)
 
-                OptIns.insert(optInFound)
                 // OptIns.upsert({nameId:nameId}, {$set: optInFound })
                 //3. count requested and confirmed DOI's
                 console.log("ourRequestedDois",ourRequestedDois)
@@ -170,89 +176,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
             })
         })
     }
-
-    /*
-    //const blockDetails = listSinceBlock(CONFIRM_CLIENT,firstBlock)
-    blockDetails.transactions.forEach(function (it) {
-        if(it.name){
-          const nameId = it.name.substring(5)
-          const doiDetails = nameShow(CONFIRM_CLIENT,nameId)
-          if(doiDetails){
-           //   console.log("doiDetails",doiDetails)
-            const doiValue = doiDetails.value
-            const valueObject = JSON.parse(doiValue)
-            const hasSignature = valueObject.signature?true:false
-            const hasDoiSignature = valueObject.doiSignature?true:false
-           // console.log(valueObject.doiSignature,hasDoiSignature)
-
-            const isOurRecord = validateAddress(CONFIRM_CLIENT,doiDetails.address).ismine
-           // console.log(doiDetails.address,isOurRecord+" hasDoiSignature:"+hasDoiSignature)
-              //if(hasDoiSignature) console.log(doiDetails, isOurRecord)
-            if(isOurRecord){
-                //console.log('is ours!',hasDoiSignature)
-              const tx = getTransaction(CONFIRM_CLIENT,doiDetails.txid)
-               //console.log("tx",tx)
-
-                if(hasDoiSignature)ourConfirmedDois++
-                if(hasSignature)  ourRequestedDois++
-
-                let optInFound = OptIns.findOne({nameId:nameId})
-
-                if(optInFound===undefined){
-                    //console.log("optInFound",optInFound.nameId)
-                    const status = ['re-imported']
-                    //let confirmedAt = undefined
-                    const createdAt = new Date( tx.time*1000)
-                    //console.log("timereceived",tx.time)
-                    //console.log("createdAt",createdAt)
-
-                    let wif
-                    const addressesByAccount  = Meta.findOne({key: "addresses_by_account"})
-                    if(addressesByAccount !== undefined){
-                        addressesByAccount.value.forEach(function (addr) {
-                            wif = getWif(CONFIRM_CLIENT, addr);
-                        })
-                    }
-
-
-                    const privateKey = getPrivateKeyFromWif({wif: wif});
-                   // logConfirm('got private key (will not show it here)',allRequestedDois);
-
-                    const domain = decryptMessage({privateKey: privateKey, message: valueObject.from});
-                    logConfirm('decrypted opt-in from dapp url:'+domain,allRequestedDois);
-
-                    let doiTimestamp = undefined
-                    if(hasDoiSignature){
-                        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>> DOI SIGNATURE')
-                        status.push('DOI confirmed')
-                        doiTimestamp = new Date(valueObject.doiTimestamp+1000)
-                    }
-                    //console.log(doiValue)
-
-                    optInFound = {
-                            nameId: nameId,
-                            address: doiDetails.address,
-                            txId: doiDetails.txid,
-                            status:status,
-                            createdAt: createdAt,
-                            value: doiValue,
-                            confirmedAt: doiTimestamp,
-                            confirmations: tx.confirmations,
-                            domain: domain
-                    }
-                   // console.log('insert',optInFound)
-                    OptIns.insert(optInFound)
-                }
-            }
-
-            if(hasDoiSignature) allConfirmedDois++
-            if(hasSignature) allRequestedDois++
-
-          }else console.log(nameId+" doesn't have details")
-
-        }
-    })*/
-
+    console.log(rescan,lastBlockHeight)
     return true
 }
 

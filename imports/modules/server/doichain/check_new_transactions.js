@@ -8,10 +8,8 @@ import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
 import {validateAddress} from "../../../../server/api/doichain";
-import {BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../../server/api/rest/imports/status";
-
 const TX_NAME_START = "e/";
-import {LAST_CHECKED_BLOCK_KEY} from "../../../startup/both/constants"
+import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
 
 const checkNewTransaction = (txid, job) => {
   try {
@@ -107,6 +105,7 @@ const checkNewTransaction = (txid, job) => {
               tx.scriptPubKey !== undefined && tx.scriptPubKey.nameOp === undefined
           );
           coinTxs.forEach(tx => {
+              console.log("---->coinTX",tx)
               addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
           });
 
@@ -133,16 +132,18 @@ function addNameTx(name, value, address, txid) {
 
 function addCoinTx(value,address, txid) {
 
+    const addressValid = validateAddress(CONFIRM_CLIENT,address)  //TODO this should be not necessary at this point anymore
+    if(!addressValid.ismine) return
+
     if(txid) //if a new block was arriving we do not use a txid here
         logConfirm("unconfirmed Doicoin "+value+" was arriving for address "+address+" by txid:",txid);
     else
         logConfirm("confirmed Doicoin "+value+" was arriving for address "+address);
 
-    const addressValid = validateAddress(CONFIRM_CLIENT,address)  //TODO this should be not necessary at this point anymore
-    if(!addressValid.ismine) return
-    const valueCount = Meta.find({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).count();
-    if(valueCount> 0){
-        const oldValue =  parseFloat(Meta.findOne({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI}).value);
+
+    const valueCount = Meta.findOne({key:BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI})
+    if(valueCount){
+        const oldValue =  parseFloat(valueCount.value);
         value += oldValue;
     }
     storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,value);
