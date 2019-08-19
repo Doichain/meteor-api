@@ -12,6 +12,7 @@ import {
   BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,
   BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,
 } from "../../../../imports/startup/both/constants";
+import scan_Doichain from "../../../../imports/modules/server/doichain/scan_doichain";
 Api.addRoute('status', {authRequired: false}, {
   get: {
     action: function() {
@@ -39,6 +40,7 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       try {
         logConfirm('checking transaction with tx:',{tx});
         checkNewTransaction(tx,null);
+       // scan_Doichain()
         return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
       } catch(error) {
         return {status: 'fail', error: error.message};

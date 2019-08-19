@@ -5,6 +5,7 @@ import {BLOCKCHAIN_INFO_VAL_CHAIN as chain, BLOCKCHAIN_INFO_VAL_BLOCKS as blocks
     BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS as allrequesteddois,
     BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS as allconfirmeddois,
     BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS as ourrequesteddoi,
+    BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS as ourReceivedDois,
     BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS as ourconfirmeddois,
     LAST_CHECKED_BLOCK_KEY as lastCheckBlockKey
 } from "./imports/startup/both/constants";
@@ -30,5 +31,6 @@ export const BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI = unconfirmed_balance
 export const BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS = allrequesteddois
 export const BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS = allconfirmeddois
 export const BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS = ourrequesteddoi
+export const BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS = ourReceivedDois
 export const BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS = ourconfirmeddois
 export const LAST_CHECKED_BLOCK_KEY = lastCheckBlockKey

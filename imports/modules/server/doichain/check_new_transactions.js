@@ -45,8 +45,11 @@ const checkNewTransaction = (txid, job) => {
                   logConfirm("checking if tx was already processed...",tx.address);
 
                   //is this necessary because of security concerns and also because our own transactions hit us again - (we don't need them here)
-                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:tx.address})
-                  console.log("isFoundMyAddress:"+tx.address,isFoundMyAddress!==undefined)
+                 //FIX
+
+                  const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [tx.address]}})
+                      //Meta.findOne({key:"addresses_by_account", value:tx.address})
+                  console.log("isFoundMyAddress:"+tx.address+" "+isFoundMyAddress,isFoundMyAddress===undefined?'not found':'found')
 
                   const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                   console.log("processedTxInOptIns:",processedTxInOptIns!==undefined)
