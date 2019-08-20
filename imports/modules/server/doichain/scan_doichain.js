@@ -11,7 +11,7 @@ import {
     BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS,
     BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS,
     BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,
-    BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS,
+    BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS, BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS,
     BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,
     BLOCKCHAIN_SCAN_STATE,
     BLOCKCHAIN_SCAN_STATE_RUNNING,
@@ -67,10 +67,12 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
     }
 
     const ourRequestedDoisObj = Meta.findOne({key:BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS})
+    const ourRequestedAndConfirmedDoisObj = Meta.findOne({key:BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS})
     const ourConfirmedDoisObj = Meta.findOne({key:BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS})
     const ourReceivedDoisObj = Meta.findOne({key:BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS})
 
     let ourRequestedDois = (ourRequestedDoisObj && !rescan)?ourRequestedDoisObj.value:0
+    let ourRequestedAndConfirmedDois = (ourRequestedAndConfirmedDoisObj && !rescan)?ourRequestedAndConfirmedDoisObj.value:0
     let ourConfirmedDois = (ourConfirmedDoisObj && !rescan)?ourConfirmedDoisObj.value:0
     let ourReceivedDois = (ourReceivedDoisObj && !rescan)?ourReceivedDoisObj.value:0
 
@@ -97,7 +99,8 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                 const hasSignature = nameValue.signature ? true : false
                 const hasDoiSignature = nameValue.doiSignature ? true : false
 
-                if (hasDoiSignature) ourConfirmedDois++
+                if (hasDoiSignature && isOurAddress) ourConfirmedDois++ //if a blockchain entry has a doi signature and
+                if (hasDoiSignature && !isOurAddress) ourRequestedAndConfirmedDois //if a blockchain entry has not our address but a doiSignature was ours when we requested it
                 if (hasSignature && !isOurAddress) ourRequestedDois++
                 if (hasSignature && isOurAddress) ourReceivedDois++
 
@@ -147,10 +150,12 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                 // OptIns.upsert({nameId:nameId}, {$set: optInFound })
                 //3. count requested and confirmed DOI's
                 console.log("ourRequestedDois",ourRequestedDois)
+                console.log("ourRequestedAndConfirmedDois",ourRequestedAndConfirmedDois)
                 console.log("ourReceivedDois",ourReceivedDois)
                 console.log("ourConfirmedDois",ourConfirmedDois)
 
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS, ourRequestedDois)
+                storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS, ourRequestedAndConfirmedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS, ourReceivedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS, ourConfirmedDois)
             } //if lastblockheight
