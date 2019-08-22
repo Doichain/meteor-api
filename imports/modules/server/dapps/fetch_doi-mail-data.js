@@ -32,9 +32,8 @@ const FetchDoiMailDataSchema = new SimpleSchema({
  * @param data
  */
 const fetchDoiMailData = (data) => {
+    const ourData = data;
     try {
-
-        const ourData = data;
         FetchDoiMailDataSchema.validate(ourData);
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE;
         let signature
@@ -140,8 +139,9 @@ const fetchDoiMailData = (data) => {
             nameId: ourData.name
         });
         OptIns.upsert({nameId: ourData.name},{$push:{status:'added to email queue'}});
-    } catch (exception) {
-        throw new Meteor.Error('dapps.fetchDoiMailData.exception', exception);
+    } catch (ex) {
+        OptIns.upsert({nameId: ourData.name},{$push:{status:'error', error:ex.message, date: new Date()}})
+        throw new Meteor.Error('dapps.fetchDoiMailData.exception', ex);
     }
 };
 

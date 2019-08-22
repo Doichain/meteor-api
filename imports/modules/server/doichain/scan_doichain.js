@@ -141,7 +141,8 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     optInFound.confirmedAt = new Date(tx.blocktime * 1000);
                     optInFound.status.push('DOI written')
                 }
-                if(foundExistingOptIn){
+                //only update when its really the same not when it has a different txId (could be a DOI!)
+                if(foundExistingOptIn && optInFound.txId===foundExistingOptIn.txId){
                     OptIns.update({nameId:thisNameId},{$set:optInFound})
                 }
                 else //if database was corrupted or only private key is available
