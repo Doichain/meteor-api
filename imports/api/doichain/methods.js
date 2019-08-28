@@ -1,16 +1,31 @@
-import { ValidatedMethod } from 'meteor/mdg:validated-method';
 import { Meteor } from 'meteor/meteor';
+import { ValidatedMethod } from 'meteor/mdg:validated-method';
 import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
+import {getSettings} from "meteor/doichain:settings";
 import getKeyPairM from '../../modules/server/doichain/get_key-pair.js';
 import getBalanceM from '../../modules/server/doichain/get_balance.js';
 import sendToAddressM from '../../modules/server/doichain/send_to_address';
-import {_i18n as i18n} from "meteor/universe:i18n";
 import addOptIn from "../../modules/server/opt-ins/add_and_write_to_blockchain";
-import {getSettings} from "meteor/doichain:settings";
 import {logConfirm} from "../../startup/server/log-configuration";
 import scan_Doichain from "../../modules/server/doichain/scan_doichain";
+import {generateBlock} from "../../../server/api/doichain";
+import {CONFIRM_CLIENT} from "../../startup/server/doichain-configuration";
 
 
+const generate = new ValidatedMethod({
+  name: 'doichain.generate',
+  validate: null,
+  run({blocks}) {
+
+    logConfirm("generating a block in case its regtest");
+
+    if(!Roles.userIsInRole(this.userId, ['admin'])) {
+      const error = "api.doichain.generate.accessDenied";
+      throw new Meteor.Error(error, i18n.__(error));
+    }
+    return generateBlock(CONFIRM_CLIENT, blocks)
+  },
+});
 
 const rescan = new ValidatedMethod({
   name: 'doichain.rescan',
@@ -25,6 +40,7 @@ const rescan = new ValidatedMethod({
     return "rescanning done"
   },
 });
+
 
 const sendToAddress = new ValidatedMethod({
   name: 'doichain.sendToAddress',
@@ -53,8 +69,6 @@ const requestEmailPermission = new ValidatedMethod({
     const defaultFrom =  getSettings('confirm.smtp.defaultFrom','doichain@localhost');
     //if given in form please take it otherwise take email of the current user, if not available to the default email of this dApp
     const our_senderMail = senderEmail?senderEmail:(Meteor.user().emails && Meteor.user().emails.length>0)?Meteor.user().emails[0].address:defaultFrom
-    console.log("senderMail",our_senderMail)
-    console.log("recipientMail",recipientMail)
     const optIn = {
       "recipient_mail": recipientMail,
       "sender_mail": our_senderMail,
@@ -86,6 +100,7 @@ const getBalance = new ValidatedMethod({
 
 // Get list of all method names on doichain
 const OPTIONS_METHODS = _.pluck([
+    generate,
     rescan,
     sendToAddress,
     requestEmailPermission,

@@ -1,5 +1,4 @@
 import { Mongo } from 'meteor/mongo';
-//import SimpleSchema from 'simpl-schema';
 
 class MetaCollection extends Mongo.Collection {
   insert(data, callback) {
@@ -33,7 +32,7 @@ Meta.schema = new SimpleSchema({
       },
       key: {
         type: String,
-        //  index: true, //TODO doesn't work inside a backage aldeed:schema-index@3.0.0
+       // index: true, //TODO doesn't work inside a backage aldeed:schema-index@3.0.0
         // TODO see https://github.com/aldeed/meteor-collection2/issues/378
         //  denyUpdate: true //TODO aldeed:schema-deny@2.0.1
       },
@@ -41,7 +40,7 @@ Meta.schema = new SimpleSchema({
     }
 );
 
-Meta.attachSchema(Meta.schema); */
+Meta.attachSchema(Meta.schema);
 
 // This represents the keys from Meta objects that should be published
 // to the client. If we add secret properties to Meta objects, don't list
@@ -51,3 +50,4 @@ Meta.publicFields = {
   key: 1,
   value: 1
 };
+*/

@@ -37,7 +37,7 @@ OptIns.schema = new SimpleSchema({
   recipient: {
     type: String,
     optional: true,
- //   denyUpdate: true, //TODO enable this when this package works again see meta
+    //denyUpdate: true, //TODO enable this when this package works again see meta
   },
   sender: {
     type: String,

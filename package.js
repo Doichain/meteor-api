@@ -38,7 +38,7 @@ Package.onUse(function(api) {
 
 Npm.depends({
     '@babel/runtime':'7.2.0',
-    'simpl-schema':'1.5.3',
+    'simpl-schema':'1.5.5',
     'scribe-js':'2.0.4',
     'namecoin': '0.1.4',
     'secp256k1':'3.6.1',

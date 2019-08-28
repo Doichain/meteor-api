@@ -1,11 +1,10 @@
 import { Meteor } from 'meteor/meteor';
-import {logBlockchain, logConfirm, logError} from "../../imports/startup/server/log-configuration";
+import {logBlockchain, logError} from "../../imports/startup/server/log-configuration";
 
 const NAMESPACE = 'e/';
 const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
-    console.log(address)
   if(!address){
         address = getAddressesByAccount("")[0];
         logBlockchain('address was not defined so getting the first existing one of the wallet:',address);
@@ -24,6 +23,19 @@ function doichain_dumpprivkey(client, address, callback) {
     if(err)  logError('doichain_dumpprivkey:',err);
     callback(err, data);
   });
+}
+
+export function generateBlock(client, blocks) {
+    const syncFunc = Meteor.wrapAsync(doichain_generateBlock);
+    return syncFunc(client, blocks);
+}
+
+function doichain_generateBlock(client, blocks, callback) {
+    const ourBlocks = blocks;
+    client.cmd('generate', ourBlocks, function(err, data) {
+        if(err)  logError('doichain_generate:',err);
+        callback(err, data);
+    });
 }
 
 export function validateAddress(client, address) {
@@ -100,7 +112,6 @@ export function nameShow(client, id) {
 
 function doichain_nameShow(client, id, callback) {
   const ourId = checkId(id);
- // logConfirm('doichain-cli name_show :',ourId);
   client.cmd('name_show', ourId, function(err, data) {
     if(err !== undefined && err !== null && err.message.startsWith("name not found")) {
       err = undefined,
@@ -202,7 +213,6 @@ export function getTransaction(client, txid) {
 }
 
 function doichain_gettransaction(client, txid, callback) {
-   // logConfirm('doichain_gettransaction:',txid);
     client.cmd('gettransaction', txid, function(err, data) {
         if(err)  logError('doichain_gettransaction:',err);
         callback(err, data);
@@ -215,7 +225,6 @@ export function getRawTransaction(client, txid) {
 }
 
 function doichain_getrawtransaction(client, txid, callback) {
-   // logBlockchain('doichain_getrawtransaction:',txid);
     client.cmd('getrawtransaction', txid, 1, function(err, data) {
         if(err)  logError('doichain_getrawtransaction:',err);
         callback(err, data);
@@ -241,7 +250,6 @@ export function doichainSendToAddress(client, address, amount) {
 }
 
 function doichain_send_to_address(client, address, amount, callback) {
-    console.log("doichain_send_to_address now "+address+" to",amount)
     client.cmd('sendtoaddress', address, amount, function(err, data) {
         if(err) { logError('doichain_send_to_address:',err);}
         callback(err, data);
@@ -263,7 +271,6 @@ function doichain_getinfo(client, callback) {
 function checkId(id) {
     const DOI_PREFIX = "doi: ";
     let ret_val = id; //default value
-
     if(id.startsWith(DOI_PREFIX)) ret_val = id.substring(DOI_PREFIX.length); //in case it starts with doi: cut  this away
     if(!id.startsWith(NAMESPACE)) ret_val = NAMESPACE+id; //in case it doesn't start with e/ put it in front now.
   return ret_val;
