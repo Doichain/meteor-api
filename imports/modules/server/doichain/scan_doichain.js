@@ -90,26 +90,28 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
             if(lastBlockHeight<=nameId.height) {
 
                 const tx = getTransaction(CONFIRM_CLIENT, nameId.txid)
-                console.log(nameId.name,nameId.value)
+
                 const nameValue = JSON.parse(nameId.value)
                 const address = nameId.address
                 const isOurAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [address]}})
-                console.log("isOurAddress:"+address,isOurAddress)
 
                 const hasSignature = nameValue.signature ? true : false
                 const hasDoiSignature = nameValue.doiSignature ? true : false
 
-                if (hasDoiSignature && isOurAddress) ourConfirmedDois++ //if a blockchain entry has a doi signature and
-                if (hasDoiSignature && !isOurAddress) ourRequestedAndConfirmedDois //if a blockchain entry has not our address but a doiSignature was ours when we requested it
-                if (hasSignature && !isOurAddress) ourRequestedDois++
-                if (hasSignature && isOurAddress) ourReceivedDois++
+                if (hasSignature && !isOurAddress && !hasDoiSignature) ourRequestedDois++ //by sendApp
+                if (hasSignature && isOurAddress  && !hasDoiSignature) ourReceivedDois++  //by validator
+
+                if (hasDoiSignature && !isOurAddress) ourConfirmedDois++  //dois confirmed by validator
+                const hasSOIWithOurAddress = false;  //TODO call name_history of this(!) name and check if there is a nameId which has only signature
+                if (hasSOIWithOurAddress && hasDoiSignature) ourRequestedAndConfirmedDois++ //TODO doesnt work
 
                 let domain
 
                 if (!hasDoiSignature && isOurAddress) {
-                    const privateKey = getPrivateKeyFromWif({wif: wif}); //TODO it could happen that this privkey of this address doesn't have the correct key of the first address - should try all keys
                     let i = 1
+                    wif = getWif(CONFIRM_CLIENT, addressesByAccount.value[0]);
                     while (!domain) {
+                        const privateKey = getPrivateKeyFromWif({wif: wif});
                         try {
                             domain = decryptMessage({privateKey: privateKey, message: nameValue.from});
                         } catch (e) {
@@ -200,9 +202,9 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
                     const hasDoiSignature = nameValue.doiSignature?true:false
 
                     if(hasDoiSignature) allConfirmedDois++
-                    if(hasSignature)  allRequestedDois++
+                    if(hasSignature && !hasDoiSignature)  allRequestedDois++
                 }
-                console.log("allRequestedDois "+i,allRequestedDois)
+                console.log("allRequestedDois",allRequestedDois)
                 console.log("allConfirmedDois",allConfirmedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS, allRequestedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS, allConfirmedDois)
