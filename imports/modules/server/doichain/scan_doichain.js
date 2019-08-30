@@ -3,8 +3,8 @@ import {
     getBlock, getBlockCount,
     getBlockHash, getRawTransaction,
     getTransaction,
-    getWif,
-    nameList
+    getWif, nameHistory,
+    nameList, nameShow
 } from "../../../../server/api/doichain";
 import storeMeta from "./store_meta";
 import {
@@ -85,7 +85,9 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
     //0. get all nameId's which ever touched this node
     const ourNameIds = nameList(CONFIRM_CLIENT)
     //2. loop through the names and get and store detail information in dApp
+    console.log('test')
     ourNameIds.forEach(function (nameId) {
+            console.log(lastBlockHeight+" "+nameId.height,nameId.address)
 
             if(lastBlockHeight<=nameId.height) {
 
@@ -102,8 +104,29 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                 if (hasSignature && isOurAddress  && !hasDoiSignature) ourReceivedDois++  //by validator
 
                 if (hasDoiSignature && !isOurAddress) ourConfirmedDois++  //dois confirmed by validator
-                const hasSOIWithOurAddress = false;  //TODO call name_history of this(!) name and check if there is a nameId which has only signature
-                if (hasSOIWithOurAddress && hasDoiSignature) ourRequestedAndConfirmedDois++ //TODO doesnt work
+                console.log('bla',nameId.name)
+                if(!hasDoiSignature){  //check if it got one somewhere else
+                    const nameShowDetail = JSON.parse(nameShow(CONFIRM_CLIENT,nameId.name).value)
+                    console.log("nameShowDetail",nameShowDetail)
+                    if(nameShowDetail.doiSignature){
+                        console.log("hasDoiSignature now DOI but not before")
+                        ourRequestedAndConfirmedDois++
+                    }
+                        /*
+
+                    const nameHistoryData = nameHistory(CONFIRM_CLIENT,nameId.address)
+                    console.log("nameHistoryData",nameHistoryData)
+                    if(nameHistoryData.length>1){
+                        const soiIsOurAddress = Meta.findOne(
+                            {
+                                key:"addresses_by_account",
+                                value: {"$in" : [nameHistoryData[0].address]}
+                            })
+                        console.log("soiIsOurAddress",soiIsOurAddress)
+                        if (soiIsOurAddress) ourRequestedAndConfirmedDois++
+                    }*/
+                }
+
 
                 let domain
 

@@ -111,14 +111,28 @@ export function nameShow(client, id) {
 }
 
 function doichain_nameShow(client, id, callback) {
+    console.log("id",id)
   const ourId = checkId(id);
   client.cmd('name_show', ourId, function(err, data) {
-    if(err !== undefined && err !== null && err.message.startsWith("name not found")) {
+  /*  if(err !== undefined && err !== null) {
       err = undefined,
       data = undefined
-    }
+    } */
     callback(err, data);
   });
+}
+
+export function nameHistory(client,nameId) {
+    const ourNameID = nameId;
+    const syncFunc = Meteor.wrapAsync(doichain_nameHistory);
+    return syncFunc(client,ourNameID);
+}
+
+function doichain_nameHistory(client, nameId, callback) {
+    const ourNameID = nameId;
+    client.cmd('name_history', ourNameID, function(err, data) {
+        callback(err, data);
+    });
 }
 
 export function feeDoi(client, address) {

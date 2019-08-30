@@ -12,7 +12,7 @@ import {
   BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS,
   BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS,
 } from "../../../../imports/startup/both/constants";
-import scan_Doichain from "../../../../imports/modules/server/doichain/scan_doichain";
+
 Api.addRoute('status', {authRequired: false}, {
   get: {
     action: function() {
