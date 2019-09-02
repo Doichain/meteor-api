@@ -22,6 +22,7 @@ const confirmOptIn = (request) => {
     const ourRequest = request;
     ConfirmOptInSchema.validate(ourRequest);
     const decoded = decodeDoiHash({hash: request.hash});
+    console.log('decoded be',decoded)
     const optIn = OptIns.findOne({_id: decoded.id});
     if(optIn === undefined || optIn.confirmationToken !== decoded.token) throw "Invalid hash";
     if(optIn.confirmationToken === decoded.token && optIn.confirmedAt != undefined){ // Opt-In was already confirmed on email click

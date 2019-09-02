@@ -3,7 +3,7 @@ import {
     getBlock, getBlockCount,
     getBlockHash, getRawTransaction,
     getTransaction,
-    getWif, nameHistory,
+    getWif,
     nameList, nameShow
 } from "../../../../server/api/doichain";
 import storeMeta from "./store_meta";
@@ -59,9 +59,10 @@ const scan_Doichain = (rescan) => {
  */
 const scan_DoichainOwn = async (rescan,firstBlock) => {
     storeMeta(BLOCKCHAIN_SCAN_STATE, BLOCKCHAIN_SCAN_STATE_RUNNING)
-
+    //OptIns.remove({})
     let lastBlockHeight = getBlock(CONFIRM_CLIENT,firstBlock).height
-
+    //we always rescan at this point no matter what if we got a new tx from mempool
+    rescan = true
     if(rescan){
         lastBlockHeight = 0;
     }
@@ -85,7 +86,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
     //0. get all nameId's which ever touched this node
     const ourNameIds = nameList(CONFIRM_CLIENT)
     //2. loop through the names and get and store detail information in dApp
-    console.log('test')
+    console.log('ourNameIds',ourNameIds)
     ourNameIds.forEach(function (nameId) {
             console.log(lastBlockHeight+" "+nameId.height,nameId.address)
 
@@ -95,38 +96,15 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
 
                 const nameValue = JSON.parse(nameId.value)
                 const address = nameId.address
+
+                const thisNameId = nameId.name.substring(2)
+                const foundExistingOptIn = OptIns.findOne({nameId:thisNameId})
+                //const status = ['on blockchain']
+
                 const isOurAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [address]}})
 
                 const hasSignature = nameValue.signature ? true : false
                 const hasDoiSignature = nameValue.doiSignature ? true : false
-
-                if (hasSignature && !isOurAddress && !hasDoiSignature) ourRequestedDois++ //by sendApp
-                if (hasSignature && isOurAddress  && !hasDoiSignature) ourReceivedDois++  //by validator
-
-                if (hasDoiSignature && !isOurAddress) ourConfirmedDois++  //dois confirmed by validator
-                console.log('bla',nameId.name)
-                if(!hasDoiSignature){  //check if it got one somewhere else
-                    const nameShowDetail = JSON.parse(nameShow(CONFIRM_CLIENT,nameId.name).value)
-                    console.log("nameShowDetail",nameShowDetail)
-                    if(nameShowDetail.doiSignature){
-                        console.log("hasDoiSignature now DOI but not before")
-                        ourRequestedAndConfirmedDois++
-                    }
-                        /*
-
-                    const nameHistoryData = nameHistory(CONFIRM_CLIENT,nameId.address)
-                    console.log("nameHistoryData",nameHistoryData)
-                    if(nameHistoryData.length>1){
-                        const soiIsOurAddress = Meta.findOne(
-                            {
-                                key:"addresses_by_account",
-                                value: {"$in" : [nameHistoryData[0].address]}
-                            })
-                        console.log("soiIsOurAddress",soiIsOurAddress)
-                        if (soiIsOurAddress) ourRequestedAndConfirmedDois++
-                    }*/
-                }
-
 
                 let domain
 
@@ -148,29 +126,53 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                 }
 
                 logMain('decrypted opt-in from dapp url:' + domain, ourConfirmedDois);
-                const thisNameId = nameId.name.substring(2)
-                const foundExistingOptIn = OptIns.findOne({nameId:thisNameId})
-                const status = ['transaction sent']
+
                 const optInFound = {
                     nameId: thisNameId,
                     address: address,
                     txId: nameId.txid,
                     createdAt: new Date(tx.time * 1000),
                     value: nameId.value,
-                    status: status,
+                    status: (foundExistingOptIn && foundExistingOptIn.status)?foundExistingOptIn.status:['scanned'],
                     confirmations: tx.confirmations,
                     domain: domain
                 }
 
-                if (hasDoiSignature) {
-                    optInFound.confirmedAt = new Date(tx.blocktime * 1000);
-                    optInFound.status.push('DOI written')
+                //validator
+                //if a nameId has our address, a signature and no doi signature its only received an not confirmed
+                //if a nameId has our address, a signature and a doi signature it was also confirmed by us.
+                //TODO this is not yet 100% correct in all cases e.g. when transaction send to another doicoin address for later use
+                //in this yase we must extend 'isOurAddress' in order to check name_history if this name was once our address
+                if (hasSignature && isOurAddress  && !hasDoiSignature){
+                    ourReceivedDois++  //by validator
+                    optInFound.receivedByValidator = true
                 }
+                if (hasDoiSignature && !isOurAddress) {
+                    ourReceivedDois++ //one day we must have received it
+                    ourConfirmedDois++
+                    optInFound.confirmedByValidator = true
+                }
+                if (hasSignature && !isOurAddress && !hasDoiSignature){
+                    ourRequestedDois++ //send dApp reqestes
+                    optInFound.ourRequestedDoi = true
+                }
+                if(!hasDoiSignature) {  //if nameId has no DOI signature in the own local record (name_list) but in the current blockchain (name_show) then it got confirmed
+                    const nameShowDetail = JSON.parse(nameShow(CONFIRM_CLIENT, nameId.name).value)
+                    if (nameShowDetail.doiSignature) {
+                        optInFound.ourRequestedAndConfirmedDois = true
+                        ourRequestedAndConfirmedDois++
+                    }
+                }
+
+
+
+
+                if (hasDoiSignature) optInFound.confirmedAt = new Date(tx.blocktime * 1000);
                 //only update when its really the same not when it has a different txId (could be a DOI!)
                 if(foundExistingOptIn && optInFound.txId===foundExistingOptIn.txId){
                     OptIns.update({nameId:thisNameId},{$set:optInFound})
                 }
-                else //if database was corrupted or only private key is available
+                else //if database was corrupted or only private key is available*/
                     OptIns.insert(optInFound)
 
                 // OptIns.upsert({nameId:nameId}, {$set: optInFound })
