@@ -95,6 +95,22 @@ OptIns.schema = new SimpleSchema({
     regEx: SimpleSchema.RegEx.Id
   },
   status: [String],
+  receivedByValidator: {
+    type: Boolean,
+    optional: true
+  },
+  confirmedByValidator: {
+    type: Boolean,
+    optional: true
+  },
+  ourRequestedDoi: {
+    type: Boolean,
+    optional: true
+  },
+  ourRequestedAndConfirmedDois: {
+    type: Boolean,
+    optional: true
+  },
   address:{
     type: String,
     optional: true
@@ -135,6 +151,10 @@ OptIns.publicFields = {
   confirmedBy: 1,
   ownerId: 1,
   status:1,
+  receivedByValidator:1,
+  confirmedByValidator:1,
+  ourRequestedDoi:1,
+  ourRequestedAndConfirmedDois:1,
   address:1,
   value:1,
   domain:1,

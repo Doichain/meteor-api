@@ -164,9 +164,6 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     }
                 }
 
-
-
-
                 if (hasDoiSignature) optInFound.confirmedAt = new Date(tx.blocktime * 1000);
                 //only update when its really the same not when it has a different txId (could be a DOI!)
                 if(foundExistingOptIn && optInFound.txId===foundExistingOptIn.txId){
