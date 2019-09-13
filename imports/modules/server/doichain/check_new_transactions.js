@@ -108,7 +108,7 @@ const checkNewTransaction = (txid, job) => {
               tx.scriptPubKey !== undefined && tx.scriptPubKey.nameOp === undefined
           );
           coinTxs.forEach(tx => {
-              console.log("---->coinTX",tx)
+              //console.log("---->coinTX",tx)
               addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
           });
 

@@ -245,6 +245,30 @@ function doichain_getrawtransaction(client, txid, callback) {
     });
 }
 
+export function importPubkey(client, pubkey) {
+    const syncFunc = Meteor.wrapAsync(doichain_importpubkey);
+    return syncFunc(client, pubkey);
+}
+
+function doichain_importpubkey(client, pubkey, callback) {
+    client.cmd('importpubkey', pubkey, function(err, data) {
+        if(err) { logError('doichain_importpubkey:', err);}
+        callback(err, data);
+    });
+}
+
+export function listUnspent(client, address) {
+    const syncFunc = Meteor.wrapAsync(list_unspent);
+    return syncFunc(client, address);
+}
+
+function list_unspent(client, address, callback) {
+    client.cmd('listunspent', 6,9999999,[address], function(err, data) {
+        if(err) { logError('list_unspent:', err);}
+        callback(err, data);
+    });
+}
+
 export function getBalance(client) {
     const syncFunc = Meteor.wrapAsync(doichain_getbalance);
     return syncFunc(client);

@@ -41,20 +41,22 @@ const fetchDoiMailData = (data) => {
         const myAddresses = Meta.findOne({key:ADDRESSES_BY_ACCOUNT}).value
         let thisConfirmAddress = CONFIRM_ADDRESS;
 
+        //we sign the nameId of this permission request with one of our addresses so the requested can see it was us and not somebody else
         try {
                 signature = signMessage(CONFIRM_CLIENT, thisConfirmAddress, ourData.name);
         }catch(ex){
-            logConfirm('address '+thisConfirmAddress+' not ours, please correct confirm.doichain.address in settings, trying one of our addresses to sign message',);
-            try{
                 myAddresses.forEach(function (addr) {
-                    if(!signature) signature = signMessage(CONFIRM_CLIENT, addr, ourData.name);
+                    try{
+                        if(!signature) signature = signMessage(CONFIRM_CLIENT, addr, ourData.name);
+                    }catch(ex) {
+                        //if an address doesn't sign the message use the next one}
+                    }
                 })
-            }catch(ex){ }
         }
 
         if(!signature){
             const error = 'Could not create signature with configured CONFIRM_ADDRESS in settings. Wrong address or missing private key'
-            OptIns.upsert({nameId: ourData.name},{$push:{status:'error', error:error+"\n"+ex}})
+            OptIns.upsert({nameId: ourData.name},{$push:{status:'error', error:error}})
             throw error;
         }
 

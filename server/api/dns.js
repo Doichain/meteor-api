@@ -2,8 +2,11 @@ import { Meteor } from 'meteor/meteor';
 import dns from 'dns';
 import {logSend} from "../../imports/startup/server/log-configuration";
 
-export function resolveTxt(key, domain) {
+export const OPT_IN_KEY = "doichain-opt-in-key";
+export const OPT_IN_KEY_TESTNET = "doichain-testnet-opt-in-key";
 
+export function resolveTxt(key, domain) {
+  console.log("key","domain")
   const syncFunc = Meteor.wrapAsync(dns_resolveTxt);
   try {
     const records = syncFunc(key, domain);

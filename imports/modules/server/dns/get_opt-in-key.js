@@ -5,10 +5,7 @@ import { FALLBACK_PROVIDER } from '../../../startup/server/dns-configuration.js'
 import {isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
 import {logSend} from "../../../startup/server/log-configuration";
 import getOptInProvider from "./get_opt-in-provider";
-
-const OPT_IN_KEY = "doichain-opt-in-key";
-const OPT_IN_KEY_TESTNET = "doichain-testnet-opt-in-key";
-
+import {OPT_IN_KEY, OPT_IN_KEY_TESTNET} from "../../../../server/api/dns";
 const GetOptInKeySchema = new SimpleSchema({
   domain: {
     type: String

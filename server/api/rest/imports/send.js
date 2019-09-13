@@ -3,10 +3,20 @@ import addOptIn from '../../../../imports/modules/server/opt-ins/add_and_write_t
 import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update_status.js';
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
 import {logError, logSend} from "../../../../imports/startup/server/log-configuration";
-import {DOI_EXPORT_ROUTE} from "../rest";
+import {
+    DOI_EXPORT_ROUTE,
+    DOICHAIN_BROADCAST_TX,
+    DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, DOICHAIN_IMPORT_PUBKEY,
+    DOICHAIN_LIST_UNSPENT
+} from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Roles} from "meteor/alanning:roles";
+import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, resolveTxt} from "../../dns";
+import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
+import {importPubkey, listUnspent} from "../../doichain";
+import {sendRawTransaction} from "namecoin";
+import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -99,10 +109,121 @@ Api.addRoute(DOI_EXPORT_ROUTE, {
     }
 });
 
+/**
+ *
+ * Adds a public key (in hex) that can be watched as if it were in your wallet but cannot be used to spend.
+ *
+ * Method: GET
+ * Params: doichain address: address
+ * Example: https://localhost:3010/api/v1/importpubkey?pubkey=
+ */
+Api.addRoute(DOICHAIN_IMPORT_PUBKEY, {
+    get: {
+        authRequired: false,
+        action: function() {
+            const params = this.queryParams;
+            const pubkey = params.pubkey;
+            console.log("requesting pubkey",pubkey)
+             try {
+                const data = importPubkey(SEND_CLIENT,pubkey)
+                 console.log("pubkey imported",pubkey)
+                return {status: 'success', data: pubkey};
+            } catch(error) {
+                logError('importing public key to choosen validator',error);
+                return {status: 'fail', error: error.message};
+            }
+        }
+    }
+});
+
+/**
+ * Makes a DNS request and requests for the doichain public-key for the given domain and network
+ * Method: GET
+ * Params:
+ * - domain  (e.g. your-domain.org)
+ *  Example: https://localhost:3000/api/v1/getpublickeybypublicdns?domain=le-space.de
+ */
+Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
+    get: {
+        authRequired: false,
+        action: function() {
+            const params = this.queryParams;
+            const domain = params.domain
+
+            let ourOPT_IN_KEY=OPT_IN_KEY;
+            if(isRegtest() || isTestnet()){
+                ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
+            }
+            try {
+                const data = resolveTxt(ourOPT_IN_KEY,domain)
+                return {status: 'success', data};
+            } catch(error) {
+                logError('requesting public key from public dns',error);
+                return {status: 'fail', error: error.message};
+            }
+        }
+    }
+});
+
+/**
+ * Requests unconfirmed transactions (utxo) from a given address
+ * Imports the given address into the nodes wallet for "watchonly"
+ * Method: GET
+ * Params: doichain address: address
+ * Example: https://localhost:3000/api/v1/listunspent?address=mj1FQKeXxdUrWJkrRti8iy2utHqarcrSoB
+ */
+Api.addRoute(DOICHAIN_LIST_UNSPENT, {
+    get: {
+        authRequired: false,
+        action: function() {
+            const params = this.queryParams;
+            const address = params.address;
+
+            try {
+                const data = listUnspent(SEND_CLIENT,address)
+                return {status: 'success', data};
+            } catch(error) {
+                logError('error getting utxo from adddress '+address,error);
+                return {status: 'fail', error: error.message};
+            }
+        }
+    }
+});
+
+/**
+ * Broadcasts a serialized raw transaction to the Doichain network
+ * Params: serialized transaction hash
+ * Method: POST
+ * Example:mExample: https://localhost:3000/api/v1/sendrawtransaction
+ */
+Api.addRoute(DOICHAIN_BROADCAST_TX, {
+    post: {
+        authRequired: false,
+        action: function() {
+            const qParams = this.queryParams;
+            const bParams = this.bodyParams;
+            let params = {}
+            if(qParams !== undefined) params = {...qParams}
+            if(bParams !== undefined) params = {...params, ...bParams}
+
+            const tx = params.tx
+            const template = params.template //store this template together with the nameId
+            try {
+                const data = sendRawTransaction(SEND_CLIENT,tx)
+
+
+                return {status: 'success', data};
+            } catch(error) {
+                logError('error getting utxo from adddress'+address,error);
+                return {status: 'fail', error: error.message};
+            }
+
+        }
+    }
+});
+
 function prepareCoDOI(params){
-
     logSend('is array ',params.sender_mail);
-
     const senders = params.sender_mail;
     const recipient_mail = params.recipient_mail;
     const data = params.data;

@@ -44,6 +44,16 @@ const userProfileSchema = new SimpleSchema({
   }
 });
 
+/**
+ * getDoiMailData
+ * - is called by the validator (bob)
+ * - transmits nameId and the signature created by Peters temporary privateKey for this transaction
+ * - we get sender and recipient out of the database and gather the public key of the responsible validator from dns
+ * - we verify the transmitted signature with Peters (internet user) publicKey
+ *
+ * @param data nameId, signature
+ * @returns {{redirect: *, returnPath: *, subject: *, recipient: *, contentType: (*|string), content: *}}
+ */
 const getDoiMailData = (data) => {
 
   let  optIn

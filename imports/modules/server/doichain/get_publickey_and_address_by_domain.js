@@ -17,11 +17,6 @@ const getPublicKeyAndAddress = (data) => {
     GetPublicKeySchema.validate(ourData);
 
     let publicKey = getOptInKey({domain: ourData.domain}).key;
-  /*  if(!publicKey){
-        const provider = getOptInProvider({domain: ourData.domain});
-        logSend("using doichain provider instead of directly configured publicKey:",{provider:provider});
-        publicKey = getOptInKey({domain: provider}).key; //get public key from provider or fallback if publickey was not set in dns
-    } */
     const destAddress =  getAddress({publicKey: publicKey});
     logSend('publicKey and destAddress ', {publicKey:publicKey,destAddress:destAddress});
     return {publicKey:publicKey,destAddress:destAddress};
