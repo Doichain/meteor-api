@@ -47,9 +47,9 @@ const userProfileSchema = new SimpleSchema({
 /**
  * getDoiMailData
  * - is called by the validator (bob)
- * - transmits nameId and the signature created by Peters temporary privateKey for this transaction
+ * - transmits parameter nameId and signature created by Peters temporary privateKey for this transaction
  * - we get sender and recipient out of the database and gather the public key of the responsible validator from dns
- * - we verify the transmitted signature with Peters (internet user) publicKey
+ * - we verify the transmitted signature if the responsible validator was sending the request for this template. (only give it to him)
  *
  * @param data nameId, signature
  * @returns {{redirect: *, returnPath: *, subject: *, recipient: *, contentType: (*|string), content: *}}
@@ -97,6 +97,7 @@ const getDoiMailData = (data) => {
     // 3. Provider sends confirmation "I got the data"
     // 4. Send dApp lock the data for this opt in
     logSend('verifying signature...');
+
     if(!verifySignature({publicKey: publicKey, data: ourData.name_id, signature: ourData.signature})) {
       throw "signature incorrect - access denied";
     }

@@ -29,18 +29,24 @@ const updateOptInStatus = (data) => {
     if(optIn === undefined) throw "Opt-In not found";
     logSend('confirm dApp confirms optIn:',ourData.nameId);
 
-    const recipient = Recipients.findOne({_id: optIn.recipient});
-    if(recipient === undefined) throw "Recipient not found";
-    const parts = recipient.email.split("@");
-    const domain = parts[parts.length-1];
-    const publicKeyAndAddress = getPublicKeyAndAddress({domain:domain});
+    /**
+     * @deprecated
+     * That is only possible with standard Doichain dApp doichain entries.
+     * Since the whole procedure on testing publicKey + nameId + signature etc. is questionable this might be removed in future
+     */
+    if(optIn.recipient){
+      const recipient = Recipients.findOne({_id: optIn.recipient});
+      if(recipient === undefined) throw "Recipient not found";
+      const parts = recipient.email.split("@");
+      const domain = parts[parts.length-1];
+      const publicKeyAndAddress = getPublicKeyAndAddress({domain:domain});
 
-    //TODO getting information from Bob that a certain nameId (DOI) got confirmed.
-    if(!verifySignature({publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})) {
-      throw "Access denied";
+      //TODO getting information from Bob that a certain nameId (DOI) got confirmed.
+      if(!verifySignature({publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})) {
+        throw "Access denied";
+      }
+      logSend('signature valid for publicKey', publicKeyAndAddress.publicKey);
     }
-    logSend('signature valid for publicKey', publicKeyAndAddress.publicKey);
-
 
     OptIns.update({_id : optIn._id},
         {

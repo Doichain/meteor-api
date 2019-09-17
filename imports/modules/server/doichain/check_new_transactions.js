@@ -2,54 +2,56 @@ import { Meteor } from 'meteor/meteor';
 import { listSinceBlock, nameShow, getRawTransaction} from '../../../../server/api/doichain.js';
 import { CONFIRM_CLIENT, CONFIRM_ADDRESS } from '../../../startup/server/doichain-configuration.js';
 import addDoichainEntry from './add_entry_and_fetch_data.js'
+import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import { Meta } from '../../../api/meta/meta.js';
 import { OptIns} from "../../../api/opt-ins/opt-ins";
-import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
-import {validateAddress} from "../../../../server/api/doichain";
+import {getRawMemPool, validateAddress} from "../../../../server/api/doichain";
 const TX_NAME_START = "e/";
 import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
 
 const checkNewTransaction = (txid, job) => {
   try {
+       let isMemCacheTransaction = false
+       const memPoolTransactions = getRawMemPool(CONFIRM_CLIENT);
+       if(memPoolTransactions.indexOf(txid)!==-1) isMemCacheTransaction = true
 
-      //TODO Security-Bug: Check if this transactions owner belongs to Bob's privateKey otherwise this interface could get used as backdoor for spam attacks
-      //logConfirm('checkNewTransaction tx:',{txid});
-      if(!txid){
-          logConfirm("checkNewTransaction in memcache");
+       console.log("isMemCacheTransaction"+isMemCacheTransaction);
+       console.log("txid",txid)
+
+       if(!isMemCacheTransaction){
+          logConfirm("checkNewTransaction for incoming block");
           try {
               var lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
               if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;
               logConfirm("lastCheckedBlock",lastCheckedBlock);
+
               const ret = listSinceBlock(CONFIRM_CLIENT, lastCheckedBlock);
+              //console.log('bla2',ret)
               if(ret === undefined || ret.transactions === undefined) return;
 
               const txs = ret.transactions;
               lastCheckedBlock = ret.lastblock;
+              console.log('lastCheckedBlock',"-"+ret.lastblock)
               if(!ret || !txs || txs.length===0){
-                //  logConfirm("transactions do not contain nameOp transaction details" +
-                  //    " or transaction not found.", ret);
+                  console.log('updating meta')
                   addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
-                  //addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
-                  return;
               }
-
+            // console.log("txs inside block",txs)
              // logConfirm("listSinceBlock",txs.length);
               const addressTxs = txs.filter(tx =>
                   tx.name !== undefined
                   && tx.name.startsWith("doi: "+TX_NAME_START)
               );
+              console.log("addressTxs",addressTxs)
 
               addressTxs.forEach(tx => {
                   logConfirm("checking if tx was already processed...",tx.address);
 
-                  //is this necessary because of security concerns and also because our own transactions hit us again - (we don't need them here)
-                 //FIX
-
                   const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [tx.address]}})
                       //Meta.findOne({key:"addresses_by_account", value:tx.address})
-                  console.log("isFoundMyAddress:"+tx.address+" "+isFoundMyAddress,isFoundMyAddress===undefined?'not found':'found')
+                  console.log("isFoundMyAddress: "+tx.address+" "+(isFoundMyAddress?'yes':'no'))
 
                   const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                   console.log("processedTxInOptIns:",processedTxInOptIns!==undefined)
@@ -58,17 +60,27 @@ const checkNewTransaction = (txid, job) => {
 
                       const txName = tx.name.substring(("doi: "+TX_NAME_START).length);
                       logConfirm("excuting name_show in order to get value of nameId:", txName);
-                      const ety = nameShow(CONFIRM_CLIENT, txName);
-                     // logConfirm("nameShow: value",ety);
-                      if(ety)
+                      let ety;
+                      try{
+                          ety = nameShow(CONFIRM_CLIENT, txName);
+                          logConfirm("nameShow: value",ety);
                           addNameTx(txName, ety.value,tx.address,tx.txid);
-                      else
+                      }catch(ex){
                           logConfirm("couldn't find name on blockchain - obviously not yet confirmed:", ety);
-
+                      }
                   }else{
                       logConfirm("not using this tx because it was already processed in mempool transaction");
                   }
               });
+              console.log("checking cointx")
+              const coinTxs = txs.filter(tx =>
+                  tx.name === undefined
+              );
+              coinTxs.forEach(tx => {
+                  console.log(tx)
+                  addCoinTx(tx.value,tx.address);
+              });
+
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
               logConfirm("transactions updated - lastCheckedBlock:",lastCheckedBlock);
              // job.done();
@@ -77,7 +89,7 @@ const checkNewTransaction = (txid, job) => {
           }
 
       }else{
-          logConfirm("txid: "+txid+" new block arrived");
+          logConfirm("txid: "+txid+" arrived in mem cache - checking for name and coin outputs");
 
           const ret = getRawTransaction(CONFIRM_CLIENT, txid);
 
@@ -87,7 +99,7 @@ const checkNewTransaction = (txid, job) => {
               logConfirm("txid "+txid+' does not contain transaction details or transaction not found.');
               return;
           }
-
+        console.log('txs',txs)
           const addressTxs = txs.filter(tx =>
               tx.scriptPubKey !== undefined
               && tx.scriptPubKey.nameOp !== undefined
@@ -99,8 +111,10 @@ const checkNewTransaction = (txid, job) => {
               tx.scriptPubKey.addresses.forEach(addr =>{
                   const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:addr})  //TODO use validataAddress (!)
                   console.log("tx was sent to one of my addresses:"+addr,isFoundMyAddress!==undefined)
-                  if(isFoundMyAddress!==undefined)
-                    addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid);
+                  if(isFoundMyAddress!==undefined){
+                      console.log("adding nameId to validator:",tx.scriptPubKey.nameOp.name)
+                      addNameTx(tx.scriptPubKey.nameOp.name, tx.scriptPubKey.nameOp.value,tx.scriptPubKey.addresses[0],txid)
+                  }
               })
           });
 
@@ -108,7 +122,7 @@ const checkNewTransaction = (txid, job) => {
               tx.scriptPubKey !== undefined && tx.scriptPubKey.nameOp === undefined
           );
           coinTxs.forEach(tx => {
-              //console.log("---->coinTX",tx)
+             // console.log("---->coinTX",tx)
               addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
           });
 

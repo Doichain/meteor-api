@@ -1,7 +1,14 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import { CONFIRM_CLIENT } from '../../../startup/server/doichain-configuration.js';
-import {getWif, signMessage, getTransaction, nameDoi, nameShow} from "../../../../server/api/doichain";
+import {
+    getWif,
+    signMessage,
+    getTransaction,
+    nameDoi,
+    nameShow,
+    getRawTransaction
+} from "../../../../server/api/doichain";
 import {API_PATH, DOI_CONFIRMATION_NOTIFY_ROUTE, VERSION} from "../../../../server/api/rest/rest";
 import {CONFIRM_ADDRESS} from "../../../startup/server/doichain-configuration";
 import {getHttpPUT} from "../../../../server/api/http";
@@ -9,6 +16,7 @@ import {logConfirm} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 import decryptMessage from "./decrypt_message";
 import {OptIns} from "../../../api/opt-ins/opt-ins";
+import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
 
 const UpdateSchema = new SimpleSchema({
   nameId: {
@@ -43,7 +51,7 @@ const update = (data, job) => {
         logConfirm('name not visible - delaying name update',ourData.nameId);
         return;
     }
-    const our_transaction = getTransaction(CONFIRM_CLIENT,name_data.txid);
+    //const our_transaction = getTransaction(CONFIRM_CLIENT,name_data.txid);
 
     //if the doi is already safed in blockchain
     if(name_data.value.indexOf('doiSignature')!=-1){
@@ -54,10 +62,16 @@ const update = (data, job) => {
     }
 
     logConfirm('updating blockchain with doiSignature:',JSON.parse(ourData.value));
-    const wif = getWif(CONFIRM_CLIENT, CONFIRM_ADDRESS);
+
+    const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
+    const address = rawTransaction.vout[0].scriptPubKey.addresses[0]
+    const wif = getWif(CONFIRM_CLIENT, address);
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here) in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
-    const ourfromHostUrl = decryptMessage({privateKey: privateKey, message: ourData.fromHostUrl});
+
+    const publicKey = getPublicKeyOfOriginTransaction(name_data.txid);
+    let ourfromHostUrl = decryptMessage({publicKey: publicKey, privateKey: privateKey, message: ourData.fromHostUrl});
+    if(!ourfromHostUrl.endsWith("/"))ourfromHostUrl+="/"
     logConfirm('decrypted fromHostUrl',ourfromHostUrl);
     const url = ourfromHostUrl+API_PATH+VERSION+"/"+DOI_CONFIRMATION_NOTIFY_ROUTE;
 
@@ -73,7 +87,9 @@ const update = (data, job) => {
 
     try {
         //TODO alice gets informed also in case something is wrong with the update
+        console.log("update doi confirmation url",url)
         const response = getHttpPUT(url, updateData);
+
         logConfirm('informed send dApp about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
 
         const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);

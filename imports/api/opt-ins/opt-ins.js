@@ -64,6 +64,14 @@ OptIns.schema = new SimpleSchema({
       optional: true,
  //     denyUpdate: false,
   },
+  templateDataEncrypted: {
+    type: String,
+    optional: true
+  },
+  validatorPublicKey: {
+    type: String,
+    optional: true
+  },
   masterDoi: {
       type: String,
       optional: true,

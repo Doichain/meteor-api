@@ -38,7 +38,7 @@ const sendMail = (mail) => {
     mail.from = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
 
     const ourMail = mail;
-    logConfirm('sending email with data:',{from: mail.from, to:mail.to, subject:mail.subject});
+    logConfirm('sending email with data:',{from: mail.from, to:mail.to, subject:mail.subject,returnPath:mail.returnPath});
     SendMailSchema.validate(ourMail);
     //TODO: Text fallback
     let emailToSend={

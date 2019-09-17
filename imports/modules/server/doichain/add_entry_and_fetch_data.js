@@ -8,6 +8,7 @@ import getPrivateKeyFromWif from './get_private-key_from_wif.js';
 import decryptMessage from './decrypt_message.js';
 import {logConfirm, logSend} from "../../../startup/server/log-configuration";
 import {Meta} from "../../../api/meta/meta";
+import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
 
 const AddDoichainEntrySchema = new SimpleSchema({
   name: {
@@ -63,11 +64,12 @@ const addDoichainEntry = (entry) => {
               })
     }
 
-
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here)');
 
-    const domain = decryptMessage({privateKey: privateKey, message: value.from});
+    //get public key of the originating transaction
+    const publicKey = getPublicKeyOfOriginTransaction(ourEntry.txId);
+    const domain = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
       logConfirm('decrypted message from domain: ',domain);
 
     const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
@@ -93,7 +95,8 @@ const addDoichainEntry = (entry) => {
     if(!masterDoi && !ourEntry.expired){
         addFetchDoiMailDataJob({
             name: ourEntry.name,
-            domain: domain
+            domain: domain,
+            txId: ourEntry.txId
         });
         logConfirm('New entry added: \n'+
             'NameId='+ourEntry.name+"\n"+

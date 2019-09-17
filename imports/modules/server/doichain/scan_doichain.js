@@ -23,6 +23,7 @@ import {OptIns} from "../../../api/opt-ins/opt-ins";
 import decryptMessage from "./decrypt_message";
 import {logMain} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
+import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
 
 
 const scan_Doichain = (rescan) => {
@@ -114,7 +115,8 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     while (!domain) {
                         const privateKey = getPrivateKeyFromWif({wif: wif});
                         try {
-                            domain = decryptMessage({privateKey: privateKey, message: nameValue.from});
+                            const publicKey = getPublicKeyOfOriginTransaction(nameId.txid);
+                            domain = decryptMessage({publicKey:publicKey,privateKey: privateKey, message: nameValue.from});
                         } catch (e) {
                             //console.log(i,addressesByAccount.value.length)
                             if (i === addressesByAccount.value.length) break;

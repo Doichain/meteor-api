@@ -6,11 +6,11 @@ const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
   if(!address){
-        address = getAddressesByAccount("")[0];
+        address = getAddressesByAccount(client,"")[0];
         logBlockchain('address was not defined so getting the first existing one of the wallet:',address);
   }
   if(!address){
-        address = getNewAddress("");
+        address = getNewAddress(client,"");
         logBlockchain('address was never defined  at all generated new address for this wallet:',address);
   }
   const syncFunc = Meteor.wrapAsync(doichain_dumpprivkey);
@@ -167,6 +167,28 @@ function doichain_nameDoi(client, name, value, address, callback) {
     }
 }
 
+export function sendRawTransaction(client, tx) {
+    const syncFunc = Meteor.wrapAsync(doichain_sendrawtransaction);
+    return syncFunc(client, tx);
+}
+
+function doichain_sendrawtransaction(client, tx, callback) {
+    client.cmd('sendrawtransaction', tx , function(err, data) {
+        callback(err, data);
+    });
+}
+
+export function getRawMemPool(client) {
+    const syncFunc = Meteor.wrapAsync(doichain_getrawmempool);
+    return syncFunc(client);
+}
+
+function doichain_getrawmempool(client, callback) {
+    client.cmd('getrawmempool', function(err, data) {
+        callback(err, data);
+    });
+}
+
 export function listSinceBlock(client, block) {
     const syncFunc = Meteor.wrapAsync(doichain_listSinceBlock);
     var ourBlock = block;
@@ -263,7 +285,7 @@ export function listUnspent(client, address) {
 }
 
 function list_unspent(client, address, callback) {
-    client.cmd('listunspent', 6,9999999,[address], function(err, data) {
+    client.cmd('listunspent', 1,9999999,[address], function(err, data) {
         if(err) { logError('list_unspent:', err);}
         callback(err, data);
     });

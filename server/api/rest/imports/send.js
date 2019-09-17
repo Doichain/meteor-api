@@ -14,9 +14,9 @@ import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Roles} from "meteor/alanning:roles";
 import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, resolveTxt} from "../../dns";
 import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
-import {importPubkey, listUnspent} from "../../doichain";
-import {sendRawTransaction} from "namecoin";
+import {importPubkey, listUnspent, sendRawTransaction} from "../../doichain";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
+import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -71,10 +71,24 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
     action: function() {
       const params = this.queryParams;
       try {
-          logSend('rest api - DOI_FETCH_ROUTE called by bob to request email template',JSON.stringify(params));
-          const data = getDoiMailData(params);
-          logSend('got doi-mail-data (including template) returning to bob',{subject:data.subject, recipient:data.recipient, redirect:data.redirect});
-        return {status: 'success', data};
+          logSend(`REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template`,JSON.stringify(params));
+          const optIn = OptIns.findOne({nameId:params.name_id})
+          logSend(`found DOI in db`,optIn)
+          if (optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
+              const publicKey = optIn.validatorPublicKey //the public
+              const templateDataEncrypted = optIn.templateDataEncrypted
+
+              // TODO - check signature of the calling party (we allow the repsonsible validator to ask for templateData
+              if(!verifySignature({publicKey: publicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
+
+              logSend("return encrypted template data for nameId",{nameId:optIn.nameId});
+              return {status: 'success',  encryptedData:templateDataEncrypted};
+          }
+          else{ //classic template request stored by a dApp
+              const data = getDoiMailData(params);
+              logSend('got doi-mail-data (including template) returning to validator',{subject:data.subject, recipient:data.recipient, redirect:data.redirect});
+              return {status: 'success', data};
+          }
       } catch(error) {
         logError('error while getting DoiMailData',error);
         return {status: 'fail', error: error.message};
@@ -166,7 +180,7 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
 });
 
 /**
- * Requests unconfirmed transactions (utxo) from a given address
+ * Requests unspent transactions (utxo) from a given address
  * Imports the given address into the nodes wallet for "watchonly"
  * Method: GET
  * Params: doichain address: address
@@ -181,6 +195,7 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
 
             try {
                 const data = listUnspent(SEND_CLIENT,address)
+               // console.log("listunspent for address:"+address,data)
                 return {status: 'success', data};
             } catch(error) {
                 logError('error getting utxo from adddress '+address,error);
@@ -200,21 +215,27 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
     post: {
         authRequired: false,
         action: function() {
-            const qParams = this.queryParams;
-            const bParams = this.bodyParams;
-            let params = {}
-            if(qParams !== undefined) params = {...qParams}
-            if(bParams !== undefined) params = {...params, ...bParams}
-
-            const tx = params.tx
-            const template = params.template //store this template together with the nameId
+            const params = this.bodyParams;
+            const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain)
+            const tx = params.tx //serialized raw transactino to broadcast
+            const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId
+            const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template
+            console.log("storing validatorPublicKey:"+validatorPublicKey);
             try {
+                //1. send tx to doichain
                 const data = sendRawTransaction(SEND_CLIENT,tx)
 
+                //2. store templateData together with nameId temporary in doichain dApps database
+                OptIns.insert({
+                    nameId:nameid,
+                    status: ['received'],
+                    templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
+                    validatorPublicKey: validatorPublicKey
+                });
 
                 return {status: 'success', data};
             } catch(error) {
-                logError('error getting utxo from adddress'+address,error);
+                logError('error broadcasting transaction to doichain network',error);
                 return {status: 'fail', error: error.message};
             }
 

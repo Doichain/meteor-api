@@ -9,6 +9,9 @@ const AddFetchDoiMailDataJobSchema = new SimpleSchema({
   },
   domain: {
     type: String
+  },
+  txId:{
+    type: String
   }
 });
 
