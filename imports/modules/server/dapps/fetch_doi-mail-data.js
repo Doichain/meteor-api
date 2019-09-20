@@ -16,7 +16,7 @@ import addSendMailJob from '../jobs/add_send_mail.js'
 import {logConfirm, logError} from "../../../startup/server/log-configuration"
 import updateDoichainEntry from "../opt-ins/update_doichain_entry"
 import decryptMessage from "../doichain/decrypt_message";
-import {getRawTransaction, getTransaction, getWif} from "../../../../server/api/doichain";
+import {getRawTransaction, getTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTransaction from "../doichain/getPublicKeyOfOriginTransaction";
 import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
 
@@ -50,7 +50,17 @@ const fetchDoiMailData = (data) => {
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE
 
         const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
-        const address = rawTransaction.vout[0].scriptPubKey.addresses[0]
+        let address
+        let outputIndex = 0
+        rawTransaction.vout.forEach(function (output) {
+            if(!address){
+                const our_address = rawTransaction.vout[outputIndex++].scriptPubKey.addresses[0]
+                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){
+                    address = our_address
+                }
+            }
+        })
+
         //console.log("address of our transaction",address)
 
         //we sign the nameId of this permission request with the correct privateKey so the requested can see it was us and not somebody else

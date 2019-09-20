@@ -7,7 +7,7 @@ import {
     getTransaction,
     nameDoi,
     nameShow,
-    getRawTransaction
+    getRawTransaction, validateAddress
 } from "../../../../server/api/doichain";
 import {API_PATH, DOI_CONFIRMATION_NOTIFY_ROUTE, VERSION} from "../../../../server/api/rest/rest";
 import {CONFIRM_ADDRESS} from "../../../startup/server/doichain-configuration";
@@ -61,10 +61,22 @@ const update = (data, job) => {
         return;
     }
 
-    logConfirm('updating blockchain with doiSignature:',JSON.parse(ourData.value));
+    logConfirm('updating txtId '+name_data.txid+' blockchain with doiSignature:',JSON.parse(ourData.value));
 
-    const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
-    const address = rawTransaction.vout[0].scriptPubKey.addresses[0]
+    const rawTransaction = getRawTransaction(CONFIRM_CLIENT,name_data.txid)
+
+    let address
+    let outputIndex = 0
+    rawTransaction.vout.forEach(function (output) { //checking out the correct output
+          if(!address){
+              const our_address = rawTransaction.vout[outputIndex++].scriptPubKey.addresses[0]
+              if(validateAddress(CONFIRM_CLIENT,our_address).ismine){
+                  address = our_address
+              }
+          }
+    })
+
+   // const address = rawTransaction.vout[0].scriptPubKey.addresses[0]
     const wif = getWif(CONFIRM_CLIENT, address);
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here) in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
