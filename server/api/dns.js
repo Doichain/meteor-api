@@ -16,7 +16,6 @@ export function resolveTxt(key, domain) {
       if(record[0].startsWith(key)) {
         const val = record[0].substring(key.length+1);
         value = val.trim();
-
       }
     });
     return value;

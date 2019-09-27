@@ -17,6 +17,7 @@ import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-conf
 import {importPubkey, listUnspent, sendRawTransaction} from "../../doichain";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
+import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -169,7 +170,7 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
                 ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
             }
             try {
-                const data = resolveTxt(ourOPT_IN_KEY,domain)
+                const data = getOptInKey({domain:domain})
                 return {status: 'success', data};
             } catch(error) {
                 logError('requesting public key from public dns',error);

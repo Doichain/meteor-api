@@ -21,7 +21,7 @@ import {
 import {Meta} from "../../../api/meta/meta";
 import {OptIns} from "../../../api/opt-ins/opt-ins";
 import decryptMessage from "./decrypt_message";
-import {logMain} from "../../../startup/server/log-configuration";
+import {logMain,logError} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
 
@@ -87,22 +87,22 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
     //0. get all nameId's which ever touched this node
     const ourNameIds = nameList(CONFIRM_CLIENT)
     //2. loop through the names and get and store detail information in dApp
-    console.log('ourNameIds',ourNameIds)
+    //console.log('ourNameIds',ourNameIds)
     ourNameIds.forEach(function (nameId) {
-            console.log(lastBlockHeight+" "+nameId.height,nameId.address)
+        try {
+            console.log(lastBlockHeight + " " + nameId.height, nameId.address)
 
-            if(lastBlockHeight<=nameId.height) {
+            if (lastBlockHeight <= nameId.height) {
 
                 const tx = getTransaction(CONFIRM_CLIENT, nameId.txid)
 
+
                 const nameValue = JSON.parse(nameId.value)
                 const address = nameId.address
-
                 const thisNameId = nameId.name.substring(2)
-                const foundExistingOptIn = OptIns.findOne({nameId:thisNameId})
-                //const status = ['on blockchain']
+                const foundExistingOptIn = OptIns.findOne({nameId: thisNameId})
 
-                const isOurAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [address]}})
+                const isOurAddress = Meta.findOne({key: "addresses_by_account", value: {"$in": [address]}})
 
                 const hasSignature = nameValue.signature ? true : false
                 const hasDoiSignature = nameValue.doiSignature ? true : false
@@ -116,7 +116,11 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                         const privateKey = getPrivateKeyFromWif({wif: wif});
                         try {
                             const publicKey = getPublicKeyOfOriginTransaction(nameId.txid);
-                            domain = decryptMessage({publicKey:publicKey,privateKey: privateKey, message: nameValue.from});
+                            domain = decryptMessage({
+                                publicKey: publicKey,
+                                privateKey: privateKey,
+                                message: nameValue.from
+                            });
                         } catch (e) {
                             //console.log(i,addressesByAccount.value.length)
                             if (i === addressesByAccount.value.length) break;
@@ -135,7 +139,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     txId: nameId.txid,
                     createdAt: new Date(tx.time * 1000),
                     value: nameId.value,
-                    status: (foundExistingOptIn && foundExistingOptIn.status)?foundExistingOptIn.status:['scanned'],
+                    status: (foundExistingOptIn && foundExistingOptIn.status) ? foundExistingOptIn.status : ['scanned'],
                     confirmations: tx.confirmations,
                     domain: domain
                 }
@@ -145,7 +149,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                 //if a nameId has our address, a signature and a doi signature it was also confirmed by us.
                 //TODO this is not yet 100% correct in all cases e.g. when transaction send to another doicoin address for later use
                 //in this yase we must extend 'isOurAddress' in order to check name_history if this name was once our address
-                if (hasSignature && isOurAddress  && !hasDoiSignature){
+                if (hasSignature && isOurAddress && !hasDoiSignature) {
                     ourReceivedDois++  //by validator
                     optInFound.receivedByValidator = true
                 }
@@ -154,11 +158,11 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     ourConfirmedDois++
                     optInFound.confirmedByValidator = true
                 }
-                if (hasSignature && !isOurAddress && !hasDoiSignature){
+                if (hasSignature && !isOurAddress && !hasDoiSignature) {
                     ourRequestedDois++ //send dApp reqestes
                     optInFound.ourRequestedDoi = true
                 }
-                if(!hasDoiSignature) {  //if nameId has no DOI signature in the own local record (name_list) but in the current blockchain (name_show) then it got confirmed
+                if (!hasDoiSignature) {  //if nameId has no DOI signature in the own local record (name_list) but in the current blockchain (name_show) then it got confirmed
                     const nameShowDetail = JSON.parse(nameShow(CONFIRM_CLIENT, nameId.name).value)
                     if (nameShowDetail.doiSignature) {
                         optInFound.ourRequestedAndConfirmedDois = true
@@ -168,25 +172,28 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
 
                 if (hasDoiSignature) optInFound.confirmedAt = new Date(tx.blocktime * 1000);
                 //only update when its really the same not when it has a different txId (could be a DOI!)
-                if(foundExistingOptIn && optInFound.txId===foundExistingOptIn.txId){
-                    OptIns.update({nameId:thisNameId},{$set:optInFound})
-                }
-                else //if database was corrupted or only private key is available*/
+                if (foundExistingOptIn && optInFound.txId === foundExistingOptIn.txId) {
+                    OptIns.update({nameId: thisNameId}, {$set: optInFound})
+                } else //if database was corrupted or only private key is available*/
                     OptIns.insert(optInFound)
 
                 // OptIns.upsert({nameId:nameId}, {$set: optInFound })
                 //3. count requested and confirmed DOI's
-                console.log("ourRequestedDois",ourRequestedDois)
-                console.log("ourRequestedAndConfirmedDois",ourRequestedAndConfirmedDois)
-                console.log("ourReceivedDois",ourReceivedDois)
-                console.log("ourConfirmedDois",ourConfirmedDois)
+                console.log("ourRequestedDois", ourRequestedDois)
+                console.log("ourRequestedAndConfirmedDois", ourRequestedAndConfirmedDois)
+                console.log("ourReceivedDois", ourReceivedDois)
+                console.log("ourConfirmedDois", ourConfirmedDois)
 
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS, ourRequestedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS, ourRequestedAndConfirmedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS, ourReceivedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS, ourConfirmedDois)
             } //if lastblockheight
-    })
+
+        }catch(exception){
+            logError('problem while scanning nameId exception:'+exception,nameId)
+        }
+    })//for each nameId
     storeMeta(BLOCKCHAIN_SCAN_STATE, BLOCKCHAIN_SCAN_STATE_STOPPED)
 }
 
