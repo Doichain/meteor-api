@@ -191,7 +191,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
             } //if lastblockheight
 
         }catch(exception){
-            logError('problem while scanning nameId exception:'+exception,nameId)
+            logError('problem while scanning nameId exception - not counting:'+exception,nameId)
         }
     })//for each nameId
     storeMeta(BLOCKCHAIN_SCAN_STATE, BLOCKCHAIN_SCAN_STATE_STOPPED)
@@ -224,22 +224,26 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
         const txs = block.tx
         //loop through all transactions
         txs.forEach(function (tx) {
-            const txRawContent = getRawTransaction(CONFIRM_CLIENT,tx)
-            const outputs = txRawContent.vout
-            outputs.forEach(function (thisOutput) {
-                if(thisOutput.scriptPubKey.nameOp){
-                    const nameValue =  JSON.parse(thisOutput.scriptPubKey.nameOp.value)
-                    const hasSignature =nameValue.signature?true:false
-                    const hasDoiSignature = nameValue.doiSignature?true:false
+            try {
+                const txRawContent = getRawTransaction(CONFIRM_CLIENT,tx)
+                const outputs = txRawContent.vout
+                outputs.forEach(function (thisOutput) {
+                    if(thisOutput.scriptPubKey.nameOp){
+                        const nameValue =  JSON.parse(thisOutput.scriptPubKey.nameOp.value)
+                        const hasSignature =nameValue.signature?true:false
+                        const hasDoiSignature = nameValue.doiSignature?true:false
 
-                    if(hasDoiSignature) allConfirmedDois++
-                    if(hasSignature && !hasDoiSignature)  allRequestedDois++
-                }
-                console.log("allRequestedDois",allRequestedDois)
-                console.log("allConfirmedDois",allConfirmedDois)
-                storeMeta(BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS, allRequestedDois)
-                storeMeta(BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS, allConfirmedDois)
-            })
+                        if(hasDoiSignature) allConfirmedDois++
+                        if(hasSignature && !hasDoiSignature)  allRequestedDois++
+                    }
+                    console.log("allRequestedDois",allRequestedDois)
+                    console.log("allConfirmedDois",allConfirmedDois)
+                    storeMeta(BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS, allRequestedDois)
+                    storeMeta(BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS, allConfirmedDois)
+                })
+            }catch(exception){
+                logError('problem while scanning nameId exception - not counting tx:'+exception,tx)
+            }
         })
     }
     console.log(rescan,lastBlockHeight)
