@@ -19,6 +19,7 @@ import decryptMessage from "../doichain/decrypt_message";
 import {getRawTransaction, getTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTransaction from "../doichain/getPublicKeyOfOriginTransaction";
 import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
+import {isRegtest} from "../../../startup/server/dapp-configuration";
 
 const FetchDoiMailDataSchema = new SimpleSchema({
     name: {
@@ -42,10 +43,7 @@ const fetchDoiMailData = (data) => {
     const ourData = data;
     try {
         FetchDoiMailDataSchema.validate(ourData);
-        //console.log("domain",ourData.domain)
-
-        if(!ourData.domain.startsWith("http://") || !ourData.domain.startsWith("https://")) //only in case of regtest
-            ourData.domain = "http://localhost:3000/"
+        if(isRegtest()) ourData.domain = "http://localhost:3000/"
 
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE
 
