@@ -3,11 +3,11 @@ import {getRawTransaction} from "../../../../server/api/doichain";
 
 const getPublicKeyOfOriginTransaction = (txid) => {
     const rawTx = getRawTransaction(CONFIRM_CLIENT,txid)
-    console.log("rawTx",rawTx)
+    //console.log("rawTx",rawTx)
     const asm = rawTx.vin[0].scriptSig.asm;
-    console.log("asm",asm)
+    //console.log("asm",asm)
     const publicKey = asm.substring(asm.indexOf('[ALL] ')+6)
-    console.log("publicKey",publicKey)
+    //console.log("publicKey",publicKey)
     return publicKey;
 }
 

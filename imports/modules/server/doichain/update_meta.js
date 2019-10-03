@@ -27,7 +27,7 @@ function updateMeta(){
 
     checkNewTransaction(null,null); //always put this to the end otherwise data might not yet got saved
 
-    scan_Doichain()
+    scan_Doichain(false)
 }
 
 export default updateMeta

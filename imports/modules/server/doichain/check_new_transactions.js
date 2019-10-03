@@ -17,7 +17,7 @@ const checkNewTransaction = (txid, job) => {
        const memPoolTransactions = getRawMemPool(CONFIRM_CLIENT);
        if(memPoolTransactions.indexOf(txid)!==-1) isMemCacheTransaction = true
 
-       console.log("isMemCacheTransaction"+isMemCacheTransaction);
+       console.log("isMemCacheTransaction",isMemCacheTransaction);
        console.log("txid",txid)
 
        if(!isMemCacheTransaction){
@@ -99,7 +99,7 @@ const checkNewTransaction = (txid, job) => {
               logConfirm("txid "+txid+' does not contain transaction details or transaction not found.');
               return;
           }
-        console.log('txs',txs)
+       // console.log('txs',txs)
           const addressTxs = txs.filter(tx =>
               tx.scriptPubKey !== undefined
               && tx.scriptPubKey.nameOp !== undefined

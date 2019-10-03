@@ -9,6 +9,7 @@ import decryptMessage from './decrypt_message.js';
 import {logConfirm, logSend} from "../../../startup/server/log-configuration";
 import {Meta} from "../../../api/meta/meta";
 import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
+import {getRawTransaction} from "../../../../server/api/doichain";
 
 const AddDoichainEntrySchema = new SimpleSchema({
   name: {
@@ -35,7 +36,7 @@ const addDoichainEntry = (entry) => {
   try {
 
     const ourEntry = entry;
-    logConfirm('adding DoichainEntry on Bob...',ourEntry.name);
+    logConfirm('adding DoichainEntry on validator (Bob) ...',ourEntry.name);
     AddDoichainEntrySchema.validate(ourEntry);
 
     const ety = DoichainEntries.findOne({name: ourEntry.name});
@@ -50,34 +51,44 @@ const addDoichainEntry = (entry) => {
         logConfirm('seems like we are rescanning blockchain, this doi permission was has already a doi signuate (exiting):',value.doiSignature);
         return
     }
-    if(value.from === undefined) throw "Wrong blockchain entry"; //TODO if from is missing but value is there, it is probably already handled correctly anyways this is not so cool as it seems.
+    if(value.from === undefined) throw "From was not given, or DOI signature already written";
 
-    //TODO confirm address here? Is it really nessary to configure? since inside the
-    // transaction the address is already given. no need to configure it at all!
-    // take out this address and get private key!
+    let privateKey = null
+    let validatorAddress = null;
+    logConfirm("getting raw transaction for tx",ourEntry.txId)
+    const vouts = getRawTransaction(CONFIRM_CLIENT,ourEntry.txId).vout
+    //logConfirm("vouts",vouts)
+    vouts.forEach((output) => {
+        console.log('hello',output)
+        if(output.scriptPubKey.nameOp) {
+            logConfirm('validator parses output of incoming soi permission to find read address', output.scriptPubKey.nameOp.name)
+            logConfirm('output.scriptPubKey.nameOp', output.scriptPubKey.nameOp)
+            logConfirm('output.scriptPubKey.addresses', output.scriptPubKey.addresses)
 
-    let wif
-    const addressesByAccount  = Meta.findOne({key: "addresses_by_account"})
-    if(addressesByAccount !== undefined){
-              addressesByAccount.value.forEach(function (addr) {
-                  wif = getWif(CONFIRM_CLIENT, addr);
-              })
-    }
+            const nameId = entry.name.startsWith("e/")?entry.name:"e/"+entry.name
+            if(output.scriptPubKey && output.scriptPubKey.nameOp &&
+                output.scriptPubKey.nameOp.name===nameId){
+                validatorAddress = output.scriptPubKey.addresses[0]
+                privateKey = getPrivateKeyFromWif({wif:getWif(CONFIRM_CLIENT,validatorAddress)});
+                logConfirm("privateKey",privateKey)
+            }
+        }else{logConfirm("no name op transaction")}
+    })
+    logConfirm('got private key of validator address',validatorAddress);
 
-    const privateKey = getPrivateKeyFromWif({wif: wif});
-    logConfirm('got private key (will not show it here)');
-
-    //get public key of the originating transaction
     const publicKey = getPublicKeyOfOriginTransaction(ourEntry.txId);
+    console.log('got publicKey from decryption of message from TX',publicKey)
     const domain = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
-      logConfirm('decrypted message from domain: ',domain);
+    logConfirm('decrypted message from domain: ',domain);
 
     const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
-      logConfirm('namePos:',namePos);
+    logConfirm('namePos:',namePos);
+
     const masterDoi = (namePos!=-1)?ourEntry.name.substring(0,namePos):undefined;
-      logConfirm('masterDoi:',masterDoi);
+    logConfirm('masterDoi:',masterDoi);
+
     const index = masterDoi?ourEntry.name.substring(namePos+1):undefined;
-      logConfirm('index:',index);
+    logConfirm('index:',index);
 
     const id = DoichainEntries.insert({
         name: ourEntry.name,
@@ -90,7 +101,7 @@ const addDoichainEntry = (entry) => {
         expired: ourEntry.expired
     });
 
-    logConfirm('DoichainEntry added on Bob:', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
+    logConfirm('DoichainEntry added on validator (Bob):', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
 
     if(!masterDoi && !ourEntry.expired){
         addFetchDoiMailDataJob({

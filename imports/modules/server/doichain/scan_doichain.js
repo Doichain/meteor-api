@@ -179,10 +179,10 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
 
                 // OptIns.upsert({nameId:nameId}, {$set: optInFound })
                 //3. count requested and confirmed DOI's
-                console.log("ourRequestedDois", ourRequestedDois)
+             /*   console.log("ourRequestedDois", ourRequestedDois)
                 console.log("ourRequestedAndConfirmedDois", ourRequestedAndConfirmedDois)
                 console.log("ourReceivedDois", ourReceivedDois)
-                console.log("ourConfirmedDois", ourConfirmedDois)
+                console.log("ourConfirmedDois", ourConfirmedDois) */
 
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS, ourRequestedDois)
                 storeMeta(BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS, ourRequestedAndConfirmedDois)
@@ -236,8 +236,8 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
                         if(hasDoiSignature) allConfirmedDois++
                         if(hasSignature && !hasDoiSignature)  allRequestedDois++
                     }
-                    console.log("allRequestedDois",allRequestedDois)
-                    console.log("allConfirmedDois",allConfirmedDois)
+                   /* console.log("allRequestedDois",allRequestedDois)
+                    console.log("allConfirmedDois",allConfirmedDois)*/
                     storeMeta(BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS, allRequestedDois)
                     storeMeta(BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS, allConfirmedDois)
                 })
