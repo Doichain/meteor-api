@@ -30,10 +30,10 @@ const confirmOptIn = (request) => {
       return decoded.redirect;
     }
     const confirmedAt = new Date();
-//TODO after confirmation we deleted the confonfirmationtoken, now we keep it. can this be a security problem?
+
+    //TODO after confirmation we deleted the confonfirmationtoken, now we keep it. can this be a security problem?
     OptIns.update({_id : optIn._id},{$set:{confirmedAt: confirmedAt, confirmedBy: ourRequest.host}});
 
-    //TODO here find all DoichainEntries in the local database  and blockchain with the same masterDoi
     const entries = DoichainEntries.find({$or: [{name: optIn.nameId}, {masterDoi: optIn.nameId}]});
     if(entries === undefined) throw "Doichain entry/entries not found";
 
@@ -43,7 +43,7 @@ const confirmOptIn = (request) => {
         const value = JSON.parse(entry.value);
         logConfirm('getSignature (only of value!)', value);
 
-        const doiSignature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, value.signature);
+        const doiSignature = signMessage(CONFIRM_CLIENT, optIn.address, value.signature);
         logConfirm('got doiSignature:',doiSignature);
         const fromHostUrl = value.from;
 

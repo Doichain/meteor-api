@@ -35,6 +35,7 @@ const SendMailSchema = new SimpleSchema({
 const sendMail = (mail) => {
   try {
 
+    const doicheinEmailFooter = "Doichain Footer"
     mail.from = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
 
     const ourMail = mail;
@@ -49,21 +50,21 @@ const sendMail = (mail) => {
         'Return-Path': mail.returnPath,
       }
     }
-    
+
     switch (mail.contentType) {
       case "text":
-        emailToSend.text=mail.message;
+        emailToSend.text=mail.message+"\n"+doicheinEmailFooter;
         break;
       case "html":
-        emailToSend.html=mail.message;
+        emailToSend.html=mail.message+doicheinEmailFooter;
         break;
       case "json":
         let mailParts=JSON.parse(mail.message);
-        emailToSend.text=mailParts.text;
-        emailToSend.html=mailParts.html;
+        emailToSend.text=mailParts.text+"\n"+doicheinEmailFooter;
+        emailToSend.html=mailParts.html+doicheinEmailFooter;
         break;
       default:
-        emailToSend.html=mail.message; //fallback to 0.0.8
+        emailToSend.html=mail.message+doicheinEmailFooter; //downward compatible to 0.0.8
         break;
     }
 
