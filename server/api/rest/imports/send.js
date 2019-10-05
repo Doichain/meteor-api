@@ -14,7 +14,7 @@ import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Roles} from "meteor/alanning:roles";
 import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, resolveTxt} from "../../dns";
 import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
-import {importPubkey, listUnspent, sendRawTransaction} from "../../doichain";
+import {importAddress, importPubkey, listUnspent, sendRawTransaction, validateAddress} from "../../doichain";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
@@ -132,6 +132,7 @@ Api.addRoute(DOI_EXPORT_ROUTE, {
  * Params: doichain address: address
  * Example: https://localhost:3010/api/v1/importpubkey?pubkey=
  */
+/*
 Api.addRoute(DOICHAIN_IMPORT_PUBKEY, {
     get: {
         authRequired: false,
@@ -149,8 +150,7 @@ Api.addRoute(DOICHAIN_IMPORT_PUBKEY, {
             }
         }
     }
-});
-
+}); */
 /**
  * Makes a DNS request and requests for the doichain public-key for the given domain and network
  * Method: GET
@@ -182,7 +182,8 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
 
 /**
  * Requests unspent transactions (utxo) from a given address
- * Imports the given address into the nodes wallet for "watchonly"
+ * 1. Imports the given address into the nodes wallet for "watchonly" if not already imported.
+ * 2. TODO only import if address is a verified address (send a signature of the email address together with the address + a publicKey)
  * Method: GET
  * Params: doichain address: address
  * Example: https://localhost:3000/api/v1/listunspent?address=mj1FQKeXxdUrWJkrRti8iy2utHqarcrSoB
@@ -195,9 +196,29 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
             const address = params.address;
 
             try {
-                const data = listUnspent(SEND_CLIENT,address)
-               // console.log("listunspent for address:"+address,data)
-                return {status: 'success', data};
+                const addressValidation = validateAddress(SEND_CLIENT,address);
+                console.log("addressValidation",addressValidation)
+                if(!addressValidation.isvalid){
+                    logError('doichain address not valid: '+address);
+                    return {status: 'fail', error: 'doichain address not valid: '+address};
+                }
+
+                if(addressValidation.isvalid && (addressValidation.ismine || addressValidation.iswatchonly)){
+                    const data = listUnspent(SEND_CLIENT,address)
+                    return {status: 'success',ismine:addressValidation.ismine, iswatchonly: addressValidation.iswatchonly, data};
+                }
+
+                if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly)){
+                    const data = listUnspent(SEND_CLIENT,address)
+                    return {status: 'success',ismine:addressValidation.ismine, iswatchonly: addressValidation.iswatchonly, data};
+                }
+
+                if(addressValidation.isvalid && (!addressValidation.ismine && !addressValidation.iswatchonly)){
+                    importAddress(SEND_CLIENT,address)
+                    const data = listUnspent(SEND_CLIENT,address)
+                    return {status: 'address imported sucessfully',ismineold:addressValidation.ismine,ismine:true, iswatchonly: addressValidation.iswatchonly, data};
+                }
+
             } catch(error) {
                 logError('error getting utxo from adddress '+address,error);
                 return {status: 'fail', error: error.message};

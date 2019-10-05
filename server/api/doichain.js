@@ -267,6 +267,18 @@ function doichain_getrawtransaction(client, txid, callback) {
     });
 }
 
+export function importAddress(client, address) {
+    const syncFunc = Meteor.wrapAsync(doichain_importaddress);
+    return syncFunc(client, address);
+}
+
+function doichain_importaddress(client, address, callback) {
+    client.cmd('importaddress', address, function(err, data) {
+        if(err) { logError('doichain_importaddress:', err);}
+        callback(err, data);
+    });
+}
+
 export function importPubkey(client, pubkey) {
     const syncFunc = Meteor.wrapAsync(doichain_importpubkey);
     return syncFunc(client, pubkey);
