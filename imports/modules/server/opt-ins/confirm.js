@@ -22,7 +22,7 @@ const confirmOptIn = (request) => {
     const ourRequest = request;
     ConfirmOptInSchema.validate(ourRequest);
     const decoded = decodeDoiHash({hash: request.hash});
-    console.log('decoded be',decoded)
+    console.log('decoded hash',decoded)
     const optIn = OptIns.findOne({_id: decoded.id});
     if(optIn === undefined || optIn.confirmationToken !== decoded.token) throw "Invalid hash";
     if(optIn.confirmationToken === decoded.token && optIn.confirmedAt != undefined){ // Opt-In was already confirmed on email click
@@ -30,7 +30,7 @@ const confirmOptIn = (request) => {
       return decoded.redirect;
     }
     const confirmedAt = new Date();
-
+    console.log('found opt in to confirm',optIn)
     //TODO after confirmation we deleted the confonfirmationtoken, now we keep it. can this be a security problem?
     OptIns.update({_id : optIn._id},{$set:{confirmedAt: confirmedAt, confirmedBy: ourRequest.host}});
 
@@ -43,7 +43,8 @@ const confirmOptIn = (request) => {
         const value = JSON.parse(entry.value);
         logConfirm('getSignature (only of value!)', value);
 
-        const doiSignature = signMessage(CONFIRM_CLIENT, optIn.address, value.signature);
+        logConfirm('creating DOI signature with address'+entry.address,value.signature);
+        const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature);
         logConfirm('got doiSignature:',doiSignature);
         const fromHostUrl = value.from;
 

@@ -14,7 +14,14 @@ import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Roles} from "meteor/alanning:roles";
 import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, resolveTxt} from "../../dns";
 import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
-import {importAddress, importPubkey, listUnspent, sendRawTransaction, validateAddress} from "../../doichain";
+import {
+    getRawTransaction,
+    importAddress,
+    importPubkey,
+    listUnspent,
+    sendRawTransaction,
+    validateAddress
+} from "../../doichain";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
@@ -228,9 +235,10 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
 });
 
 /**
- * Broadcasts a serialized raw transaction to the Doichain network
+ * Broadcasts a serialized raw transaction to the Doichain network, stores templateData on the Doichain node.
  * Params: serialized transaction hash
  * Method: POST
+ * Return: tx - the transaction id, utxo (the unconfirmed - unspent transaction of this tx)
  * Example:mExample: https://localhost:3000/api/v1/sendrawtransaction
  */
 Api.addRoute(DOICHAIN_BROADCAST_TX, {
@@ -238,29 +246,41 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         authRequired: false,
         action: function() {
             const params = this.bodyParams;
-            const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain)
-            const tx = params.tx //serialized raw transactino to broadcast
-            const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId
-            const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template
-            console.log("storing validatorPublicKey:"+validatorPublicKey);
-            try {
-                //1. send tx to doichain
-                const data = sendRawTransaction(SEND_CLIENT,tx)
+            //is this a standard DOI coin transaction or a DOI request transaction?
+            if((!params.nameId ||
+                !params.templateDataEncrypted ||
+                !params.validatorPublicKey)
+                && params.tx){
 
-                //2. store templateData together with nameId temporary in doichain dApps database
-                OptIns.insert({
-                    nameId:nameid,
-                    status: ['received'],
-                    templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
-                    validatorPublicKey: validatorPublicKey
-                });
-
+                const data = sendRawTransaction(SEND_CLIENT,params.tx)
+                const txRaw = getRawTransaction(SEND_CLIENT,data.result)
+                console.log(txRaw)
                 return {status: 'success', data};
-            } catch(error) {
-                logError('error broadcasting transaction to doichain network',error);
-                return {status: 'fail', error: error.message};
             }
+            else{
+                const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill our database
+                const tx = params.tx //serialized raw transactino to broadcast
+                const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId //TODO security please ensure ddos attacks - cleanup or make sure template size can be limited in configuration
+                const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template //TODO please validate if this is a publickey (and not a ton of books)
+                console.log("storing validatorPublicKey:"+validatorPublicKey);
+                try {
+                    //1. send tx to doichain
+                    const data = sendRawTransaction(SEND_CLIENT,tx)
 
+                    //2. store templateData together with nameId temporary in doichain dApps database
+                    OptIns.insert({
+                        nameId:nameid,
+                        status: ['received'],
+                        templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
+                        validatorPublicKey: validatorPublicKey
+                    });
+
+                    return {status: 'success', data};
+                } catch(error) {
+                    logError('error broadcasting transaction to doichain network',error);
+                    return {status: 'fail', error: error.message};
+                }
+            }
         }
     }
 });

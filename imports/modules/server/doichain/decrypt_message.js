@@ -1,4 +1,4 @@
-import { Meteor } from 'meteor/meteor';
+import {Meteor} from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import crypto from 'crypto';
 import ecies from 'standard-ecies';
@@ -7,16 +7,16 @@ import eccrypto from 'eccrypto'
 import bitcore from "bitcore";
 
 const DecryptMessageSchema = new SimpleSchema({
-  privateKey: {
-    type: String
-  },
-  publicKey: {
-    type: String,
-    optional: true
-  },
-  message: {
-    type: String
-  }
+    privateKey: {
+        type: String
+    },
+    publicKey: {
+        type: String,
+        optional: true
+    },
+    message: {
+        type: String
+    }
 });
 
 /**
@@ -33,27 +33,27 @@ const DecryptMessageSchema = new SimpleSchema({
  * @returns {*}
  */
 const decryptMessage = (data) => {
-  try {
-    const ourData = data;
-    DecryptMessageSchema.validate(ourData);
-    const privateKey = Buffer.from(ourData.privateKey, 'hex');
-    const ecdh = crypto.createECDH('secp256k1');
-    ecdh.setPrivateKey(privateKey,'hex');
-    try{
-      const message = Buffer.from(ourData.message, 'hex');
-      return ecies.decrypt(ecdh, message).toString('utf8');
-    }catch(exception0){
-      //try to decrypt with shared secret and aes (we use the following option in the javascript library - the upper in hte classic dApp
-      //TODO this is quite a hack which needs to be solved. In future we might remove the first variant
-      console.log('standard dApp ecies decryption didn`t work, truying ecdh with a shared scret')
-      const secret = ecdh.computeSecret(ourData.publicKey, 'hex').toString('hex')
-      const bytes  = CryptoJS.AES.decrypt(ourData.message, secret);
-      const message  = bytes.toString(CryptoJS.enc.Utf8);
-      return message
-    }
-  } catch(exception1) {
-    console.log('exception 1',exception1)
-    throw new Meteor.Error('doichain.decryptMessage.exception', exception1);
+    try {
+        const ourData = data;
+        DecryptMessageSchema.validate(ourData);
+        const privateKey = Buffer.from(ourData.privateKey, 'hex');
+        const ecdh = crypto.createECDH('secp256k1');
+        ecdh.setPrivateKey(privateKey, 'hex');
+        try {
+            const message = Buffer.from(ourData.message, 'hex');
+            return ecies.decrypt(ecdh, message).toString('utf8');
+        } catch (exception0) {
+            //try to decrypt with shared secret and aes (we use the following option in the javascript library - the upper in hte classic dApp
+            //TODO this is quite a hack which needs to be solved. In future we might remove the first variant
+            console.log('standard dApp ecies decryption didn`t work, truying ecdh with a shared scret')
+            const secret = ecdh.computeSecret(ourData.publicKey, 'hex').toString('hex')
+            const bytes = CryptoJS.AES.decrypt(ourData.message, secret);
+            const message = bytes.toString(CryptoJS.enc.Utf8);
+            return message
+        }
+    } catch (exception1) {
+        console.log('exception 1', exception1)
+        throw new Meteor.Error('doichain.decryptMessage.exception', exception1);
     }
 };
 
