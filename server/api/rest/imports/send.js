@@ -254,7 +254,8 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 const data = sendRawTransaction(SEND_CLIENT,params.tx)
                 const txRaw = getRawTransaction(SEND_CLIENT,data.result)
-                console.log(txRaw)
+                if(txRaw)data.txRaw = txRaw
+                logSend(txRaw)
                 return {status: 'success', data};
             }
             else{
@@ -262,7 +263,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 const tx = params.tx //serialized raw transactino to broadcast
                 const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId //TODO security please ensure ddos attacks - cleanup or make sure template size can be limited in configuration
                 const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template //TODO please validate if this is a publickey (and not a ton of books)
-                console.log("storing validatorPublicKey:"+validatorPublicKey);
+                logSend("storing validatorPublicKey:"+validatorPublicKey);
                 try {
                     //1. send tx to doichain
                     const data = sendRawTransaction(SEND_CLIENT,tx)
