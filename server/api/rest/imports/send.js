@@ -228,10 +228,12 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 try {
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
-                    const txRaw = getRawTransaction(SEND_CLIENT,data.result)
-                    if(txRaw)data.txRaw = txRaw
+                    //logSend(data)
+                    if(!data) logError("problem with transaction not txid",data)
+                    const txRaw = getRawTransaction(SEND_CLIENT,data)
+                    //if(txRaw)data.txRaw = txRaw
                     logSend(txRaw)
-                    return {status: 'success', data};
+                    return {status: 'success', txRaw};
                 } catch(error) {
                     logError('error broadcasting transaction to doichain network',error);
                     return {status: 'fail', error: error.message};
@@ -246,7 +248,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 try {
                     //1. send tx to doichain
                     const data = sendRawTransaction(SEND_CLIENT,tx)
-
+                    const txRaw = getRawTransaction(SEND_CLIENT,data)
                     //2. store templateData together with nameId temporary in doichain dApps database
                     OptIns.insert({
                         nameId:nameid,
@@ -255,7 +257,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                         validatorPublicKey: validatorPublicKey
                     });
 
-                    return {status: 'success', data};
+                    return {status: 'success', txRaw};
                 } catch(error) {
                     logError('error broadcasting transaction to doichain network',error);
                     return {status: 'fail', error: error.message};
