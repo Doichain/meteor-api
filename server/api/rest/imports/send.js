@@ -132,33 +132,6 @@ Api.addRoute(DOI_EXPORT_ROUTE, {
 });
 
 /**
- *
- * Adds a public key (in hex) that can be watched as if it were in your wallet but cannot be used to spend.
- *
- * Method: GET
- * Params: doichain address: address
- * Example: https://localhost:3010/api/v1/importpubkey?pubkey=
- */
-/*
-Api.addRoute(DOICHAIN_IMPORT_PUBKEY, {
-    get: {
-        authRequired: false,
-        action: function() {
-            const params = this.queryParams;
-            const pubkey = params.pubkey;
-            console.log("requesting pubkey",pubkey)
-             try {
-                const data = importPubkey(SEND_CLIENT,pubkey)
-                 console.log("pubkey imported",pubkey)
-                return {status: 'success', data: pubkey};
-            } catch(error) {
-                logError('importing public key to choosen validator',error);
-                return {status: 'fail', error: error.message};
-            }
-        }
-    }
-}); */
-/**
  * Makes a DNS request and requests for the doichain public-key for the given domain and network
  * Method: GET
  * Params:
@@ -247,20 +220,22 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         action: function() {
             const params = this.bodyParams;
             //is this a standard DOI coin transaction or a DOI request transaction?
-            console.log(params)
             if((!params.nameId ||
                 !params.templateDataEncrypted ||
                 !params.validatorPublicKey)
                 && params.tx){
-                console.log("sending single transaction")
+                logSend("sending single transaction",params.tx)
 
-                const data = sendRawTransaction(SEND_CLIENT,params.tx)
-                console.log("data",data)
-
-                const txRaw = getRawTransaction(SEND_CLIENT,data.result)
-                if(txRaw)data.txRaw = txRaw
-                logSend(txRaw)
-                return {status: 'success', data};
+                try {
+                    const data = sendRawTransaction(SEND_CLIENT,params.tx)
+                    const txRaw = getRawTransaction(SEND_CLIENT,data.result)
+                    if(txRaw)data.txRaw = txRaw
+                    logSend(txRaw)
+                    return {status: 'success', data};
+                } catch(error) {
+                    logError('error broadcasting transaction to doichain network',error);
+                    return {status: 'fail', error: error.message};
+                }
             }
             else{
                 const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill our database
