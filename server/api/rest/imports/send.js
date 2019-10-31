@@ -247,12 +247,16 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         action: function() {
             const params = this.bodyParams;
             //is this a standard DOI coin transaction or a DOI request transaction?
+            console.log(params)
             if((!params.nameId ||
                 !params.templateDataEncrypted ||
                 !params.validatorPublicKey)
                 && params.tx){
+                console.log("sending single transaction")
 
                 const data = sendRawTransaction(SEND_CLIENT,params.tx)
+                console.log("data",data)
+
                 const txRaw = getRawTransaction(SEND_CLIENT,data.result)
                 if(txRaw)data.txRaw = txRaw
                 logSend(txRaw)
