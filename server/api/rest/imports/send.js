@@ -6,7 +6,7 @@ import {logError, logSend} from "../../../../imports/startup/server/log-configur
 import {
     DOI_EXPORT_ROUTE,
     DOICHAIN_BROADCAST_TX,
-    DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, DOICHAIN_IMPORT_PUBKEY,
+    DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, DOICHAIN_IMPORT_PUBKEY, DOICHAIN_LIST_TXS,
     DOICHAIN_LIST_UNSPENT
 } from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
@@ -17,7 +17,7 @@ import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-conf
 import {
     getRawTransaction,
     importAddress,
-    importPubkey,
+    importPubkey, listTransactions,
     listUnspent,
     sendRawTransaction,
     validateAddress
@@ -159,6 +159,34 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
         }
     }
 });
+
+/**
+ * Requests all transaction of a Doichain address (watchOnly or not)
+ */
+Api.addRoute(DOICHAIN_LIST_TXS, {
+    get: {
+        authRequired: false,
+        action: function() {
+            const params = this.queryParams;
+            const address = params.address;
+
+            try {
+
+                const data = listTransactions(SEND_CLIENT).filter(function (el) {
+                    console.log('el',el)
+                    return el.address === address
+                });
+
+                return {status: 'success',data};
+
+            } catch(error) {
+                logError('error getting transactions for address '+address,error);
+                return {status: 'fail', error: error.message};
+            }
+        }
+    }
+})
+
 
 /**
  * Requests unspent transactions (utxo) from a given address

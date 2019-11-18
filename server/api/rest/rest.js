@@ -9,6 +9,7 @@ export const DOI_WALLETNOTIFY_ROUTE = "walletnotify";
 
 export const DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS = "getpublickeybypublicdns";
 export const DOICHAIN_IMPORT_PUBKEY = "importpubkey";
+export const DOICHAIN_LIST_TXS = "listtransactions";
 export const DOICHAIN_LIST_UNSPENT = "listunspent";
 export const DOICHAIN_BROADCAST_TX = "sendrawtransaction";
 

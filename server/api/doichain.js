@@ -242,6 +242,18 @@ function doichain_getblock(client, blockhash, callback) {
     });
 }
 
+export function listTransactions(client) {
+    const syncFunc = Meteor.wrapAsync(doichain_listtransactions);
+    return syncFunc(client);
+}
+
+function doichain_listtransactions(client, callback) {
+    client.cmd('listtransactions', function(err, data) {
+        if(err)  logError('doichain_listtransactions:',err);
+        callback(err, data);
+    });
+}
+
 
 export function getTransaction(client, txid) {
     const syncFunc = Meteor.wrapAsync(doichain_gettransaction);
