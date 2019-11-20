@@ -22,8 +22,6 @@ const updateDoichainEntry = (entry) => {
         DoichainEntries.update({name: ourEntry.name},
             {$set:{verifyLocalHash: ourEntry.verifyLocalHash}} );
 
-        logConfirm('bla bla bla:', ourEntry.verifyLocalHash);
-
     } catch (exception) {
         throw new Meteor.Error('opt-ins.updateDoichainEntry.exception', exception);
     }

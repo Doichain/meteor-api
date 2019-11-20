@@ -79,18 +79,19 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
     action: function() {
       const params = this.queryParams;
       try {
-          logSend(`REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template`,JSON.stringify(params));
+          logSend('REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template',JSON.stringify(params));
           const optIn = OptIns.findOne({nameId:params.name_id})
-          logSend(`found DOI in db`,optIn)
+          logSend('found DOI in db',optIn)
           if (optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
-              const publicKey = optIn.validatorPublicKey //the public
-              const templateDataEncrypted = optIn.templateDataEncrypted
+              const validatorPublicKey = optIn.validatorPublicKey
+              const recipientPublicKey = 'please get from tx!' //TODO
+              const templateDataEncrypted = optIn.templateDataEncrypted //TODO make sure its not getting too big and data are deleted after a certain time in any case and / or when template was picked up
 
-              // TODO - check signature of the calling party (we allow the repsonsible validator to ask for templateData
-              if(!verifySignature({publicKey: publicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
+              //check signature of the calling party (we allow only the repsonsible validator to ask for templateData
+              if(!verifySignature({publicKey: validatorPublicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
 
               logSend("return encrypted template data for nameId",{nameId:optIn.nameId});
-              return {status: 'success',  encryptedData:templateDataEncrypted};
+              return {status: 'success',  encryptedData:templateDataEncrypted, publicKey: recipientPublicKey};
           }
           else{ //classic template request stored by a dApp
               const data = getDoiMailData(params);
@@ -268,7 +269,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 }
             }
             else{
-                const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill our database
+                const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill the validator database
                 const tx = params.tx //serialized raw transactino to broadcast
                 const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId //TODO security please ensure ddos attacks - cleanup or make sure template size can be limited in configuration
                 const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template //TODO please validate if this is a publickey (and not a ton of books)
@@ -277,9 +278,11 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                     //1. send tx to doichain
                     const data = sendRawTransaction(SEND_CLIENT,tx)
                     const txRaw = getRawTransaction(SEND_CLIENT,data)
+                    const publicKey = 'get PublicKey from txRaw im imports/send:281'
                     //2. store templateData together with nameId temporary in doichain dApps database
                     OptIns.insert({
                         nameId:nameid,
+                        publicKey: publicKey,
                         status: ['received'],
                         templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
                         validatorPublicKey: validatorPublicKey

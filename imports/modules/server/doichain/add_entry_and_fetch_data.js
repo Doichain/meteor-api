@@ -57,9 +57,7 @@ const addDoichainEntry = (entry) => {
     let validatorAddress = null;
     logConfirm("getting raw transaction for tx",ourEntry.txId)
     const vouts = getRawTransaction(CONFIRM_CLIENT,ourEntry.txId).vout
-    //logConfirm("vouts",vouts)
     vouts.forEach((output) => {
-        console.log('hello',output)
         if(output.scriptPubKey.nameOp) {
             logConfirm('validator parses output of incoming soi permission to find read address', output.scriptPubKey.nameOp.name)
             logConfirm('output.scriptPubKey.nameOp', output.scriptPubKey.nameOp)

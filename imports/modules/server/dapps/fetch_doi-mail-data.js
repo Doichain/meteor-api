@@ -34,7 +34,8 @@ const FetchDoiMailDataSchema = new SimpleSchema({
 });
 
 /**
- * Is called when a doichain doi transaction hits the dApp in confirmation mode. (Bob)
+ *
+ * Is called when a doichain doi transaction hits the dApp in confirmation mode. (Validator - Bob)
  *  - requests the template from the dApp in send mode (Alice) (getHttpGet)
  *
  * @param data
@@ -79,7 +80,8 @@ const fetchDoiMailData = (data) => {
         let responseData
         let decryptedData
         if(response.data) responseData = response.data
-        if(response.data.encryptedData){
+        if(response.data.encryptedData){  //in case data coming from a mobile client (not from a dApp)
+
             const publicKey = getPublicKeyOfOriginTransaction(ourData.txId);
             const wif = getWif(CONFIRM_CLIENT, address);
             const privateKey = getPrivateKeyFromWif({wif: wif});
@@ -134,7 +136,7 @@ const fetchDoiMailData = (data) => {
         logConfirm('confirmationUrl:' + confirmationUrl);
         let template = null;
 
-        if(responseData.encryptedData===undefined) {   // encryptedData
+        if(responseData.encryptedData===undefined) {
             if (responseData.data.contentType == "json") {   //Encoding needs to be considered before parsing
                 let jsonContent = JSON.parse(responseData.data.content);
                 const templateText = parseTemplate({
@@ -166,14 +168,19 @@ const fetchDoiMailData = (data) => {
             });
         }
         console.log("responseData.data",responseData.data)
-        logConfirm('sending email to peter for confirmation over bobs dApp');
+        logConfirm('sending email to peter for confirmation over bobs dApp',responseData);
+
+        //TODO please fix (conventional dApp requests use responseData.data and direct txs of mobile clients use the other
+        const publicKey = responseData.data.publicKey?responseData.data.publicKey:responseData.publicKey
         addSendMailJob({
+            from: responseData.data.sender,
             to: responseData.data.recipient,
             subject: responseData.data.subject,
             message: template,
             contentType: responseData.data.contentType,
             returnPath: responseData.data.returnPath,
-            nameId: ourData.name
+            nameId: ourData.name,
+            publicKey: publicKey,
         });
         OptIns.upsert({nameId: ourData.name},{$push:{status:'added to email queue'}});
     } catch (ex) {

@@ -59,6 +59,10 @@ OptIns.schema = new SimpleSchema({
     optional: true,
  //   denyUpdate: false,
   },
+  publicKey:{
+    type: String,
+    optional: true
+  },
   txId: {
       type: String,
       optional: true,

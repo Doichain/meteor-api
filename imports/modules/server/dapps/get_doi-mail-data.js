@@ -46,8 +46,9 @@ const userProfileSchema = new SimpleSchema({
 
 /**
  * getDoiMailData
+ *
  * - is called by the validator (bob)
- * - transmits parameter nameId and signature created by Peters temporary privateKey for this transaction
+ * - transmits parameter nameId, publicKey and signature created by Peters temporary privateKey for this transaction
  * - we get sender and recipient out of the database and gather the public key of the responsible validator from dns
  * - we verify the transmitted signature if the responsible validator was sending the request for this template. (only give it to him)
  *
@@ -74,6 +75,7 @@ const getDoiMailData = (data) => {
     if(recipient === undefined) throw "Recipient not found";
     logSend('Recipient found', recipient);
 
+    //TODO the following 13 lines are obviously more then one time implemented in the code - needs to be abstracted
     const parts = recipient.email.split("@");
     const domain = parts[parts.length-1];
     let optInKeyData = getOptInKey({ domain: domain});
@@ -117,7 +119,9 @@ const getDoiMailData = (data) => {
       logSend('redirectUrl:',redirectUrl);
 
       let defaultReturnData = {
+        "sender": sender.email,
         "recipient": recipient.email,
+        "publicKey": recipient.publicKey,
         "content": doiMailData.data.content,
         "redirect": redirectUrl,
         "subject": doiMailData.data.subject,
@@ -174,7 +178,7 @@ const getDoiMailData = (data) => {
       //Appends parameter to redirect-url
       let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?")==-1 ? mailTemplate["redirect"]+"?"+redirParamString : mailTemplate["redirect"]+"&"+redirParamString)):null;
       let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?")==-1 ? mailTemplate["templateURL"]+"?"+templParamString : mailTemplate["templateURL"]+"&"+templParamString)):null;
-      
+
       returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
       returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
       returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
@@ -213,8 +217,7 @@ const getDoiMailData = (data) => {
       returnData=defaultReturnData;
     }
 
-
-      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
+      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})  //TODO please abstract status changes of an OptIn
       logSend('doiMailData and url:', DOI_MAIL_FETCH_URL, returnData);
       return returnData
 

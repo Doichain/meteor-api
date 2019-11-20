@@ -17,8 +17,13 @@ const VerifyOptInSchema = new SimpleSchema({
   name_id: {
     type: String
   },
-  recipient_public_key: {
-    type: String
+  recipient_public_key: {  //deprecated (TODO)
+    type: String,
+    optional:true
+  },
+  public_key:{
+    type: String,
+    optional: true
   }
 });
 
@@ -29,10 +34,13 @@ const verifyOptIn = (data) => {
     const entry = nameShow(VERIFY_CLIENT, ourData.name_id);
     if(entry === undefined) return {nameIdFound: "failed"};
     const entryData = JSON.parse(entry.value);
+
+    const publicKey = ourData.public_key?ourData.public_key:ourData.recipient_public_key  //TODO remove this in future versions update documentation
+
     const firstCheck = verifySignature({
       data: ourData.recipient_mail+ourData.sender_mail,
       signature: entryData.signature,
-      publicKey: ourData.recipient_public_key
+      publicKey: publicKey
     });
 
     if(!firstCheck) return {soiSignatureStatus: "failed"};

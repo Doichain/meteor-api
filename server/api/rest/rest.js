@@ -6,6 +6,8 @@ export const DOI_CONFIRMATION_ROUTE = "opt-in/confirm";
 export const DOI_CONFIRMATION_NOTIFY_ROUTE = "opt-in";
 export const DOI_BLOCKNOTIFY_ROUTE = "blocknotify";
 export const DOI_WALLETNOTIFY_ROUTE = "walletnotify";
+export const DOI_VERIFY_ROUTE = "opt-in/verify";
+export const DOI_EXPLORER = "explorer"
 
 export const DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS = "getpublickeybypublicdns";
 export const DOICHAIN_IMPORT_PUBKEY = "importpubkey";
