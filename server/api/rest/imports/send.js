@@ -17,7 +17,7 @@ import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-conf
 import {
     getRawTransaction,
     importAddress,
-    importPubkey, listTransactions,
+    listTransactions,
     listUnspent,
     sendRawTransaction,
     validateAddress
@@ -25,6 +25,8 @@ import {
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
+import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
+    from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -84,7 +86,8 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
           logSend('found DOI in db',optIn)
           if (optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
               const validatorPublicKey = optIn.validatorPublicKey
-              const recipientPublicKey = 'please get from tx!' //TODO
+              console.log('getting public key of origin transaction for later use',optIn.txId)
+              const recipientPublicKey = getPublicKeyOfOriginTxId(optIn.txId);  //TODO  //recipient here means peters public key (which funnily is not the recipient but the sender in this case (!!?!!)
               const templateDataEncrypted = optIn.templateDataEncrypted //TODO make sure its not getting too big and data are deleted after a certain time in any case and / or when template was picked up
 
               //check signature of the calling party (we allow only the repsonsible validator to ask for templateData
@@ -278,10 +281,12 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                     //1. send tx to doichain
                     const data = sendRawTransaction(SEND_CLIENT,tx)
                     const txRaw = getRawTransaction(SEND_CLIENT,data)
-                    const publicKey = 'get PublicKey from txRaw im imports/send:281'
+                    const publicKey = getPublicKeyOfRawTransaction(txRaw)
+                    const txId = txRaw.txid
                     //2. store templateData together with nameId temporary in doichain dApps database
                     OptIns.insert({
                         nameId:nameid,
+                        txId: txId,
                         publicKey: publicKey,
                         status: ['received'],
                         templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData

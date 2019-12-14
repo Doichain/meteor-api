@@ -8,7 +8,7 @@ import getPrivateKeyFromWif from './get_private-key_from_wif.js';
 import decryptMessage from './decrypt_message.js';
 import {logConfirm, logSend} from "../../../startup/server/log-configuration";
 import {Meta} from "../../../api/meta/meta";
-import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
+import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 import {getRawTransaction} from "../../../../server/api/doichain";
 
 const AddDoichainEntrySchema = new SimpleSchema({
@@ -73,8 +73,8 @@ const addDoichainEntry = (entry) => {
         }else{logConfirm("no name op transaction")}
     })
     logConfirm('got private key of validator address',validatorAddress);
-
-    const publicKey = getPublicKeyOfOriginTransaction(ourEntry.txId);
+    console.log('getting public key of origin tx',ourEntry.txId)
+    const publicKey = getPublicKeyOfOriginTxId(ourEntry.txId);
     console.log('got publicKey from decryption of message from TX',publicKey)
     const domain = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
     logConfirm('decrypted message from domain: ',domain);

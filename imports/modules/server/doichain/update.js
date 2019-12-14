@@ -16,7 +16,7 @@ import {logConfirm} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 import decryptMessage from "./decrypt_message";
 import {OptIns} from "../../../api/opt-ins/opt-ins";
-import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
+import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 
 const UpdateSchema = new SimpleSchema({
   nameId: {
@@ -81,7 +81,7 @@ const update = (data, job) => {
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here) in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
 
-    const publicKey = getPublicKeyOfOriginTransaction(name_data.txid);
+    const publicKey = getPublicKeyOfOriginTxId(name_data.txid);
     let ourfromHostUrl = decryptMessage({publicKey: publicKey, privateKey: privateKey, message: ourData.fromHostUrl});
     if(!ourfromHostUrl.endsWith("/"))ourfromHostUrl+="/"
     logConfirm('decrypted fromHostUrl',ourfromHostUrl);

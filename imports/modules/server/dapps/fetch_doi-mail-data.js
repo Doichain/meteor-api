@@ -17,7 +17,7 @@ import {logConfirm, logError} from "../../../startup/server/log-configuration"
 import updateDoichainEntry from "../opt-ins/update_doichain_entry"
 import decryptMessage from "../doichain/decrypt_message";
 import {getRawTransaction, getTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
-import getPublicKeyOfOriginTransaction from "../doichain/getPublicKeyOfOriginTransaction";
+import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
 import {isRegtest} from "../../../startup/server/dapp-configuration";
 
@@ -82,7 +82,7 @@ const fetchDoiMailData = (data) => {
         if(response.data) responseData = response.data
         if(response.data.encryptedData){  //in case data coming from a mobile client (not from a dApp)
 
-            const publicKey = getPublicKeyOfOriginTransaction(ourData.txId);
+            const publicKey = getPublicKeyOfOriginTxId(ourData.txId);
             const wif = getWif(CONFIRM_CLIENT, address);
             const privateKey = getPrivateKeyFromWif({wif: wif});
 

@@ -23,7 +23,7 @@ import {OptIns} from "../../../api/opt-ins/opt-ins";
 import decryptMessage from "./decrypt_message";
 import {logMain,logError} from "../../../startup/server/log-configuration";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
-import getPublicKeyOfOriginTransaction from "./getPublicKeyOfOriginTransaction";
+import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 
 
 const scan_Doichain = (rescan) => {
@@ -115,7 +115,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                     while (!domain) {
                         const privateKey = getPrivateKeyFromWif({wif: wif});
                         try {
-                            const publicKey = getPublicKeyOfOriginTransaction(nameId.txid);
+                            const publicKey = getPublicKeyOfOriginTxId(nameId.txid);
                             domain = decryptMessage({
                                 publicKey: publicKey,
                                 privateKey: privateKey,

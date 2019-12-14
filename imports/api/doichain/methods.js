@@ -3,7 +3,6 @@ import { ValidatedMethod } from 'meteor/mdg:validated-method';
 import { DDPRateLimiter } from 'meteor/ddp-rate-limiter';
 import {getSettings} from "meteor/doichain:settings";
 import getKeyPairM from '../../modules/server/doichain/get_key-pair.js';
-import getBalanceM from '../../modules/server/doichain/get_balance.js';
 import sendToAddressM from '../../modules/server/doichain/send_to_address';
 import addOptIn from "../../modules/server/opt-ins/add_and_write_to_blockchain";
 import {logConfirm} from "../../startup/server/log-configuration";
@@ -87,25 +86,13 @@ const getKeyPair = new ValidatedMethod({
   },
 });
 
-/**TODO this can be removed - if not longer important since we import balance durinng blocknotify and status call from outside*/
-const getBalance = new ValidatedMethod({
-  name: 'doichain.getBalance',
-  validate: null,
-  run() {
-    const logVal = getBalanceM();
-    return logVal;
-  },
-});
-
-
 // Get list of all method names on doichain
 const OPTIONS_METHODS = _.pluck([
     generate,
     rescan,
     sendToAddress,
     requestEmailPermission,
-    getKeyPair,
-    getBalance], 'name');
+    getKeyPair], 'name');
 
 if (Meteor.isServer) {
   // Only allow 5 opt-in operations per connection per second
