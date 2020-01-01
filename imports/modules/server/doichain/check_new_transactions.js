@@ -17,8 +17,8 @@ const checkNewTransaction = (txid, job) => {
        const memPoolTransactions = getRawMemPool(CONFIRM_CLIENT);
        if(memPoolTransactions.indexOf(txid)!==-1) isMemCacheTransaction = true
 
-       console.log("isMemCacheTransaction",isMemCacheTransaction);
-       console.log("txid",txid)
+      logConfirm("isMemCacheTransaction",isMemCacheTransaction);
+      logConfirm("txid",txid)
 
        if(!isMemCacheTransaction){
           logConfirm("checkNewTransaction for incoming block");
@@ -28,7 +28,6 @@ const checkNewTransaction = (txid, job) => {
               logConfirm("lastCheckedBlock",lastCheckedBlock);
 
               const ret = listSinceBlock(CONFIRM_CLIENT, lastCheckedBlock);
-              //console.log('bla2',ret)
               if(ret === undefined || ret.transactions === undefined) return;
 
               const txs = ret.transactions;
@@ -38,8 +37,7 @@ const checkNewTransaction = (txid, job) => {
                   console.log('updating meta')
                   addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
               }
-            // console.log("txs inside block",txs)
-             // logConfirm("listSinceBlock",txs.length);
+
               const addressTxs = txs.filter(tx =>
                   tx.name !== undefined
                   && tx.name.startsWith("doi: "+TX_NAME_START)
@@ -50,7 +48,6 @@ const checkNewTransaction = (txid, job) => {
                   logConfirm("checking if tx was already processed...",tx.address);
 
                   const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value: {"$in" : [tx.address]}})
-                      //Meta.findOne({key:"addresses_by_account", value:tx.address})
                   console.log("isFoundMyAddress: "+tx.address+" "+(isFoundMyAddress?'yes':'no'))
 
                   const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
