@@ -248,7 +248,7 @@ export function listTransactions(client) {
 }
 
 function doichain_listtransactions(client, callback) {
-    client.cmd('listtransactions', '\"\"',1000000,0,true,function(err, data) {
+    client.cmd('listtransactions', '*',100000,0,true,function(err, data) {
         if(err)  logError('doichain_listtransactions:',err);
         callback(err, data);
     });

@@ -173,7 +173,6 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         action: function() {
             const params = this.queryParams;
             const address = params.address;
-
             try {
                 const data = listTransactions(SEND_CLIENT).filter(function (el) {
                     logSend('listTransaction',el);
