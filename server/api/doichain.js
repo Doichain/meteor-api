@@ -254,7 +254,6 @@ function doichain_listtransactions(client, callback) {
     });
 }
 
-
 export function getTransaction(client, txid) {
     const syncFunc = Meteor.wrapAsync(doichain_gettransaction);
     return syncFunc(client, txid);
