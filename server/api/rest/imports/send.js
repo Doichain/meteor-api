@@ -172,17 +172,52 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
-            const address = params.address;
+            const ourAddress = params.address;
             try {
                 const data = listTransactions(SEND_CLIENT).filter(function (el) {
-                    logSend('listTransaction',el);
-                    return el.address === address
+                    const txid = el.txid
+                    //get inputs and outputs to check if inputs and/or outputs belong to us
+                    const rawTx = getRawTransaction(SEND_CLIENT,txid);
+                    console.log('trawTx is',rawTx)
+                    rawTx.vin.forEach( (input) => {
+                        console.log("input is",input)
+                        console.log('checking input with txid',input.txid)
+                        if(input.txid){ //input could be coinbase then it doesn't have a txid
+                            getRawTransaction(SEND_CLIENT,input.txid).vout.forEach((output)=>{
+                                const outputAdresses = output.scriptPubKey.addresses
+                                if(outputAdresses){
+                                    for(let i = 0;i<outputAdresses.length;i++){
+                                        if(outputAdresses[i]==ourAddress && el.category=='send'){
+                                            el.ourInput = true
+                                            break
+                                        }
+                                    }
+                                }
+                            })
+                        }
+                    })
+                    rawTx.vout.forEach((output) => {
+                        console.log('checking output',output)
+                       if(output.scriptPubKey && output.scriptPubKey.addresses){
+                            console.log('checking output',output.scriptPubKey.addresses)
+                            const outputAdresses = output.scriptPubKey.addresses
+                            const addressesCount = outputAdresses.length
+                            console.log("outputAdresses",outputAdresses.length)
+                            for(var i = 0;i<addressesCount;i++){
+                                if(outputAdresses[i]==ourAddress && el.category=='receive'){
+                                    el.ourOutput = true
+                                    break
+                                }
+                            }
+                        }
+                    })
+                    return el.ourInput || el.ourOutput
                 });
 
                 return {status: 'success',data};
 
             } catch(error) {
-                logError('error getting transactions for address '+address,error);
+                logError('error getting transactions for address '+ourAddress,error);
                 return {status: 'fail', error: error.message};
             }
         }
