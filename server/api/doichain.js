@@ -242,13 +242,13 @@ function doichain_getblock(client, blockhash, callback) {
     });
 }
 
-export function listTransactions(client) {
+export function listTransactions(client, account) {
     const syncFunc = Meteor.wrapAsync(doichain_listtransactions);
-    return syncFunc(client);
+    return syncFunc(client, account);
 }
 
-function doichain_listtransactions(client, callback) {
-    client.cmd('listtransactions', '*',100000,0,true,function(err, data) {
+function doichain_listtransactions(client, account, callback) {
+    client.cmd('listtransactions', account,100000,0,true,function(err, data) {
         if(err)  logError('doichain_listtransactions:',err);
         callback(err, data);
     });
@@ -284,7 +284,7 @@ export function importAddress(client, address) {
 }
 
 function doichain_importaddress(client, address, callback) {
-    client.cmd('importaddress', address, function(err, data) {
+    client.cmd('importaddress', address, address, true, function(err, data) {
         if(err) { logError('doichain_importaddress:', err);}
         callback(err, data);
     });

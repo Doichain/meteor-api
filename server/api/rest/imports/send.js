@@ -174,52 +174,69 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             const params = this.queryParams;
             const ourAddress = params.address;
             try {
-                const data = listTransactions(SEND_CLIENT).filter(function (el) {
-                    const txid = el.txid
+                console.log('list transactions called - all transactions of this wallet used')
+                const account = ourAddress
+                if(account || account!=''){
+
+
+                const data = listTransactions(SEND_CLIENT,account).filter(function (el) {
+                  /*  const txid = el.txid
+                    //console.log('getting txis of ',txid)
                     //get inputs and outputs to check if inputs and/or outputs belong to us
-                    const rawTx = getRawTransaction(SEND_CLIENT,txid);
-                    console.log('trawTx is',rawTx)
-                    rawTx.vin.forEach( (input) => {
-                        console.log("input is",input)
-                        console.log('checking input with txid',input.txid)
-                        if(input.txid){ //input could be coinbase then it doesn't have a txid
-                            getRawTransaction(SEND_CLIENT,input.txid).vout.forEach((output)=>{
-                                const outputAdresses = output.scriptPubKey.addresses
-                                if(outputAdresses){
-                                    for(let i = 0;i<outputAdresses.length;i++){
-                                        if(outputAdresses[i]==ourAddress && el.category=='send'){
-                                            el.ourInput = true
-                                            break
-                                        }
-                                    }
-                                }
-                            })
-                        }
-                    })
+                      const rawTx = getRawTransaction(SEND_CLIENT,txid);
+                       //console.log('trawTx is',rawTx)
+                        rawTx.vin.forEach( (input) => {
+                           //console.log('checking input with txid',input.txid)
+                           if(input.txid){ //input could be coinbase then it doesn't have a txid
+                           // console.log('input.txid',input.txid)
+                               getRawTransaction(SEND_CLIENT,input.txid).vout.forEach((output)=>{
+                                 //  console.log("input output.value",output.value)
+                                 //  console.log("input output.scriptPubKey.addresses",output.scriptPubKey.addresses)
+                                   const outputAdresses = output.scriptPubKey.addresses
+                                  // console.log("outputAdresses inputs",outputAdresses)
+                                   if(outputAdresses){
+                                       for(let i = 0;i<outputAdresses.length;i++){
+                                           if(outputAdresses[i]===ourAddress && el.category==='receive'){
+                                               console.log("--->was our input! returning",rawTx.vin)
+                                             //  el.ourInput[input.txid] = {output: output}
+                                               el.ourInput = [txid, {output: output}]
+                                           }
+                                       }
+                                   }
+                               })
+                           }
+                        })
+
                     rawTx.vout.forEach((output) => {
-                        console.log('checking output',output)
+                        //console.log("output output.value",output.value)
+                        //console.log("output output.scriptPubKey.addresses",output.scriptPubKey.addresses)
                        if(output.scriptPubKey && output.scriptPubKey.addresses){
-                            console.log('checking output',output.scriptPubKey.addresses)
+                           // console.log('checking output',output.scriptPubKey.addresses)
                             const outputAdresses = output.scriptPubKey.addresses
                             const addressesCount = outputAdresses.length
-                            console.log("outputAdresses",outputAdresses.length)
+                            //console.log("outputAdresses outputs",outputAdresses)
                             for(var i = 0;i<addressesCount;i++){
-                                if(outputAdresses[i]==ourAddress && el.category=='receive'){
-                                    el.ourOutput = true
-                                    break
+                                if(outputAdresses[i]===ourAddress && el.category==='send'){
+                                    console.log("--->was our output! returning",rawTx.vout)
+                                  //  el.ourOutput = true
+                                    el.ourInput = [txid, {output: output}]
                                 }
                             }
                         }
                     })
-                    return el.ourInput || el.ourOutput
-                });
 
+                    return el.address === ourAddress && (el.ourInput || el.ourOutput)*/
+                    return true
+                });
+                console.log('data:',data)
                 return {status: 'success',data};
+                }else   return {status: 'success',data:[]};
 
             } catch(error) {
                 logError('error getting transactions for address '+ourAddress,error);
                 return {status: 'fail', error: error.message};
             }
+
         }
     }
 })
