@@ -6,7 +6,8 @@ import {logError, logSend} from "../../../../imports/startup/server/log-configur
 import {
     DOI_EXPORT_ROUTE,
     DOICHAIN_BROADCAST_TX,
-    DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, DOICHAIN_IMPORT_PUBKEY, DOICHAIN_LIST_TXS,
+    DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
+    DOICHAIN_LIST_TXS,
     DOICHAIN_LIST_UNSPENT
 } from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
@@ -27,6 +28,8 @@ import verifySignature from "../../../../imports/modules/server/doichain/verify_
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
 import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
     from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
+import {Meta} from "../../../../imports/api/meta/meta";
+import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -178,7 +181,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
                 const account = ourAddress
                 if(account || account!=''){
 
-
+                //TODO lists only received transaction and not sent transactions here we need to store received and stored transactions in our own database and send this inst
                 const data = listTransactions(SEND_CLIENT,account).filter(function (el) {
                   /*  const txid = el.txid
                     //console.log('getting txis of ',txid)
@@ -254,36 +257,46 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
     get: {
         authRequired: false,
         action: function() {
-            const params = this.queryParams;
-            const address = params.address;
+            const params = this.queryParams
+            const address = params.address
+
+            const listOurUnspent = (addressValidation,msg) =>{
+
+                const blocksCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_BLOCKS}).value
+                console.log(blocksCount)
+
+                let data = listUnspent(SEND_CLIENT,address)
+                const retVale =
+                    {status: 'success',
+                        msg: msg,
+                        block: blocksCount,
+                        ismine:addressValidation.ismine,
+                        iswatchonly: addressValidation.iswatchonly,
+                        data}
+
+                return retVale;
+            }
 
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,address);
-                console.log("addressValidation",addressValidation)
+               // console.log("addressValidation",addressValidation)
                 if(!addressValidation.isvalid){
                     logError('doichain address not valid: '+address);
                     return {status: 'fail', error: 'doichain address not valid: '+address};
                 }
 
-                if(addressValidation.isvalid && (addressValidation.ismine || addressValidation.iswatchonly)){
-                    const data = listUnspent(SEND_CLIENT,address)
-                    return {status: 'success',ismine:addressValidation.ismine, iswatchonly: addressValidation.iswatchonly, data};
-                }
-
-                if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly)){
-                    const data = listUnspent(SEND_CLIENT,address)
-                    return {status: 'success',ismine:addressValidation.ismine, iswatchonly: addressValidation.iswatchonly, data};
-                }
-
+                if(addressValidation.isvalid && (addressValidation.ismine || addressValidation.iswatchonly))
+                    return listOurUnspent(addressValidation)
+                if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly))
+                    return listOurUnspent(addressValidation)
                 if(addressValidation.isvalid && (!addressValidation.ismine && !addressValidation.iswatchonly)){
                     importAddress(SEND_CLIENT,address)
-                    const data = listUnspent(SEND_CLIENT,address)
-                    return {status: 'address imported sucessfully',ismineold:addressValidation.ismine,ismine:true, iswatchonly: addressValidation.iswatchonly, data};
+                    return listOurUnspent(addressValidation,'address imported sucessfully')
                 }
-
+                console.log('bla',addressValidation)
             } catch(error) {
-                logError('error getting utxo from adddress '+address,error);
-                return {status: 'fail', error: error.message};
+                logError('error getting utxo from adddress '+address,error)
+                return {status: 'fail', error: error.message}
             }
         }
     }
