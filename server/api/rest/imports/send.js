@@ -8,7 +8,7 @@ import {
     DOICHAIN_BROADCAST_TX,
     DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
     DOICHAIN_LIST_TXS,
-    DOICHAIN_LIST_UNSPENT
+    DOICHAIN_LIST_UNSPENT, EMAIL_VERIFY_ROUTE
 } from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
@@ -19,9 +19,9 @@ import {
     getRawTransaction,
     importAddress,
     listTransactions,
-    listUnspent,
+    listUnspent, nameDoi,
     sendRawTransaction,
-    validateAddress
+    validateAddress,getWif
 } from "../../doichain";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
@@ -30,6 +30,104 @@ import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
     from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
 import {Meta} from "../../../../imports/api/meta/meta";
 import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
+import getPublicKeyAndAddress from "../../../../imports/modules/server/doichain/get_publickey_and_address_by_domain";
+import getSignature from "../../../../imports/modules/server/doichain/get_signature";
+import encryptMessage from "../../../../imports/modules/server/doichain/encrypt_message";
+import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
+
+
+Api.addRoute(EMAIL_VERIFY_ROUTE, {
+    post: {
+        authRequired: true,
+        action: function() {
+            const qParams = this.queryParams;
+            const bParams = this.bodyParams;
+            let params = {}
+            if(qParams !== undefined) params = {...qParams}
+            if(bParams !== undefined) params = {...params, ...bParams}
+
+            logSend('parameter received from rpc client:',params);
+            //TODO in case we submitt an array we should call this function for each element
+            let emailsToVerify = []
+            let nameDoiTx = ''
+            if(params.sender_mail.constructor !== Array)
+                emailsToVerify.push(params.sender_mail)
+                try {
+                    let ipfsHashes = []
+                    emailsToVerify.forEach((our_sender_email) => {
+                        console.log('preparing email for verification', our_sender_email)
+                        const parts = our_sender_email.split("@");
+                        const domain = parts[parts.length - 1];
+                        const publicKeyAndAddress = getPublicKeyAndAddress({domain: domain});
+                        //1. create a signature with our_sender_email and our private_key, use it as our nameId
+                        const privateKey = getWif(SEND_CLIENT) //here we use the first address of the dApps wallet
+                        console.log('privatKey',privateKey)
+                        console.log('our_sender_email',our_sender_email)
+
+                        const signature =  getSignature({message: our_sender_email, privateKey:
+                                getPrivateKeyFromWif({wif:privateKey})})
+                        //2. call name_doi on Doichain and store entry on blockchain recipient of address is public key gathered by domain name (dns)
+                        const nameId = "es/" + signature
+
+                        const encryptedObjectAsString =  encryptMessage({
+                                message: JSON.stringify({sender_mail:our_sender_email}),
+                                publicKey: publicKeyAndAddress.publicKey
+                        })
+
+                        addIPFS(encryptedObjectAsString).then((nameValue)=>{
+                            console.log('nameValue',nameValue) //TODO please encrypt this with a bobs publickey
+                            nameDoiTx = nameDoi(SEND_CLIENT, nameId, nameValue, publicKeyAndAddress.destAddress);
+                            const our_data =  {tx:nameDoiTx,nameId:nameId,nameValue:nameValue}
+                            console.log('nameDoi sent to Doichain node. tx:',our_data)
+                            //Remark: we do not provide a template, since validator should use a standard template
+                            //next steps on validator:
+                            ipfsHashes.push(our_data) //TODO doesn't seem to work because of async
+                        })
+
+                    })
+                    return {status: 'success', data: {txData: ipfsHashes, status: 'success', message: 'Email address sent to validator(s)'}};
+                } catch (error) {
+                    return {statusCode: 500, body: {status: 'fail', message: error.message}};
+                }
+        } //action
+    }
+});
+
+const addIPFS = async (ipfsData) => {
+
+    let { Peer, BlockStore } = require('@textile/ipfs-lite')
+    let { setupLibP2PHost } = require('@textile/ipfs-lite/dist/setup')
+    let { MemoryDatastore } = require('interface-datastore')
+
+    let store = new BlockStore(new MemoryDatastore())
+    let data
+    await (async function() {
+
+        //use any installed ipfs node on this host
+        let host
+        if(isRegtest())
+            host = await setupLibP2PHost(undefined, undefined, ['/ip4/0.0.0.0/tcp/0'])
+        else
+            host = await setupLibP2PHost()
+
+        let lite = new Peer(store, host)
+        await lite.start()
+
+        console.log('adding encrypted object ipfsData')
+        const source = [{
+            path: 'nameId',
+            content: ipfsData,
+        }]
+        data =  await lite.addFile(source)
+        console.log('added file with CID:',data.cid.toString())
+        console.log(data.cid.toString())
+        let retdata = await lite.getFile(data.cid)
+        console.log("returned file content from ifps",retdata.toString())
+
+        setTimeout(() => {lite.stop()}, 10000)
+    })()
+    return data.cid.toString()
+}
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -367,7 +465,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 });
 
 function prepareCoDOI(params){
-    logSend('is array ',params.sender_mail);
+    logSend('prepare CoDoi because got array ',params.sender_mail);
     const senders = params.sender_mail;
     const recipient_mail = params.recipient_mail;
     const data = params.data;

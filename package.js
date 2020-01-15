@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.3.37',
+  version: '0.3.39',
   summary: 'Provides a Doichain REST API & webfrontend for Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
@@ -46,7 +46,7 @@ Npm.depends({
     'standard-ecies':'1.0.0',
     'bs58':'4.0.1',
     'hashids':'1.2.2',
-    'eccrypto':'1.1.1',
+    'eccrypto':'1.1.2',
     'crypto':'1.0.1',
     'bitcore-message':'0.12.0'
 });

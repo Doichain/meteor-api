@@ -2,6 +2,7 @@ import { Restivus } from 'meteor/nimble:restivus';
 import { isDebug } from '../../../imports/startup/server/dapp-configuration.js';
 import { SEND_APP, CONFIRM_APP, VERIFY_APP, isAppType } from '../../../imports/startup/server/type-configuration.js';
 
+export const EMAIL_VERIFY_ROUTE = "email/verify";
 export const DOI_CONFIRMATION_ROUTE = "opt-in/confirm";
 export const DOI_CONFIRMATION_NOTIFY_ROUTE = "opt-in";
 export const DOI_BLOCKNOTIFY_ROUTE = "blocknotify";
@@ -10,7 +11,6 @@ export const DOI_VERIFY_ROUTE = "opt-in/verify";
 export const DOI_EXPLORER = "explorer"
 
 export const DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS = "getpublickeybypublicdns";
-export const DOICHAIN_IMPORT_PUBKEY = "importpubkey";
 export const DOICHAIN_LIST_TXS = "listtransactions";
 export const DOICHAIN_LIST_UNSPENT = "listunspent";
 export const DOICHAIN_BROADCAST_TX = "sendrawtransaction";

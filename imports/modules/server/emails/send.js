@@ -6,7 +6,6 @@ import {OptIns} from "../../../api/opt-ins/opt-ins";
 import {getUrl} from "../../../startup/server/dapp-configuration";
 import {
   API_PATH,
-  DOI_CONFIRMATION_ROUTE,
   DOI_EXPLORER,
   DOI_VERIFY_ROUTE,
   VERSION

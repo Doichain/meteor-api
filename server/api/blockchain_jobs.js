@@ -4,10 +4,24 @@ export const BlockchainJobs = JobCollection('blockchain');
 import { Meteor } from 'meteor/meteor';
 import insert from '../../imports/modules/server/doichain/insert.js';
 import update from '../../imports/modules/server/doichain/update.js';
-/* eslint-disable no-unused-vars */ //TODO re-enable this!
 import checkNewTransaction from '../../imports/modules/server/doichain/check_new_transactions.js';
 import { CONFIRM_APP, isAppType } from '../../imports/startup/server/type-configuration.js';
 import {logMain} from "../../imports/startup/server/log-configuration";
+import insertVerifyEmail from "../../imports/modules/server/doichain/insert_verify_email";
+
+
+BlockchainJobs.processJobs('insertVerifyEmail', {workTimeout: 30*1000},function (job, cb) {
+  try {
+    const entry = job.data;
+    insertVerifyEmail(entry);
+    job.done();
+  } catch(exception) {
+    job.fail();
+    throw new Meteor.Error('jobs.blockchain.insert.exception', exception);
+  } finally {
+    cb();
+  }
+});
 
 BlockchainJobs.processJobs('insert', {workTimeout: 30*1000},function (job, cb) {
   try {

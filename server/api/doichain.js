@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logError} from "../../imports/startup/server/log-configuration";
 
 const NAMESPACE = 'e/';
+const NAMESPACE_VERIFIED_EMAIL = 'es/';
 const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
@@ -355,6 +356,6 @@ function checkId(id) {
     const DOI_PREFIX = "doi: ";
     let ret_val = id; //default value
     if(id.startsWith(DOI_PREFIX)) ret_val = id.substring(DOI_PREFIX.length); //in case it starts with doi: cut  this away
-    if(!id.startsWith(NAMESPACE)) ret_val = NAMESPACE+id; //in case it doesn't start with e/ put it in front now.
-  return ret_val;
+    if(!id.startsWith(NAMESPACE) && !id.startsWith(NAMESPACE_VERIFIED_EMAIL)) ret_val = NAMESPACE+id; //in case it doesn't start with e/ put it in front now.
+    return ret_val;
 }

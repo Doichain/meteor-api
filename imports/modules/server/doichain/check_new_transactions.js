@@ -7,9 +7,15 @@ import { Meta } from '../../../api/meta/meta.js';
 import { OptIns} from "../../../api/opt-ins/opt-ins";
 import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
-import {getRawMemPool, validateAddress} from "../../../../server/api/doichain";
+import {getRawMemPool, getWif, validateAddress} from "../../../../server/api/doichain";
 const TX_NAME_START = "e/";
+const TX_VERIFIED_EMAIL_NAME_START = "es/";
+
 import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
+import {SEND_CLIENT} from "../../../startup/server/doichain-configuration";
+import decryptMessage from "./decrypt_message";
+import getPrivateKeyFromWif from "./get_private-key_from_wif";
+import addSendVerifyEmailMailJob from "../jobs/add_send_verify_email_mail";
 
 const checkNewTransaction = (txid, job) => {
   try {
@@ -96,7 +102,8 @@ const checkNewTransaction = (txid, job) => {
               logConfirm("txid "+txid+' does not contain transaction details or transaction not found.');
               return;
           }
-       // console.log('txs',txs)
+
+          //check for DOI transactions
           const addressTxs = txs.filter(tx =>
               tx.scriptPubKey !== undefined
               && tx.scriptPubKey.nameOp !== undefined
@@ -115,6 +122,7 @@ const checkNewTransaction = (txid, job) => {
               })
           });
 
+          //check for coin transactions
           const coinTxs = txs.filter(tx =>
               tx.scriptPubKey !== undefined && tx.scriptPubKey.nameOp === undefined
           );
@@ -123,6 +131,48 @@ const checkNewTransaction = (txid, job) => {
               addCoinTx(tx.value,tx.scriptPubKey.addresses[0],txid);
           });
 
+           //check for verified email transactions
+           const veTxs = txs.filter(tx =>
+               tx.scriptPubKey !== undefined
+               && tx.scriptPubKey.nameOp !== undefined
+               && tx.scriptPubKey.nameOp.op === "name_doi"
+               && tx.scriptPubKey.nameOp.name !== undefined
+               && tx.scriptPubKey.nameOp.name.startsWith(TX_VERIFIED_EMAIL_NAME_START)
+           );
+
+           veTxs.forEach(tx => {
+               tx.scriptPubKey.addresses.forEach(addr =>{
+                  // const isFoundMyAddress = Meta.findOne({key:"addresses_by_account", value:addr})
+                   const isFoundMyAddress = validateAddress(SEND_CLIENT, addr).ismine
+                   console.log("tx was sent to one of my addresses:"+addr,isFoundMyAddress)
+                   if(isFoundMyAddress){
+                       const cid = tx.scriptPubKey.nameOp.value
+                       console.log('ipfs cit is',cid)
+                       getFromIPFS(cid).then((dataFromIPFS) => {
+                           console.log('dataFromIPFS',dataFromIPFS)
+                           const privateKey = getWif(SEND_CLIENT,addr)
+                           console.log('our privateKey',getPrivateKeyFromWif({wif:privateKey}))
+                           const decryptedDataObjectFromIPFS = decryptMessage({
+                               message:dataFromIPFS,
+                               privateKey:getPrivateKeyFromWif({wif:privateKey})})
+                           console.log("dataFromIPFS (email to request)",JSON.parse(decryptedDataObjectFromIPFS))
+                            const to = JSON.parse(decryptedDataObjectFromIPFS).sender_mail
+                           const subject = "Doichain email verification processs"
+                           const message = `Please click the following  link to verify activate your email ${to} on the Doichain blockchain.`
+                           const contentType = "text/plain"
+                            console.log('sending to',to)
+                           addSendVerifyEmailMailJob({
+                               to: to,
+                               subject: subject,
+                               message: message,
+                               contentType: contentType
+                           });
+                       })
+                       console.log("adding nameId to validator and requesting email verification",tx.scriptPubKey.nameOp.name)
+                   }
+               })
+           });
+
       }
   } catch(exception) {
     throw new Meteor.Error('doichain.checkNewTransactions.exception', exception);
@@ -130,6 +180,34 @@ const checkNewTransaction = (txid, job) => {
   return true;
 };
 
+const getFromIPFS = async (cid) => {
+    let { Peer, BlockStore } = require('@textile/ipfs-lite')
+    let { setupLibP2PHost } = require('@textile/ipfs-lite/dist/setup')
+    let { MemoryDatastore } = require('interface-datastore')
+
+    let store = new BlockStore(new MemoryDatastore())
+    let data
+    await (async function() {
+       // let host = await setupLibP2PHost()
+        /*var host = await setupLibP2PHost(undefined, undefined, [
+            `/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star`
+        ])*/
+
+        let host = await setupLibP2PHost(undefined, undefined, ['/ip4/0.0.0.0/tcp/0'])
+        let lite = new Peer(store, host)
+
+        console.log('starting host...')
+        await lite.start()
+        console.log('started. getting file from cid',cid)
+        //let cid = 'QmWATWQ7fVPP2EFGu71UkfnqhYXDYH566qy47CnJDgvs8u'
+        data = await lite.getFile(cid)
+        console.log("got an email from alice to verify",data.toString())
+        // Hello World
+        await lite.stop()
+        //return data.toString()
+    })()
+    return data.toString()
+}
 
 function addNameTx(name, value, address, txid) {
 
@@ -144,6 +222,16 @@ function addNameTx(name, value, address, txid) {
     });
 }
 
+/**
+ * This method should add an incoing coin transaction weather its coming through memcash (unconfirmed) or in a new block (confirmed)
+ *
+ * //TODO 1) right now it only adds unconfirmed transactions (it should also add track confirmed) -
+ * //TODO 2) track transaction (txid, received,sent, amount address (from/to) for later use in doiContacts
+ *
+ * @param value
+ * @param address
+ * @param txid
+ */
 function addCoinTx(value,address, txid) {
 
     const addressValid = validateAddress(CONFIRM_CLIENT,address)  //TODO this should be not necessary at this point anymore

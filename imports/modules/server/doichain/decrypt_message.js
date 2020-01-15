@@ -3,8 +3,6 @@ import SimpleSchema from 'simpl-schema';
 import crypto from 'crypto';
 import ecies from 'standard-ecies';
 import CryptoJS from 'crypto-js'
-import eccrypto from 'eccrypto'
-import bitcore from "bitcore";
 
 const DecryptMessageSchema = new SimpleSchema({
     privateKey: {
