@@ -41,9 +41,10 @@ const decryptMessage = (data) => {
             const message = Buffer.from(ourData.message, 'hex');
             return ecies.decrypt(ecdh, message).toString('utf8');
         } catch (exception0) {
+            console.log(exception0)
             //try to decrypt with shared secret and aes (we use the following option in the javascript library - the upper in hte classic dApp
-            //TODO this is quite a hack which needs to be solved. In future we might remove the first variant
-            console.log('standard dApp ecies decryption didn`t work, truying ecdh with a shared scret')
+            //TODO this is an extremely dirthy hack which needs to be solved. In future we might remove the first variant
+            console.log('standard dApp ecies decryption didn`t work, truying ecdh with a shared secret')
             const secret = ecdh.computeSecret(ourData.publicKey, 'hex').toString('hex')
             const bytes = CryptoJS.AES.decrypt(ourData.message, secret);
             const message = bytes.toString(CryptoJS.enc.Utf8);

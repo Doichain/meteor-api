@@ -23,7 +23,6 @@ MailJobs.processJobs('sendVerifyEmail', function (job, cb) {
     try {
         const email = job.data;
         sendVerifyEmail(email)
-//    sendMail(email);
         job.done();
     } catch (exception) {
         job.fail();

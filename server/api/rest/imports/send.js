@@ -1,10 +1,11 @@
+import bitcore from "bitcore-doichain";
 import { Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE } from '../rest.js';
 import addOptIn from '../../../../imports/modules/server/opt-ins/add_and_write_to_blockchain.js';
 import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update_status.js';
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
 import {logError, logSend} from "../../../../imports/startup/server/log-configuration";
 import {
-    DOI_EXPORT_ROUTE,
+    DOI_EXPORT_ROUTE, DOI_NAME_SHOW,
     DOICHAIN_BROADCAST_TX,
     DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
     DOICHAIN_LIST_TXS,
@@ -12,9 +13,23 @@ import {
 } from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
-import {Roles} from "meteor/alanning:roles";
-import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, resolveTxt} from "../../dns";
+import {Transactions} from "../../../../imports/api/transactions/transactions";
+import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, } from "../../dns";
 import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
+import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
+import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
+import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
+import {Meta} from "../../../../imports/api/meta/meta";
+import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
+import getPublicKeyAndAddress from "../../../../imports/modules/server/doichain/get_publickey_and_address_by_domain";
+import getSignature from "../../../../imports/modules/server/doichain/get_signature";
+import {nameShow} from "../../doichain"
+import encryptMessage from "../../../../imports/modules/server/doichain/encrypt_message";
+import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
+import {IPFS} from "../../ipfs";
+import getAddress from "../../../../imports/modules/server/doichain/get_address";
+import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
+    from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
 import {
     getRawTransaction,
     importAddress,
@@ -23,21 +38,15 @@ import {
     sendRawTransaction,
     validateAddress,getWif
 } from "../../doichain";
-import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
-import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
-import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
-import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
-    from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
-import {Meta} from "../../../../imports/api/meta/meta";
-import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
-import getPublicKeyAndAddress from "../../../../imports/modules/server/doichain/get_publickey_and_address_by_domain";
-import getSignature from "../../../../imports/modules/server/doichain/get_signature";
-import encryptMessage from "../../../../imports/modules/server/doichain/encrypt_message";
-import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
 
-
+/**
+ * Verifies and sender email to belong to a certain wallet.
+ * Params:
+ * - sender_email: the sender email address to be verified
+ * - address (optional): a Doichain address of this wallet (if undefined) we use the first entry in the wallet (can be wrong!)
+ */
 Api.addRoute(EMAIL_VERIFY_ROUTE, {
-    post: {
+        post: {
         authRequired: true,
         action: function() {
             const qParams = this.queryParams;
@@ -45,47 +54,119 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
             let params = {}
             if(qParams !== undefined) params = {...qParams}
             if(bParams !== undefined) params = {...params, ...bParams}
-
             logSend('parameter received from rpc client:',params);
-            //TODO in case we submitt an array we should call this function for each element
+            const senderEmail = params.sender_mail
+            const ourAddress = params.address
+
+            const retValidateAddress = validateAddress(SEND_CLIENT,ourAddress)
+
+            retValidateAddress.ismine?console.log("retValidateAddress.ismine:"+retValidateAddress.ismine):retValidateAddress
+            retValidateAddress.isvalid?console.log("retValidateAddress.valid:"+retValidateAddress.isvalid):'not valid'
+
+            if(!retValidateAddress.isvalid || !retValidateAddress.ismine){
+                return {statusCode: 500, body: {
+                        status: 'fail',
+                        message: 'address: '+ourAddress+
+                            ' valid: '+ retValidateAddress.isvalid+
+                            ' mine: '+retValidateAddress.ismine}};
+            }
+            const ourPrivateKey = getWif(SEND_CLIENT,ourAddress) //TODO this works only when we use the Doichain Node wallet in case we use mobile wallet this cannot work
+            const ourPublicKey = retValidateAddress.pubkey
+
             let emailsToVerify = []
             let nameDoiTx = ''
-            if(params.sender_mail.constructor !== Array)
-                emailsToVerify.push(params.sender_mail)
+            let senderPublicKey = ''
+
+            if(senderEmail.constructor !== Array)
+                emailsToVerify.push(senderEmail)
                 try {
                     let ipfsHashes = []
                     emailsToVerify.forEach((our_sender_email) => {
                         console.log('preparing email for verification', our_sender_email)
                         const parts = our_sender_email.split("@");
                         const domain = parts[parts.length - 1];
-                        const publicKeyAndAddress = getPublicKeyAndAddress({domain: domain});
+                        const publicKeyAndAddressOfValidator = getPublicKeyAndAddress({domain: domain});
+
                         //1. create a signature with our_sender_email and our private_key, use it as our nameId
-                        const privateKey = getWif(SEND_CLIENT) //here we use the first address of the dApps wallet
-                        console.log('privatKey',privateKey)
-                        console.log('our_sender_email',our_sender_email)
-
-                        const signature =  getSignature({message: our_sender_email, privateKey:
-                                getPrivateKeyFromWif({wif:privateKey})})
-                        //2. call name_doi on Doichain and store entry on blockchain recipient of address is public key gathered by domain name (dns)
+                        const signature =  getSignature({
+                                message: our_sender_email,
+                                privateKey:getPrivateKeyFromWif({wif:ourPrivateKey})
+                            })
+                        console.log(ourAddress+' signature for '+our_sender_email,ourPrivateKey)
+                        //2. store encrypted entry on ipfs and call name_doi on Doichain. Encrypted with PublicKey of validator
+                        // - recipient address is public key gathered by domain name (dns) - responsible validator (Bob)
                         const nameId = "es/" + signature
-
                         const encryptedObjectAsString =  encryptMessage({
-                                message: JSON.stringify({sender_mail:our_sender_email}),
-                                publicKey: publicKeyAndAddress.publicKey
-                        })
+                                message: JSON.stringify({
+                                    sender_mail:our_sender_email,
+                                    address: ourAddress
+                                }),
+                                publicKey: publicKeyAndAddressOfValidator.publicKey})
 
-                        addIPFS(encryptedObjectAsString).then((nameValue)=>{
-                            console.log('nameValue',nameValue) //TODO please encrypt this with a bobs publickey
-                            nameDoiTx = nameDoi(SEND_CLIENT, nameId, nameValue, publicKeyAndAddress.destAddress);
-                            const our_data =  {tx:nameDoiTx,nameId:nameId,nameValue:nameValue}
-                            console.log('nameDoi sent to Doichain node. tx:',our_data)
-                            //Remark: we do not provide a template, since validator should use a standard template
-                            //next steps on validator:
-                            ipfsHashes.push(our_data) //TODO doesn't seem to work because of async
-                        })
+                        //TODO 1. when executing mameDoi make sure you send it from the above stated Doichain address otherwise things get confusing.
+                        const utxos = Async.runSync((done) => {
+                            const nodeUtxos = listOurUnspent(retValidateAddress) //retValidateAddress
+                            console.log('got utxos from node for'+retValidateAddress,nodeUtxos)
+                            bitcore.getUTXOs4EmailVerificationRequest(
+                                ourAddress,undefined,nodeUtxos).then((retUTXOs) => {
+                                    done(undefined, retUTXOs)
+                                }) //TODO we have no offchain-utxos here so far, but every transaction creates change we need to reuse in case we want another transacition before next block
+                        }).result
+                        if(!utxos)
+                            return {statusCode: 500, body: {status: 'fail', message: 'insufficient funds or wait for next block'}};
+                        logSend('utxos found on Doichain node',utxos)
+                        const our_data = Async.runSync((done) => {
 
+                            addIPFS(encryptedObjectAsString).then((nameValue)=>{
+                                const destAddress = publicKeyAndAddressOfValidator.destAddress
+                                const changeAddress = ourAddress //TODO always create a new address (from a new privateky) for now just send change back to us.
+
+                                //TODO createRawDoichainTX is nice but not nice enough, here we don't want a DOI-Request TX we want a EmailVerification TX
+                                const txSignedSerialized = bitcore.createRawDoichainTX(
+                                    nameId,
+                                    nameValue,
+                                    destAddress,
+                                    changeAddress,
+                                    ourPrivateKey,
+                                    utxos, //here's the necessary utxos and the balance and change included
+                                    bitcore.constants.NETWORK_FEE.satoshis, //for storing this record
+                                    bitcore.constants.EMAIL_VERIFICATION_FEE.satoshis //for validator bob (0.01), to validate (reward) and store (0.01) the email verification
+                                )
+                                logSend('created signed doichain transaction for email verifcation',txSignedSerialized)
+                                try {
+                                    nameDoiTx = sendRawTransaction(SEND_CLIENT,txSignedSerialized)
+                                    logSend('got response from Doichain after sending txid',nameDoiTx)
+
+                                    if(!nameDoiTx) logError("problem with transaction no txid",nameDoiTx)
+                                    const txRaw = getRawTransaction(SEND_CLIENT,nameDoiTx)
+                                    console.log('got raw tx',txRaw)
+                                    const utxosResponse = bitcore.getOffchainUTXOs(changeAddress,txRaw)
+                                    logSend('utxos from after sending rawTx for changeAddress'+changeAddress,utxosResponse)
+
+                                    senderPublicKey = getPublicKeyOfOriginTxId(nameDoiTx)
+                                    const sender = getAddress({publicKey: senderPublicKey});
+                                    const our_data =  {
+                                        tx:nameDoiTx,
+                                        nameId:nameId,
+                                        nameValue:nameValue,
+                                        senderAddress:sender,
+                                        senderPublicKey: senderPublicKey
+                                    }
+
+                                    ipfsHashes.push(our_data)
+                                    done(false, true);
+                                }catch (e) {
+                                    console.log(e)
+                                    done(e, undefined);
+                                }
+                            })
+                        }).result
+                        logSend('nameDoi sent to Doichain node to initiate email verification tx:',ipfsHashes)
                     })
-                    return {status: 'success', data: {txData: ipfsHashes, status: 'success', message: 'Email address sent to validator(s)'}};
+                    return {status: 'success', data: {
+                            ipfsHashes: ipfsHashes,
+                            status: 'success',
+                            message: 'Email address sent to validator(s)'}};
                 } catch (error) {
                     return {statusCode: 500, body: {status: 'fail', message: error.message}};
                 }
@@ -93,41 +174,55 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
     }
 });
 
+/**
+ * Adds data to IPFS
+ *
+ * @param ipfsData
+ * @returns {Promise<string>}
+ */
 const addIPFS = async (ipfsData) => {
 
-    let { Peer, BlockStore } = require('@textile/ipfs-lite')
-    let { setupLibP2PHost } = require('@textile/ipfs-lite/dist/setup')
-    let { MemoryDatastore } = require('interface-datastore')
-
-    let store = new BlockStore(new MemoryDatastore())
     let data
     await (async function() {
-
-        //use any installed ipfs node on this host
-        let host
-        if(isRegtest())
-            host = await setupLibP2PHost(undefined, undefined, ['/ip4/0.0.0.0/tcp/0'])
-        else
-            host = await setupLibP2PHost()
-
-        let lite = new Peer(store, host)
-        await lite.start()
-
-        console.log('adding encrypted object ipfsData')
+        const lite = await IPFS()
+        logSend('adding encrypted object ipfsData')
         const source = [{
             path: 'nameId',
             content: ipfsData,
         }]
         data =  await lite.addFile(source)
-        console.log('added file with CID:',data.cid.toString())
-        console.log(data.cid.toString())
+        logSend('added file with CID:',data.cid.toString())
+        logSend(data.cid.toString())
         let retdata = await lite.getFile(data.cid)
-        console.log("returned file content from ifps",retdata.toString())
+        logSend("returned file content from ifps",retdata.toString())
 
-        setTimeout(() => {lite.stop()}, 10000)
+       // setTimeout(() => {lite.stop()}, 10000)
     })()
     return data.cid.toString()
 }
+
+Api.addRoute(DOI_NAME_SHOW, {authRequired: false}, {
+    get: {
+        action: function() {
+            const params = this.queryParams;
+            const nameId = decodeURIComponent(params.nameId);
+            logSend('name_show called with nameId',nameId)
+
+            try {
+                const val = Transactions.findOne({"nameId":nameId})
+                //const val = nameShow(SEND_CLIENT,nameId)
+                logSend('returned',val);
+                if(val)
+                    return {status: 'success', data: {val}};
+                else
+                    return {statusCode: 500, body: {status: 'fail', message: 'nameId not found in local transaction list'}};
+            } catch(error) {
+                return {statusCode: 500, body: {status: 'fail', message: error.message}};
+            }
+        }
+    }}
+)
+
 
 Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
   post: {
@@ -251,9 +346,8 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
             const domain = params.domain
 
             let ourOPT_IN_KEY=OPT_IN_KEY;
-            if(isRegtest() || isTestnet()){
-                ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
-            }
+            if(isRegtest() || isTestnet())  ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
+
             try {
                 const data = getOptInKey({domain:domain})
                 return {status: 'success', data};
@@ -275,63 +369,13 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             const params = this.queryParams;
             const ourAddress = params.address;
             try {
-                console.log('list transactions called - all transactions of this wallet used')
-                const account = ourAddress
-                if(account || account!=''){
-
-                //TODO lists only received transaction and not sent transactions here we need to store received and stored transactions in our own database and send this inst
-                const data = listTransactions(SEND_CLIENT,account).filter(function (el) {
-                  /*  const txid = el.txid
-                    //console.log('getting txis of ',txid)
-                    //get inputs and outputs to check if inputs and/or outputs belong to us
-                      const rawTx = getRawTransaction(SEND_CLIENT,txid);
-                       //console.log('trawTx is',rawTx)
-                        rawTx.vin.forEach( (input) => {
-                           //console.log('checking input with txid',input.txid)
-                           if(input.txid){ //input could be coinbase then it doesn't have a txid
-                           // console.log('input.txid',input.txid)
-                               getRawTransaction(SEND_CLIENT,input.txid).vout.forEach((output)=>{
-                                 //  console.log("input output.value",output.value)
-                                 //  console.log("input output.scriptPubKey.addresses",output.scriptPubKey.addresses)
-                                   const outputAdresses = output.scriptPubKey.addresses
-                                  // console.log("outputAdresses inputs",outputAdresses)
-                                   if(outputAdresses){
-                                       for(let i = 0;i<outputAdresses.length;i++){
-                                           if(outputAdresses[i]===ourAddress && el.category==='receive'){
-                                               console.log("--->was our input! returning",rawTx.vin)
-                                             //  el.ourInput[input.txid] = {output: output}
-                                               el.ourInput = [txid, {output: output}]
-                                           }
-                                       }
-                                   }
-                               })
-                           }
-                        })
-
-                    rawTx.vout.forEach((output) => {
-                        //console.log("output output.value",output.value)
-                        //console.log("output output.scriptPubKey.addresses",output.scriptPubKey.addresses)
-                       if(output.scriptPubKey && output.scriptPubKey.addresses){
-                           // console.log('checking output',output.scriptPubKey.addresses)
-                            const outputAdresses = output.scriptPubKey.addresses
-                            const addressesCount = outputAdresses.length
-                            //console.log("outputAdresses outputs",outputAdresses)
-                            for(var i = 0;i<addressesCount;i++){
-                                if(outputAdresses[i]===ourAddress && el.category==='send'){
-                                    console.log("--->was our output! returning",rawTx.vout)
-                                  //  el.ourOutput = true
-                                    el.ourInput = [txid, {output: output}]
-                                }
-                            }
-                        }
-                    })
-
-                    return el.address === ourAddress && (el.ourInput || el.ourOutput)*/
-                    return true
-                });
+                console.log('list transactions for address',ourAddress)
+                const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
                 console.log('data:',data)
-                return {status: 'success',data};
-                }else   return {status: 'success',data:[]};
+                if(data)
+                    return {status: 'success',data};
+                else
+                    return {status: 'success',data:[]};
 
             } catch(error) {
                 logError('error getting transactions for address '+ourAddress,error);
@@ -347,6 +391,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
  * Requests unspent transactions (utxo) from a given address
  * 1. Imports the given address into the nodes wallet for "watchonly" if not already imported.
  * 2. TODO only import if address is a verified address (send a signature of the email address together with the address + a publicKey)
+ * 3. TODO remark to 2. - interesting conecept, but in order to verify an email somebody else must pay the fee for it, if this wallet can't list unspents it cannot spend either! (!)
  * Method: GET
  * Params: doichain address: address
  * Example: https://localhost:3000/api/v1/listunspent?address=mj1FQKeXxdUrWJkrRti8iy2utHqarcrSoB
@@ -358,26 +403,9 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
             const params = this.queryParams
             const address = params.address
 
-            const listOurUnspent = (addressValidation,msg) =>{
-
-                const blocksCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_BLOCKS}).value
-                console.log(blocksCount)
-
-                let data = listUnspent(SEND_CLIENT,address)
-                const retVale =
-                    {status: 'success',
-                        msg: msg,
-                        block: blocksCount,
-                        ismine:addressValidation.ismine,
-                        iswatchonly: addressValidation.iswatchonly,
-                        data}
-
-                return retVale;
-            }
-
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,address);
-               // console.log("addressValidation",addressValidation)
+
                 if(!addressValidation.isvalid){
                     logError('doichain address not valid: '+address);
                     return {status: 'fail', error: 'doichain address not valid: '+address};
@@ -391,7 +419,6 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
                     importAddress(SEND_CLIENT,address)
                     return listOurUnspent(addressValidation,'address imported sucessfully')
                 }
-                console.log('bla',addressValidation)
             } catch(error) {
                 logError('error getting utxo from adddress '+address,error)
                 return {status: 'fail', error: error.message}
@@ -399,6 +426,22 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
         }
     }
 });
+
+const listOurUnspent = (addressValidation,msg) =>{
+
+    const blocksCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_BLOCKS}).value
+    console.log(blocksCount)
+    let data = (!addressValidation)?listUnspent(SEND_CLIENT):listUnspent(SEND_CLIENT,addressValidation.address)
+    const retVale =
+        {status: 'success',
+            msg: msg,
+            block: blocksCount,
+            ismine:addressValidation?addressValidation.ismine:true,
+            iswatchonly: addressValidation?addressValidation.iswatchonly:true,
+            data}
+
+    return retVale;
+}
 
 /**
  * Broadcasts a serialized raw transaction to the Doichain network, stores templateData on the Doichain node.
@@ -491,14 +534,10 @@ function prepareCoDOI(params){
         }
 
     });
-
-    logSend(retResponse);
-
     return retResponse;
 }
 
 function prepareAdd(params){
-
     try {
         const val = addOptIn(params);
         logSend('opt-In added ID:',val);

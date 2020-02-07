@@ -1,10 +1,9 @@
 import {Meteor} from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
-
-var bitcore = require('bitcore');
+import bitcore from 'bitcore'
 import Message from 'bitcore-message';
-
 import {logError, logVerify} from "../../../startup/server/log-configuration";
+import {isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
 
 const VerifySignatureSchema = new SimpleSchema({
     data: {
@@ -61,11 +60,16 @@ const verifySignature = (data) => {
         const ourData = data;
         logVerify('verifySignature:', ourData);
         VerifySignatureSchema.validate(ourData);
-        bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain-testnet')
+
+        if(isRegtest() || isTestnet())
+            bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain-testnet')
+        else
+            bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain')
 
         const address = bitcore.Address.fromPublicKey(new bitcore.PublicKey(ourData.publicKey));
+        const verify = Message(ourData.data).verify(address, ourData.signature)
         try {
-            return Message(ourData.data).verify(address, ourData.signature);
+            return verify
         } catch (error) {
             logError(error)
         }

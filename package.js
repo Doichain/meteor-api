@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.3.39',
+  version: '0.3.40',
   summary: 'Provides a Doichain REST API & webfrontend for Doichain Node',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
@@ -20,7 +20,8 @@ Package.onUse(function(api) {
             'nimble:restivus@0.8.12',
             'http@1.4.2',
             'accounts-base@1.4.3',
-            'doichain:settings@0.2.17'
+            'doichain:settings@0.2.17',
+            'meteorhacks:async@1.0.0'
         ],
         imply = [
             'mongo'
@@ -48,6 +49,7 @@ Npm.depends({
     'hashids':'1.2.2',
     'eccrypto':'1.1.2',
     'crypto':'1.0.1',
+    "bitcore-doichain":"0.1.28",
     'bitcore-message':'0.12.0'
 });
 

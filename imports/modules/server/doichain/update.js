@@ -51,8 +51,6 @@ const update = (data, job) => {
         logConfirm('name not visible - delaying name update',ourData.nameId);
         return;
     }
-    //const our_transaction = getTransaction(CONFIRM_CLIENT,name_data.txid);
-
     //if the doi is already safed in blockchain
     if(name_data.value.indexOf('doiSignature')!=-1){
         logConfirm('doiSignature found in DOI cancelling job',name_data);
@@ -65,25 +63,24 @@ const update = (data, job) => {
 
     const rawTransaction = getRawTransaction(CONFIRM_CLIENT,name_data.txid)
 
-    let address
-    let outputIndex = 0
+    let address = undefined
     rawTransaction.vout.forEach(function (output) { //checking out the correct output
           if(!address){
-              const our_address = rawTransaction.vout[outputIndex++].scriptPubKey.addresses[0]
+              const our_address = output.scriptPubKey.addresses[0]
               if(validateAddress(CONFIRM_CLIENT,our_address).ismine){
                   address = our_address
               }
           }
     })
 
-   // const address = rawTransaction.vout[0].scriptPubKey.addresses[0]
     const wif = getWif(CONFIRM_CLIENT, address);
     const privateKey = getPrivateKeyFromWif({wif: wif});
     logConfirm('got private key (will not show it here) in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
 
     const publicKey = getPublicKeyOfOriginTxId(name_data.txid);
     let ourfromHostUrl = decryptMessage({publicKey: publicKey, privateKey: privateKey, message: ourData.fromHostUrl});
-    if(!ourfromHostUrl.endsWith("/"))ourfromHostUrl+="/"
+
+    if(!ourfromHostUrl.endsWith("/")) ourfromHostUrl+="/"
     logConfirm('decrypted fromHostUrl',ourfromHostUrl);
     const url = ourfromHostUrl+API_PATH+VERSION+"/"+DOI_CONFIRMATION_NOTIFY_ROUTE;
 
@@ -99,10 +96,8 @@ const update = (data, job) => {
 
     try {
         //TODO alice gets informed also in case something is wrong with the update
-        console.log("update doi confirmation url",url)
         const response = getHttpPUT(url, updateData);
-
-        logConfirm('informed send dApp about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
+        logConfirm('informed send dApp (Alice) about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
 
         const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
         logConfirm('name_doi of transaction txid:',txid);

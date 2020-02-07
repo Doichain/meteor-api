@@ -4,6 +4,7 @@ import {logBlockchain, logError} from "../../imports/startup/server/log-configur
 const NAMESPACE = 'e/';
 const NAMESPACE_VERIFIED_EMAIL = 'es/';
 const DOI_FEE = '0.03';
+const VERIEFIED_EMAIL_FEE = '0.011';
 
 export function getWif(client, address) {
   if(!address){
@@ -106,19 +107,16 @@ function doichain_nameList(client, callback) {
     });
 }
 
-export function nameShow(client, id) {
+export function nameShow(client, nameId) {
   const syncFunc = Meteor.wrapAsync(doichain_nameShow);
-  return syncFunc(client, id);
+  return syncFunc(client, nameId);
 }
 
-function doichain_nameShow(client, id, callback) {
-    console.log("id",id)
-  const ourId = checkId(id);
+function doichain_nameShow(client, nameId, callback) {
+    console.log("name_show",nameId)
+  const ourId = checkId(nameId);
+    console.log("name_show",ourId)
   client.cmd('name_show', ourId, function(err, data) {
-  /*  if(err !== undefined && err !== null) {
-      err = undefined,
-      data = undefined
-    } */
     callback(err, data);
   });
 }
@@ -174,6 +172,7 @@ export function sendRawTransaction(client, tx) {
 }
 
 function doichain_sendrawtransaction(client, tx, callback) {
+    console.log('sending raw transaction',tx)
     client.cmd('sendrawtransaction', tx , function(err, data) {
         callback(err, data);
     });
@@ -268,8 +267,8 @@ function doichain_gettransaction(client, txid, callback) {
 }
 
 export function getRawTransaction(client, txid) {
-    const syncFunc = Meteor.wrapAsync(doichain_getrawtransaction);
-    return syncFunc(client, txid);
+        const syncFunc = Meteor.wrapAsync(doichain_getrawtransaction);
+        return syncFunc(client, txid);
 }
 
 function doichain_getrawtransaction(client, txid, callback) {
@@ -303,6 +302,10 @@ function doichain_importpubkey(client, pubkey, callback) {
     });
 }
 
+export function listUnspentNew(client) {
+    const syncFunc = Meteor.wrapAsync(list_unspent);
+    return syncFunc(client);
+}
 export function listUnspent(client, address) {
     const syncFunc = Meteor.wrapAsync(list_unspent);
     return syncFunc(client, address);
@@ -352,6 +355,10 @@ function doichain_getinfo(client, callback) {
     });
 }
 
+/**
+ * 1. checks if an id starts with doi: if yes it will be removed
+ * 2. checks if an id doesn't start with e/ (DOI-permission) and not with es/ (Email signature) and optionaly putting a e/ as default
+ */
 function checkId(id) {
     const DOI_PREFIX = "doi: ";
     let ret_val = id; //default value

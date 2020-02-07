@@ -23,6 +23,13 @@ const getAddress = (data) => {
   }
 };
 
+//TODO please replace this through already written and temper proof libraries methods (bitcoin-js, bitcore lib etc)
+/**
+ * Creates an Addres from a PrivateKey
+ * @param publicKey
+ * @returns {*}
+ * @private
+ */
 function _getAddress(publicKey) {
   const pubKey = CryptoJS.lib.WordArray.create(Buffer.from(publicKey, 'hex'));
   let key = CryptoJS.SHA256(pubKey);

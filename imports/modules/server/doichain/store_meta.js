@@ -17,7 +17,7 @@ function storeMeta(blockchainInfoVal,data) {
         }
     }
     else {  //if its not an object
-        if(id)Meta.update({_id:id},{$set:{value: val,key:blockchainInfoVal}});
+        if(id)Meta.update({_id:id},{$set:{value: val,key:blockchainInfoVal,stateDate:new Date()}});
         else Meta.insert({key:blockchainInfoVal, value: val});
     }
    // console.log("id:"+id+" val:"+val+" key:"+blockchainInfoVal)

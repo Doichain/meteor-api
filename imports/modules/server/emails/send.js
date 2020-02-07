@@ -107,7 +107,6 @@ const sendMail = (mail) => {
       Email.send(emailToSend);
       OptIns.update({nameId: mail.nameId},{$push:{status:'email sent'}});
     }
-
     else{
       const error = 'Error creating email'
       OptIns.update({nameId: mail.nameId},{$push:{status:'error fetching template', error:error }})

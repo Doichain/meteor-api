@@ -8,6 +8,8 @@ import {BLOCKCHAIN_INFO_VAL_CHAIN as chain, BLOCKCHAIN_INFO_VAL_BLOCKS as blocks
     BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS as ourrequestedAndConfirmeddoi,
     BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS as ourReceivedDois,
     BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS as ourconfirmeddois,
+    BLOCKCHAIN_INFO_VAL_ALLREQUESTEDEMAILVERIFICATIONS as allRequestedEmailVerifications,
+    BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDEMAILVERIFICATIONS as allConfirmedEmailVerifications,
     LAST_CHECKED_BLOCK_KEY as lastCheckBlockKey
 } from "./imports/startup/both/constants";
 
@@ -35,4 +37,6 @@ export const BLOCKCHAIN_INFO_VAL_OURREQUESTEDANDCONFIRMEDDOIS = ourrequestedAndC
 export const BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS = ourrequesteddoi
 export const BLOCKCHAIN_INFO_VAL_OURRECEIVEDDOIS = ourReceivedDois
 export const BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS = ourconfirmeddois
+export const BLOCKCHAIN_INFO_VAL_ALLREQUESTEDEMAILVERIFICATIONS = allRequestedEmailVerifications
+export const BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDEMAILVERIFICATIONS = allConfirmedEmailVerifications
 export const LAST_CHECKED_BLOCK_KEY = lastCheckBlockKey

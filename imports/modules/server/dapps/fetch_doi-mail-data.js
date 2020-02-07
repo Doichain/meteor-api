@@ -134,7 +134,7 @@ const fetchDoiMailData = (data) => {
         logConfirm('generated confirmationHash:', confirmationHash);
         const confirmationUrl = getUrl() + API_PATH + VERSION + "/" + DOI_CONFIRMATION_ROUTE + "/" + encodeURIComponent(confirmationHash);
         logConfirm('confirmationUrl:' + confirmationUrl);
-        let template = null;
+        let template = undefined;
 
         if(responseData.encryptedData===undefined) {
             if (responseData.data.contentType == "json") {   //Encoding needs to be considered before parsing

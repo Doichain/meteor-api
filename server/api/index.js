@@ -4,3 +4,4 @@ import './blockchain_jobs.js';
 import './dapp_jobs.js';
 import './dns.js';
 import './rest/rest.js';
+import './ipfs.js'

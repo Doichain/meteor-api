@@ -1,15 +1,11 @@
 import namecoin from 'namecoin';
-import { SEND_APP, CONFIRM_APP, VERIFY_APP, isAppType } from './type-configuration.js';
 import {getAddressesByAccount, getNewAddress, validateAddress} from "../../../server/api/doichain";
 import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
 
 var sendClient = createClient("send");
-/*var sendClient = undefined;
-if(isAppType(SEND_APP)) {
 
-}*/
 export const SEND_CLIENT = sendClient;
 
 var confirmClient = undefined;

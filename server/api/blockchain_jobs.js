@@ -1,4 +1,3 @@
-
 import { JobCollection,Job } from 'meteor/vsivsi:job-collection';
 export const BlockchainJobs = JobCollection('blockchain');
 import { Meteor } from 'meteor/meteor';
