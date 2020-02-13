@@ -2,7 +2,7 @@ import { Api } from '../rest.js'
 import {getInfo} from "../../doichain"
 import { CONFIRM_CLIENT,SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration"
 import {DOI_BLOCKNOTIFY_ROUTE, DOI_WALLETNOTIFY_ROUTE} from "../rest"
-import {logConfirm} from "../../../../imports/startup/server/log-configuration"
+import {logConfirm, logMain} from "../../../../imports/startup/server/log-configuration"
 import checkNewTransaction from "../../../../imports/modules/server/doichain/check_new_transactions"
 import updateMeta from "../../../../imports/modules/server/doichain/update_meta";
 import {Meta} from "../../../../imports/api/meta/meta";
@@ -38,14 +38,29 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       const params = this.queryParams;
       const tx = params.tx;
       try {
-        logConfirm('walletnotfiy called - checking transaction with tx:',tx?tx:' block arrived or no txid in parameter');
-        if(tx && !txidFilter.includes(tx)){
-          txidFilter.push(tx)
+        console.log('_',(_ === undefined))
+        console.log('txidFilter',txidFilter)
+        console.log(_.find(txidFilter, (ourTx) => ourTx.tx===tx))
+        const foundTxs = _.find(txidFilter, (ourTx) => ourTx.tx===tx)
+        console.log("foundTxs.length"+(foundTxs===undefined))
+        console.log("foundTxs",foundTxs)
+        logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),_.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');
+        if(!_.find(txidFilter, (ourTx) => ourTx.tx===tx)) {
+          txidFilter.push({tx:tx, date:new Date()})
           checkNewTransaction(tx,null);
+          console.log('txidFilter now',txidFilter)
         }
+
         //we cleanup the txidFilter after we put a value inside - which should protect us for double calls (for the change) which is anyways recorded by our later logic
-        delete txidFilter[txidFilter.indexOf(tx)];
-        console.log('txFilter length (should be empty)',txidFilter.length)
+        for(let i = 0; i<txidFilter.length;i++ ){
+          console.log('txidFilter[i].date.getTime()'+new Date(txidFilter[i].date.getTime()+10000).toISOString(),new Date().toISOString())
+          if(txidFilter[i].date.getTime()+(1000*10) <  new Date().getTime()) //if older then 1 minute we delete them from the txfilter
+            logMain("deleting tx from txidFilter: "+i,txidFilter[i])
+            delete txidFilter[i];
+            console.log('txFilter length (should be empty)',txidFilter.length)
+        }
+
+
         return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
       } catch(error) {
         return {status: 'fail', error: error.message};
@@ -60,7 +75,6 @@ Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {authRequired: false},{
     action: function() {
       const params = this.queryParams;
       try {
-          const checked = true
           checkNewTransaction(null,params.block);
           updateMeta();
         return {status: 'success',  data: Meta.findOne({"key" : "blocks"}).value}

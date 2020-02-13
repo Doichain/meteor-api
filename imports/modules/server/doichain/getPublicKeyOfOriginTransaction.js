@@ -15,12 +15,8 @@ export const getPublicKeyOfRawTransaction = (rawTx,parent) => {
         const lengthOfAsm = rawTx.vin[0].scriptSig.asm.length
         if(indexOfPubKey!=-1)
         {
-            console.log('indexOfPubKey',indexOfPubKey)
-            console.log('lengthOfAsm',lengthOfAsm)
             //TODO could be we have more then one vin - then we have more then one publicKey
             const publicKey = asm.substring(indexOfPubKey+6,lengthOfAsm) //TODO is this safe? is this always like this? Guess not.
-           // console.log("vin[0].scriptSig",rawTx.vin[0].scriptSig)
-            console.log('found publicKey ',publicKey)
             return publicKey;
         }
     }

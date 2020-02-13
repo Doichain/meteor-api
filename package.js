@@ -50,6 +50,7 @@ Npm.depends({
     'eccrypto':'1.1.2',
     'crypto':'1.0.1',
     "bitcore-doichain":"0.1.28",
+    "bitcoinjs-lib":"5.1.7",
     'bitcore-message':'0.12.0'
 });
 

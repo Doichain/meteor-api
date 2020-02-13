@@ -1,4 +1,5 @@
 import bitcore from "bitcore-doichain";
+import bitcoin from "bitcoinjs-lib"
 import { Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE } from '../rest.js';
 import addOptIn from '../../../../imports/modules/server/opt-ins/add_and_write_to_blockchain.js';
 import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update_status.js';
@@ -23,7 +24,6 @@ import {Meta} from "../../../../imports/api/meta/meta";
 import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
 import getPublicKeyAndAddress from "../../../../imports/modules/server/doichain/get_publickey_and_address_by_domain";
 import getSignature from "../../../../imports/modules/server/doichain/get_signature";
-import {nameShow} from "../../doichain"
 import encryptMessage from "../../../../imports/modules/server/doichain/encrypt_message";
 import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
 import {IPFS} from "../../ipfs";
@@ -33,8 +33,7 @@ import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
 import {
     getRawTransaction,
     importAddress,
-    listTransactions,
-    listUnspent, nameDoi,
+    listUnspent,
     sendRawTransaction,
     validateAddress,getWif
 } from "../../doichain";
@@ -95,7 +94,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                         console.log(ourAddress+' signature for '+our_sender_email,ourPrivateKey)
                         //2. store encrypted entry on ipfs and call name_doi on Doichain. Encrypted with PublicKey of validator
                         // - recipient address is public key gathered by domain name (dns) - responsible validator (Bob)
-                        const nameId = "es/" + signature
+                        let nameId = "es/" + signature
                         const encryptedObjectAsString =  encryptMessage({
                                 message: JSON.stringify({
                                     sender_mail:our_sender_email,
@@ -108,58 +107,177 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                             const nodeUtxos = listOurUnspent(retValidateAddress) //retValidateAddress
                             console.log('got utxos from node for'+retValidateAddress,nodeUtxos)
                             bitcore.getUTXOs4EmailVerificationRequest(
-                                ourAddress,undefined,nodeUtxos).then((retUTXOs) => {
+                                    ourAddress,undefined,nodeUtxos).then((retUTXOs) => {
                                     done(undefined, retUTXOs)
                                 }) //TODO we have no offchain-utxos here so far, but every transaction creates change we need to reuse in case we want another transacition before next block
                         }).result
                         if(!utxos)
                             return {statusCode: 500, body: {status: 'fail', message: 'insufficient funds or wait for next block'}};
-                        logSend('utxos found on Doichain node',utxos)
+                        logSend('utxos found on Doichain node', utxos)
                         const our_data = Async.runSync((done) => {
 
-                            addIPFS(encryptedObjectAsString).then((nameValue)=>{
-                                const destAddress = publicKeyAndAddressOfValidator.destAddress
-                                const changeAddress = ourAddress //TODO always create a new address (from a new privateky) for now just send change back to us.
-
-                                //TODO createRawDoichainTX is nice but not nice enough, here we don't want a DOI-Request TX we want a EmailVerification TX
-                                const txSignedSerialized = bitcore.createRawDoichainTX(
-                                    nameId,
-                                    nameValue,
-                                    destAddress,
-                                    changeAddress,
-                                    ourPrivateKey,
-                                    utxos, //here's the necessary utxos and the balance and change included
-                                    bitcore.constants.NETWORK_FEE.satoshis, //for storing this record
-                                    bitcore.constants.EMAIL_VERIFICATION_FEE.satoshis //for validator bob (0.01), to validate (reward) and store (0.01) the email verification
-                                )
-                                logSend('created signed doichain transaction for email verifcation',txSignedSerialized)
+                            addIPFS(encryptedObjectAsString).then((nameValue) => {
                                 try {
-                                    nameDoiTx = sendRawTransaction(SEND_CLIENT,txSignedSerialized)
-                                    logSend('got response from Doichain after sending txid',nameDoiTx)
+                                    logSend('nameValue from ipfs is', nameValue)
+                                    const destAddress = publicKeyAndAddressOfValidator.destAddress
+                                    const changeAddress = ourAddress //TODO always create a new address (from a new privateky) for now just send change back to us.
 
-                                    if(!nameDoiTx) logError("problem with transaction no txid",nameDoiTx)
-                                    const txRaw = getRawTransaction(SEND_CLIENT,nameDoiTx)
-                                    console.log('got raw tx',txRaw)
-                                    const utxosResponse = bitcore.getOffchainUTXOs(changeAddress,txRaw)
-                                    logSend('utxos from after sending rawTx for changeAddress'+changeAddress,utxosResponse)
+                                    const DOICHAIN = {
+                                        messagePrefix: '\x19Doichain Signed Message:\n',
+                                        bech32: 'dc',
+                                        bip32: {
+                                            public: 0x0488b21e,
+                                            private: 0x0499ade4
+                                        },
+                                        pubKeyHash: 52, //D=30 d=90 (52=N) https://en.bitcoin.it/wiki/List_of_address_prefixes
+                                        scriptHash: 13,
+                                        wif: 180, //???
+                                    };
+
+                                    const DOICHAIN_TESTNET = {
+                                        messagePrefix: '\x19Doichain-Testnet Signed Message:\n',
+                                        bech32: 'dt',
+                                        bip32: {
+                                            public: 0x043587cf,
+                                            private: 0x04358394
+                                        },
+                                        pubKeyHash: 111, //D=30 d=90 (52=N) https://en.bitcoin.it/wiki/List_of_address_prefixes
+                                        scriptHash: 196,
+                                        wif: 239, //???
+                                    };
+
+                                    const DOICHAIN_REGTEST = {
+                                        messagePrefix: '\x19Doichain-Testnet Signed Message:\n',
+                                        bech32: 'dcrt',
+                                        bip32: {
+                                            public: 0x043587cf,
+                                            private: 0x04358394
+                                        },
+                                        pubKeyHash: 111, //D=30 d=90 (52=N) https://en.bitcoin.it/wiki/List_of_address_prefixes
+                                        scriptHash: 196,
+                                        wif: 239, //???
+                                    };
+
+                                    //  const keyPair = bitcoin.ECPair.makeRandom({ network: DOICHAIN_TESTNET });
+                                    //  console.log('keyPair',keyPair)
+                                    //  const { address } = bitcoin.payments.p2pkh({
+                                    //      pubkey: keyPair.publicKey,
+                                    //      network: DOICHAIN,
+                                    //  });
+                                    //  console.log('adddress',address)
+                                    const keypair = bitcoin.ECPair.fromWIF(ourPrivateKey, DOICHAIN_REGTEST);
+                                    var conv = require('binstring');
+                                    var base58 = require('bs58');
+
+                                    let nameIdPart2 = ''
+                                    if(nameId.length>57) //we have only space for 77 chars in the name in case its longer as in signatures put the rest into the value
+                                    {
+                                        console.log('cutting nameId in two parts',nameId.length)
+                                        nameIdPart2 = nameId.substring(58,nameId.length)
+                                        nameId = nameId.substring(0,57)
+
+                                        console.log('nameIdPart2',nameIdPart2)
+                                        nameValue = nameIdPart2+' '+nameValue
+                                    }
+                                    const op_name = conv(nameId,{in:'binary', out:'hex'})
+                                    let op_value = conv(nameValue, {in: 'binary', out:'hex'})
+                                    const op_address = conv(destAddress, {in: 'binary', out:'hex'})  //base58.decode(destAddress).toString('hex').substr(2, 40);
+                                    const opCodesStackScript = bitcoin.script.fromASM(
+                                        `
+                                              OP_10
+                                              ${op_name}
+                                              ${op_value}
+                                              OP_2DROP
+                                              OP_DROP
+                                              OP_DUP
+                                              OP_HASH160
+                                              ${op_address}
+                                              OP_EQUALVERIFY
+                                              OP_CHECKSIG
+                                        `.trim().replace(/\s+/g, ' '),
+                                    )
+
+                                    const input = utxos.utxos[0]
+                                    const inputTxId = input.txid
+                                    const n = input.vout
+                                    //const inputRawTx = getRawTransaction(SEND_CLIENT, inputTxId)
+                                    //const scriptPubKey = input.scriptPubKey
+                                    /*  console.log(
+                                        inputRawTx.hex + "\n"+
+                                        (input.amount * 100000000).toString(16) + "\n" +// value in satoshis (Int64LE) = 0x015f90 = 90000
+                                        (scriptPubKey.length/2).toString(16) + "\n"+
+                                        scriptPubKey +"\n"+
+                                        // locktime
+                                        '00000000') */
+                                    const txb = new bitcoin.TransactionBuilder(DOICHAIN_REGTEST)
+                                    txb.addInput(inputTxId, n)
+                                    txb.addOutput(destAddress, bitcore.constants.EMAIL_VERIFICATION_FEE.satoshis)
+                                    txb.addOutput(opCodesStackScript,bitcore.constants.NETWORK_FEE.satoshis)
+                                    txb.addOutput(changeAddress, parseInt(((utxos.change) * 100000000))-50000)
+                                    txb.setVersion(0x7100) //TODO add this to constants
+                                    txb.sign(0, keypair)
+                                    const txSignedSerialized = txb.build().toHex()
+                                    /*
+                                    const psbt = new bitcoin.Psbt({network: DOICHAIN_REGTEST})
+                                        .addInput({
+                                            hash: inputTxId, index: n,
+                                            nonWitnessUtxo: Buffer.from(
+                                                inputRawTx.hex +
+                                                (input.amount * 100000000).toString(16) +  // value in satoshis (Int64LE) = 0x015f90 = 90000
+                                                (scriptPubKey.length/2).toString(16) +
+                                                scriptPubKey +
+                                                // locktime
+                                                '00000000',
+                                                'hex')
+                                        })
+                                        .addOutput({
+                                            address: destAddress,
+                                            value: bitcore.constants.EMAIL_VERIFICATION_FEE.satoshis
+                                        })
+                                       .addOutput({
+                                            script: opCodesStackScript,
+                                            value: bitcore.constants.NETWORK_FEE.satoshis
+                                        })
+                                        .addOutput({
+                                            address: changeAddress,
+                                            value: parseInt(utxos.change) * 100000000 //-1500000
+                                        })
+                                        .signInput(0, keypair); //https://bitcoin.stackexchange.com/posts/86118/revisions
+                                    psbt.setMaximumFeeRate(15000)
+
+                                    psbt.finalizeAllInputs();
+                                    const txSignedSerialized = psbt.extractTransaction().toHex()
+                                      */
+                                   // return
+
+                                    nameDoiTx = sendRawTransaction(SEND_CLIENT, txSignedSerialized)
+                                    logSend('got response from Doichain after sending txid', nameDoiTx)
+
+                                    if (!nameDoiTx){
+                                        logError("problem with transaction no txid", nameDoiTx)
+                                    }
+                                    const txRaw = getRawTransaction(SEND_CLIENT, nameDoiTx)
+                                    console.log('got raw tx', txRaw)
+                                   // const utxosResponse = bitcore.getOffchainUTXOs(changeAddress, txRaw)
+                                    //logSend('utxos from after sending rawTx for changeAddress' + changeAddress, utxosResponse)
 
                                     senderPublicKey = getPublicKeyOfOriginTxId(nameDoiTx)
                                     const sender = getAddress({publicKey: senderPublicKey});
-                                    const our_data =  {
-                                        tx:nameDoiTx,
-                                        nameId:nameId,
-                                        nameValue:nameValue,
-                                        senderAddress:sender,
+                                    const our_data = {
+                                        tx: nameDoiTx,
+                                        nameId: nameId,
+                                        nameValue: nameValue,
+                                        senderAddress: sender,
                                         senderPublicKey: senderPublicKey
                                     }
 
                                     ipfsHashes.push(our_data)
                                     done(false, true);
-                                }catch (e) {
+                                } catch (e) {
                                     console.log(e)
                                     done(e, undefined);
                                 }
-                            })
+                            }) //addIpfs
                         }).result
                         logSend('nameDoi sent to Doichain node to initiate email verification tx:',ipfsHashes)
                     })
@@ -210,7 +328,6 @@ Api.addRoute(DOI_NAME_SHOW, {authRequired: false}, {
 
             try {
                 const val = Transactions.findOne({"nameId":nameId})
-                //const val = nameShow(SEND_CLIENT,nameId)
                 logSend('returned',val);
                 if(val)
                     return {status: 'success', data: {val}};

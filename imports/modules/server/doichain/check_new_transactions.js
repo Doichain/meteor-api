@@ -154,10 +154,10 @@ const checkNewTransaction = (txid, block) => {
           }
 
           txs.forEach(our_txid => {
-
+              logConfirm('now checking txid:',our_txid)
               let tx
               try {
-                  tx = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, our_txid)
+                  tx = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, our_txid,true)
               }catch(e){
                   logConfirm("tx not ours");
               }
@@ -169,6 +169,7 @@ const checkNewTransaction = (txid, block) => {
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
                       const amount = detail.amount
+                      const category = detail.category
                       const fee = detail.fee
                       const n = detail.vout
                       const name = detail.name
@@ -217,6 +218,7 @@ const checkNewTransaction = (txid, block) => {
                           || isSenderMyMAddress.iswatchonly)
                           addCoinTx(tx.txid,
                               n,
+                              category,
                               amount,
                               fee,
                               tx.confirmations,
@@ -229,6 +231,7 @@ const checkNewTransaction = (txid, block) => {
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
               logConfirm("transactions updated - lastCheckedBlock:", lastCheckedBlock);
           })
+          logConfirm("working with tx finished");
       }
   } catch(exception) {
         throw new Meteor.Error('doichain.checkNewTransactions.exception', exception);
@@ -320,11 +323,10 @@ function addNameTx(name, value, address, txid) {
  * @param address
  * @param txid
  */
-function addCoinTx(txid,n,amount,fee, confirmations,senderAddress,address,nameId,nameValue) {
-    console.log('adding coin ', amount)
-    let category = "sent"
-    if (validateAddress(CONFIRM_CLIENT, address).ismine) category = 'received'
-
+function addCoinTx(txid,n,category,amount,fee, confirmations,senderAddress,address,nameId,nameValue) {
+    const our_address = (category==="send")?senderAddress:address
+    const our_senderAddress = (category==="receive")?address:senderAddress
+    console.log('adding coin to address: '+address, amount)
     const tx = {
         txid: txid,
         n: n,
@@ -332,21 +334,17 @@ function addCoinTx(txid,n,amount,fee, confirmations,senderAddress,address,nameId
         amount: amount,
         fee: fee ? fee : 0,
         confirmations: confirmations,
-        address: address,
-        senderAddress: senderAddress,
+        senderAddress: our_senderAddress,
+        address: our_address,
         nameId: nameId,
         nameValue: nameValue
     }
-    console.log(tx)
     const insertTx = () => {
-        Transactions.remove({txid: txid, n: n})
+        Transactions.remove({txid: txid, n: n,amount:amount})
         const transactionsId = Transactions.insert(tx)
         console.log(transactionsId + " transactionsId inserted local db")
     }
-    //if(confirmations>0) Meteor.setTimeout(insertTx, 1000) //in case its a block please wait a second before inserting it to prevent collission with memcache tx (and double entries in db)
-    //else  //not necessary anymore sine we filter out already confirmed tx's before adding it twice
     insertTx()
-
     logConfirm(senderAddress + " sent " + amount + " DOI to address " + address + " in txid:", txid);
 
     const valueCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI})

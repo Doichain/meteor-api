@@ -12,7 +12,7 @@ const getAllLanguages = new ValidatedMethod({
 });
 
 // Get list of all method names on languages
-const OPTINS_METHODS = _.pluck([
+const OPTIONS_METHODS = _.pluck([
   getAllLanguages
 ], 'name');
 
@@ -20,7 +20,7 @@ if (Meteor.isServer) {
   // Only allow 5 opt-in operations per connection per second
   DDPRateLimiter.addRule({
     name(name) {
-      return _.contains(OPTINS_METHODS, name);
+      return _.contains(OPTIONS_METHODS, name);
     },
 
     // Rate limit per connection ID

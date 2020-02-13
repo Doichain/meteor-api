@@ -254,13 +254,13 @@ function doichain_listtransactions(client, account, callback) {
     });
 }
 
-export function getTransaction(client, txid) {
+export function getTransaction(client, txid, watchOnly) {
     const syncFunc = Meteor.wrapAsync(doichain_gettransaction);
-    return syncFunc(client, txid);
+    return syncFunc(client, txid, watchOnly);
 }
 
-function doichain_gettransaction(client, txid, callback) {
-    client.cmd('gettransaction', txid, function(err, data) {
+function doichain_gettransaction(client, txid, watchOnly,callback) {
+    client.cmd('gettransaction', txid, watchOnly, function(err, data) {
         if(err)  logError('doichain_gettransaction:',err);
         callback(err, data);
     });
@@ -331,7 +331,6 @@ function doichain_getbalance(client, callback) {
 }
 
 export function doichainSendToAddress(client, address, amount) {
-    console.log("doichainSendToAddress now "+address+" to",amount)
     const syncFunc = Meteor.wrapAsync(doichain_send_to_address);
     return syncFunc(client, address, amount);
 }

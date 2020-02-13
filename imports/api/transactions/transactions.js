@@ -50,12 +50,12 @@ Transactions.schema = new SimpleSchema({
     confirmations : {
         type: Number
     },
-    address:{
-        type:String
-    },
     senderAddress:{
         type: String,
         optional:true
+    },
+    address:{
+        type:String
     },
     nameId: {
         type: String,
