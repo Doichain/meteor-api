@@ -38,11 +38,8 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       const params = this.queryParams;
       const tx = params.tx;
       try {
-        console.log('_',(_ === undefined))
         console.log('txidFilter',txidFilter)
-        console.log(_.find(txidFilter, (ourTx) => ourTx.tx===tx))
         const foundTxs = _.find(txidFilter, (ourTx) => ourTx.tx===tx)
-        console.log("foundTxs.length"+(foundTxs===undefined))
         console.log("foundTxs",foundTxs)
         logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),_.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');
         if(!_.find(txidFilter, (ourTx) => ourTx.tx===tx)) {
@@ -56,7 +53,7 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
           console.log('txidFilter[i].date.getTime()'+new Date(txidFilter[i].date.getTime()+10000).toISOString(),new Date().toISOString())
           if(txidFilter[i].date.getTime()+(1000*10) <  new Date().getTime()) //if older then 1 minute we delete them from the txfilter
             logMain("deleting tx from txidFilter: "+i,txidFilter[i])
-            delete txidFilter[i];
+            txidFilter.splice(i, 1);
             console.log('txFilter length (should be empty)',txidFilter.length)
         }
 

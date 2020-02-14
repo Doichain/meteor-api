@@ -31,99 +31,6 @@ export const TX_VERIFIED_EMAIL_NAME_START = "es/";
 
 const checkNewTransaction = (txid, block) => {
   try {
-     //  let isMemCacheTransaction = false
-       //if the transaction reported (txid) just came in is still in mempool its clearly a mempool transaction
-      // const memPoolTransactions = getRawMemPool(CONFIRM_CLIENT);
-      // if(memPoolTransactions.indexOf(txid)!==-1) isMemCacheTransaction = true
-
-    /*   if(isMemCacheTransaction) {
-           logConfirm("walletnotfiy called - check_new_transactions",txid);
-           logConfirm("txid: "+txid+" arrived in mem cache - checking for name and coin outputs");
-           let ret;
-           let vout;
-           try{
-               ret = getRawTransaction(CONFIRM_CLIENT, txid);
-               vout = ret.vout;
-           }catch(e){
-               logConfirm('not our tx')
-           }
-           if(!ret || !vout || !vout.length===0){
-               logConfirm("txid "+txid+' does not contain transaction details or transaction not found.');
-               return;
-           }
-           let nameId
-           let nameValue
-           vout.forEach(output => {
-               if(output.scriptPubKey &&
-                   output.scriptPubKey.nameOp &&
-                   output.scriptPubKey.nameOp.op === "name_doi" &&
-                   output.scriptPubKey.nameOp.name !== undefined)
-               {
-                   if(output.scriptPubKey.nameOp.name.startsWith(TX_NAME_START)){
-                       nameId = output.scriptPubKey.nameOp.name
-                       nameValue =output.scriptPubKey.nameOp.value
-                       output.scriptPubKey.addresses.forEach(addr =>{
-                           console.log('now tryuing to add nameId on blockchain for address',addr)
-                           const isFoundMyAddress = validateAddress(SEND_CLIENT, addr)
-                           if(isFoundMyAddress.ismine) //no watchonly here please
-                               addNameTx(output.scriptPubKey.nameOp.name, output.scriptPubKey.nameOp.value,addr,txid)
-                       })
-                    }
-                   if(output.scriptPubKey.nameOp.name.startsWith(TX_VERIFIED_EMAIL_NAME_START)){
-                       nameId = output.scriptPubKey.nameOp.name
-                       nameValue =output.scriptPubKey.nameOp.value
-                       output.scriptPubKey.addresses.forEach(addr =>{
-                           const isFoundMyAddress = validateAddress(SEND_CLIENT, addr)
-                           if(isFoundMyAddress.ismine) //no watchonly addresses here please this is Bob not Alice
-                                addVerifyEmailTx(output.scriptPubKey.nameOp.name,output.scriptPubKey.nameOp.value,addr,txid)
-                       })
-                   }
-               }
-               console.log(output)
-               output.scriptPubKey.addresses.forEach(addr => {
-                   let publicKey
-                   if (!publicKey) publicKey = getPublicKeyOfOriginTxId(txid) //in case we have a confirmed block
-                   let firstOutsAddress
-                   if (!publicKey) { //handle Coinbase transaction transaction please refactor with the same procedure in memcache tx
-                       const rawTx = getRawTransaction(CONFIRM_CLIENT, tx.txid)
-                       const txIdOfInput = rawTx.vin[0].txid
-                       if (txIdOfInput) {
-                           console.log("txIdOfInput", txIdOfInput)
-                           const rawTxInput = getRawTransaction(CONFIRM_CLIENT, txIdOfInput)
-                           firstOutsAddress = rawTxInput.vout[0].scriptPubKey.addresses[0]
-                           console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
-                       }
-                   }
-
-                   const senderAddress = publicKey ? bitcore.getAddressOfPublicKey(publicKey).toString() : firstOutsAddress
-                   console.log('senderAddress', senderAddress)
-                   const isOwnerMyMAddress = validateAddress(CONFIRM_CLIENT, addr)
-                   const isSenderMyMAddress = validateAddress(CONFIRM_CLIENT, senderAddress)
-                   console.log('isOwnerMyMAddress: ' + isOwnerMyMAddress.address, isOwnerMyMAddress.ismine)
-                   console.log('isSenderMyMAddress:' + isSenderMyMAddress.address, isSenderMyMAddress.ismine)
-                   if (isOwnerMyMAddress.ismine
-                       || isOwnerMyMAddress.iswatchonly
-                       || isSenderMyMAddress.ismine
-                       || isSenderMyMAddress.iswatchonly) {
-                       const amount = output.value
-                       const n = output.n
-                       const fee = 0;
-                       const confirmations = 0
-                       addCoinTx(txid,
-                           n,
-                           amount,
-                           fee,
-                           confirmations,
-                           senderAddress,
-                           addr,
-                           nameId,
-                           nameValue);
-                   } else console.log('not mine', addr)
-               })
-               //}
-           });
-       } */
-
       if (block || txid) {
           logConfirm("blocknotfiy called - check_new_transactions for all tx of the block", block);
           let lastCheckedBlock = block
@@ -212,20 +119,26 @@ const checkNewTransaction = (txid, block) => {
                       console.log('isOwnerMyMAddress: ' + isOwnerMyMAddress.address, isOwnerMyMAddress.ismine)
                       const isSenderMyMAddress = validateAddress(CONFIRM_CLIENT, senderAddress)
                       console.log('isSenderMyMAddress: ' + senderAddress, isSenderMyMAddress.ismine)
-                      if (isOwnerMyMAddress.ismine
+                      if ((isOwnerMyMAddress.ismine
                           || isOwnerMyMAddress.iswatchonly
                           || isSenderMyMAddress.ismine
                           || isSenderMyMAddress.iswatchonly)
-                          addCoinTx(tx.txid,
-                              n,
-                              category,
-                              amount,
-                              fee,
-                              tx.confirmations,
-                              senderAddress,
-                              address,
-                              nameId,
-                              nameValue) //we add this again, since we are interested about the confirmation
+                      && senderAddress!==address)
+
+                         // if((category==="send" && (isSenderMyMAddress.ismine || isSenderMyMAddress.iswatchonly))
+                        //  || (category==="receive" && (isOwnerMyMAddress.ismine || isOwnerMyMAddress.iswatchonly)))
+                          {
+                              addCoinTx(tx.txid,
+                                  n,
+                                  category,
+                                  amount,
+                                  fee,
+                                  tx.confirmations,
+                                  senderAddress,
+                                  address,
+                                  nameId,
+                                  nameValue)
+                          } //we add this again, since we are interested about the confirmation
                   });
               }
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
@@ -324,9 +237,11 @@ function addNameTx(name, value, address, txid) {
  * @param txid
  */
 function addCoinTx(txid,n,category,amount,fee, confirmations,senderAddress,address,nameId,nameValue) {
+    //const our_address = address //(category==="send")?senderAddress:address
     const our_address = (category==="send")?senderAddress:address
-    const our_senderAddress = (category==="receive")?address:senderAddress
-    console.log('adding coin to address: '+address, amount)
+    //const our_senderAddress = senderAddress //(category==="send")?address:senderAddress
+    const our_senderAddress = (category==="send")?address:senderAddress
+    console.log('adding coin to address: '+our_address, amount)
     const tx = {
         txid: txid,
         n: n,
