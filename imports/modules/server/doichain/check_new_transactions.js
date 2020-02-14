@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import bitcore from "bitcore-doichain";
 import {randomBytes} from "crypto";
-import { listSinceBlock, nameShow, getRawTransaction,getBlock,getTransaction} from '../../../../server/api/doichain.js';
+import { nameShow, getRawTransaction,getBlock,getTransaction} from '../../../../server/api/doichain.js';
 import {getUrl} from "../../../startup/server/dapp-configuration";
 import { SEND_CLIENT, CONFIRM_CLIENT } from '../../../startup/server/doichain-configuration.js';
 import addDoichainEntry from './add_entry_and_fetch_data.js'
@@ -82,22 +82,27 @@ const checkNewTransaction = (txid, block) => {
                       const name = detail.name
                       let nameId
                       let nameValue
-                      const isOwnerMyMAddress = validateAddress(CONFIRM_CLIENT, address) //TODO could easily be there are more addresses in one transaction (e.g. in DOI or Email Verification transactions)
+                      const isOwnerMyMAddress = validateAddress(CONFIRM_CLIENT, address) //address of this output
+                      const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
+
                       if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
                           nameId = name.substring(("doi: " + TX_NAME_START).length);
                           logConfirm("nameId: " + nameId, tx.txid);
-                          const ety = nameShow(CONFIRM_CLIENT, nameId);
+                          const ety = nameShow(CONFIRM_CLIENT, nameId); //TODO in case this is not yet confirmed it must be taken from rawTX
                           logConfirm("nameShow: " + nameId, ety);
                           nameValue = ety.value
-                          const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
-                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine) //TODO don't add it again to blockchain but maybe update a local value in case the block is confirmed
+                          logConfirm("nameValue " , nameValue)
+                          logConfirm("processedTxInOptIns " , processedTxInOptIns)
+                          logConfirm("isOwnerMyMAddress.ismine " , isOwnerMyMAddress)
+
+                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
                               addNameTx(nameId, nameValue, address, tx.txid);
                       } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
                           nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
-                          const ety = nameShow(CONFIRM_CLIENT, nameId);
+                          const ety = nameShow(CONFIRM_CLIENT, nameId); //TODO in case this is not yet confirmed it must be taken from rawTX
                           nameValue = ety.value
                           logConfirm("nameShow: " + nameId, ety);
-                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine) //TODO don't add it again to blockchain but maybe update a local value in case the block is confirmed
+                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
                               addVerifyEmailTx(nameId, nameValue, address, ety.txid)
                       }
 
@@ -124,9 +129,6 @@ const checkNewTransaction = (txid, block) => {
                           || isSenderMyMAddress.ismine
                           || isSenderMyMAddress.iswatchonly)
                       && senderAddress!==address)
-
-                         // if((category==="send" && (isSenderMyMAddress.ismine || isSenderMyMAddress.iswatchonly))
-                        //  || (category==="receive" && (isOwnerMyMAddress.ismine || isOwnerMyMAddress.iswatchonly)))
                           {
                               addCoinTx(tx.txid,
                                   n,

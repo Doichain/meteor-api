@@ -411,7 +411,7 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
           }
           else{ //classic template request stored by a dApp
               const data = getDoiMailData(params);
-              logSend('got doi-mail-data (including template) returning to validator',{subject:data.subject, recipient:data.recipient, redirect:data.redirect});
+              logSend('got doi-mail-data (including template) returning to validator',{senderName: data.senderName, subject:data.subject, recipient:data.recipient, redirect:data.redirect});
               return {status: 'success', data};
           }
       } catch(error) {
@@ -572,6 +572,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         authRequired: false,
         action: function() {
             const params = this.bodyParams;
+            console.log('params',params)
             //is this a standard DOI coin transaction or a DOI request transaction?
             if((!params.nameId ||
                 !params.templateDataEncrypted ||
@@ -581,10 +582,8 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 try {
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
-                    //logSend(data)
                     if(!data) logError("problem with transaction not txid",data)
                     const txRaw = getRawTransaction(SEND_CLIENT,data)
-                    //if(txRaw)data.txRaw = txRaw
                     logSend(txRaw)
                     return {status: 'success', txRaw};
                 } catch(error) {
@@ -605,7 +604,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                     const publicKey = getPublicKeyOfRawTransaction(txRaw)
                     const txId = txRaw.txid
                     //2. store templateData together with nameId temporary in doichain dApps database
-                    OptIns.insert({
+                    const optInId = OptIns.insert({
                         nameId:nameid,
                         txId: txId,
                         publicKey: publicKey,
@@ -613,7 +612,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                         templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
                         validatorPublicKey: validatorPublicKey
                     });
-
+                    logSend("optInId stored:"+optInId);
                     return {status: 'success', txRaw};
                 } catch(error) {
                     logError('error broadcasting transaction to doichain network',error);

@@ -57,40 +57,40 @@ const userProfileSchema = new SimpleSchema({
  */
 const getDoiMailData = (data) => {
 
-  let  optIn
+  let optIn
   try {
 
     const ourData = data;
     GetDoiMailDataSchema.validate(ourData);
     optIn = OptIns.findOne({nameId: ourData.name_id});
 
-    if(optIn === undefined) throw "Opt-In with name_id: "+ourData.name_id+" not found";
-    OptIns.update({_id: optIn._id},{$push:{status:'template requested'}})
-    logSend('Opt-In found',optIn);
+    if (optIn === undefined) throw "Opt-In with name_id: " + ourData.name_id + " not found";
+    OptIns.update({_id: optIn._id}, {$push: {status: 'template requested'}})
+    logSend('Opt-In found', optIn);
 
     const sender = Senders.findOne({_id: optIn.sender});
-    if(sender === undefined) throw "Sender not found";
+    if (sender === undefined) throw "Sender not found";
 
     const recipient = Recipients.findOne({_id: optIn.recipient});
-    if(recipient === undefined) throw "Recipient not found";
+    if (recipient === undefined) throw "Recipient not found";
     logSend('Recipient found', recipient);
 
     //TODO the following 13 lines are obviously more then one time implemented in the code - needs to be abstracted
     const parts = recipient.email.split("@");
-    const domain = parts[parts.length-1];
-    let optInKeyData = getOptInKey({ domain: domain});
+    const domain = parts[parts.length - 1];
+    let optInKeyData = getOptInKey({domain: domain});
     let publicKey = optInKeyData.key;
     let optInType = optInKeyData.type;
 
-    if(!publicKey){
-      const provider = getOptInProvider({domain: ourData.domain });
-      logSend("using doichain provider instead of directly configured publicKey:", { provider: provider });
-      optInKeyData = getOptInKey({ domain: provider}).key; //get public key from provider or fallback if publickey was not set in dns
+    if (!publicKey) {
+      const provider = getOptInProvider({domain: ourData.domain});
+      logSend("using doichain provider instead of directly configured publicKey:", {provider: provider});
+      optInKeyData = getOptInKey({domain: provider}).key; //get public key from provider or fallback if publickey was not set in dns
       publicKey = optInKeyData.key;
       optInType = optInKeyData.type;
     }
 
-    logSend('queried data: (parts, domain, provider, publicKey)', '('+parts+','+domain+','+publicKey+')');
+    logSend('queried data: (parts, domain, provider, publicKey)', '(' + parts + ',' + domain + ',' + publicKey + ')');
 
     //TODO: Only allow access one time
     // Possible solution:
@@ -100,10 +100,10 @@ const getDoiMailData = (data) => {
     // 4. Send dApp lock the data for this opt in
     logSend('verifying signature...');
 
-    if(!verifySignature({publicKey: publicKey, data: ourData.name_id, signature: ourData.signature})) {
+    if (!verifySignature({publicKey: publicKey, data: ourData.name_id, signature: ourData.signature})) {
       throw "signature incorrect - access denied";
     }
-    OptIns.update({_id: optIn._id},{$push:{status:'signature verified'}})
+    OptIns.update({_id: optIn._id}, {$push: {status: 'signature verified'}})
     logSend('signature verified');
 
     //TODO: Query for language
@@ -113,10 +113,10 @@ const getDoiMailData = (data) => {
       doiMailData = getHttpGET(DOI_MAIL_FETCH_URL, "").data;
       let redirectUrl = doiMailData.data.redirect;
 
-      if(!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")){
-          redirectUrl = getUrl()+"templates/pages/"+redirectUrl;
+      if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
+        redirectUrl = getUrl() + "templates/pages/" + redirectUrl;
       }
-      logSend('redirectUrl:',redirectUrl);
+      logSend('redirectUrl:', redirectUrl);
 
       let defaultReturnData = {
         "sender": sender.email,
@@ -124,112 +124,116 @@ const getDoiMailData = (data) => {
         "publicKey": recipient.publicKey,
         "content": doiMailData.data.content,
         "redirect": redirectUrl,
+        "senderName": doiMailData.data.senderName,
         "subject": doiMailData.data.subject,
         "contentType": (doiMailData.data.contentType || 'html'),
         "returnPath": doiMailData.data.returnPath
       }
 
       //in case we don't send data to a fallback server, send sender email to destination fallback.
-      if(optInType === "default"){
-         defaultReturnData.verifyLocalHash = getDataHash({data: (sender.email+recipient.email) }); //verifyLocalHash = verifyLocalHash
+      if (optInType === "default") {
+        defaultReturnData.verifyLocalHash = getDataHash({data: (sender.email + recipient.email)}); //verifyLocalHash = verifyLocalHash
       }
-      OptIns.update({_id: optIn._id},{$push:{status:'email configured'}})
-      logSend('defaultReturnData:',defaultReturnData);
+      OptIns.update({_id: optIn._id}, {$push: {status: 'email configured'}})
+      logSend('defaultReturnData:', defaultReturnData);
 
-    let returnData = defaultReturnData;
+      let returnData = defaultReturnData;
 
-    try{
+      try {
 
-      let owner = Accounts.users.findOne({_id: optIn.ownerId});
-      let mailTemplate = owner.profile.mailTemplate;
-      let redirParamString=null;
-      let templParamString=null;
+        let owner = Accounts.users.findOne({_id: optIn.ownerId});
+        let mailTemplate = owner.profile.mailTemplate;
+        let redirParamString = null;
+        let templParamString = null;
 
-      try{
+        try {
 
-        let optinData = JSON.parse(optIn.data);
-        let redirParam = optinData.redirectParam ? optinData.redirectParam:null;
-        let templParam = optinData.templateParam ? optinData.templateParam:null;
+          let optinData = JSON.parse(optIn.data);
+          let redirParam = optinData.redirectParam ? optinData.redirectParam : null;
+          let templParam = optinData.templateParam ? optinData.templateParam : null;
 
-        //parse template params
-      let str = [];
-      for (let tParam in templParam){
-        if (templParam.hasOwnProperty(tParam)) {
-          str.push(encodeURIComponent(tParam) + "=" + encodeURIComponent(templParam[tParam]));
-          logSend("tmplParam added:",tParam+"="+templParam[tParam]);
+          //parse template params
+          let str = [];
+          for (let tParam in templParam) {
+            if (templParam.hasOwnProperty(tParam)) {
+              str.push(encodeURIComponent(tParam) + "=" + encodeURIComponent(templParam[tParam]));
+              logSend("tmplParam added:", tParam + "=" + templParam[tParam]);
+            }
+            templParamString = str.join("&");
+          }
+          //parse redirect params
+          str = [];
+          for (let rParam in redirParam) {
+            if (redirParam.hasOwnProperty(rParam)) {
+              str.push(encodeURIComponent(rParam) + "=" + encodeURIComponent(redirParam[rParam]));
+              logSend("redirParam added:", rParam + "=" + redirParam[rParam]);
+            }
+            redirParamString = str.join("&");
+          }
+        } catch (e) {
+          logSend("Couldn't retrieve parameters")
         }
-        templParamString=str.join("&");
-      }
-      //parse redirect params
-      str = [];
-      for (let rParam in redirParam){
-        if (redirParam.hasOwnProperty(rParam)) {
-          str.push(encodeURIComponent(rParam) + "=" + encodeURIComponent(redirParam[rParam]));
-          logSend("redirParam added:",rParam+"="+redirParam[rParam]);
+        userProfileSchema.validate(mailTemplate);
+
+        //Appends parameter to redirect-url
+        let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?") == -1 ? mailTemplate["redirect"] + "?" + redirParamString : mailTemplate["redirect"] + "&" + redirParamString)) : null;
+        let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?") == -1 ? mailTemplate["templateURL"] + "?" + templParamString : mailTemplate["templateURL"] + "&" + templParamString)) : null;
+
+        returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
+        returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
+        returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
+        let templateResult = getHttpGET(tmpTemplate);
+        let message = false;
+        let contentType = templateResult.headers["content-type"];
+        switch (contentType.split(";")[0]) {
+          case "text/plain":
+            contentType = "text"
+            message = templateResult.content;
+            break;
+          case "text/html":
+            contentType = "html"
+            message = templateResult.content;
+            break;
+          case "application/json":
+            //check if json has fields text and html
+            if (templateResult.data && templateResult.data.text && templateResult.data.html) {
+              //console.log(templateResult.data.html);
+              message = templateResult.content;
+              contentType = "json";
+            }
+            break;
+          default:
+            break;
         }
-        redirParamString=str.join("&");
-      }
-      }
-      catch(e){
-        logSend("Couldn't retrieve parameters")
-      }
-      userProfileSchema.validate(mailTemplate);
+        logSend("contentType", contentType);
+        //returnData["content"] = tmpTemplate ? (templateResult.content || defaultReturnData["content"]) : defaultReturnData["content"];
+        returnData["content"] = tmpTemplate ? (message || defaultReturnData["content"]) : defaultReturnData["content"];
+        returnData["contentType"] = contentType && message ? contentType : "html";
+        logSend("Redirect Url set to:", returnData["redirect"]);
+        logSend("Template Url set to:", (tmpTemplate ? tmpTemplate : "Default"));
 
-      //Appends parameter to redirect-url
-      let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?")==-1 ? mailTemplate["redirect"]+"?"+redirParamString : mailTemplate["redirect"]+"&"+redirParamString)):null;
-      let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?")==-1 ? mailTemplate["templateURL"]+"?"+templParamString : mailTemplate["templateURL"]+"&"+templParamString)):null;
-
-      returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
-      returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
-      returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
-      let templateResult = getHttpGET(tmpTemplate);
-      let message = false;
-      let contentType=templateResult.headers["content-type"];
-      switch (contentType.split(";")[0]) {
-        case "text/plain":
-        contentType="text"
-        message=templateResult.content;
-        break;
-        case "text/html":
-        contentType="html"
-        message=templateResult.content;
-        break;
-        case "application/json":
-        //check if json has fields text and html
-        if(templateResult.data && templateResult.data.text && templateResult.data.html){
-          //console.log(templateResult.data.html);
-          message=templateResult.content;
-          contentType="json";
-        }
-        break;
-        default:
-          break;
+      } catch (error) {
+        returnData = defaultReturnData;
       }
-      logSend("contentType",contentType);
-      //returnData["content"] = tmpTemplate ? (templateResult.content || defaultReturnData["content"]) : defaultReturnData["content"];
-      returnData["content"] = tmpTemplate ? (message || defaultReturnData["content"]) : defaultReturnData["content"];
-      returnData["contentType"] = contentType&&message ? contentType:"html";
-      logSend("Redirect Url set to:",returnData["redirect"]);
-      logSend("Template Url set to:",(tmpTemplate ? tmpTemplate : "Default"));
 
-    }
-    catch(error) {
-      returnData=defaultReturnData;
-    }
-
-      OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})  //TODO please abstract status changes of an OptIn
+      OptIns.update({_id: optIn._id}, {$push: {status: 'template fetched'}})  //TODO please abstract status changes of an OptIn
       logSend('doiMailData and url:', DOI_MAIL_FETCH_URL, returnData);
       return returnData
 
-    } catch(error) {
-      throw "Error while fetching mail content: "+error;
+    } catch (error) {
+      throw "Error while fetching mail content: " + error;
     }
 
-  } catch(exception) {
-    if(optIn!==undefined) OptIns.update({_id: optIn._id},{$push:{status:'problem template fetch', error: exception}})
+  } catch (exception) {
+    if (optIn !== undefined) OptIns.update({_id: optIn._id}, {
+      $push: {
+        status: 'problem template fetch',
+        error: exception
+      }
+    })
     throw new Meteor.Error('dapps.getDoiMailData.exception', exception);
   }
-  if(optIn!==undefined) OptIns.update({_id: optIn._id},{$push:{status:'template fetched'}})
+  if (optIn !== undefined) OptIns.update({_id: optIn._id}, {$push: {status: 'template fetched'}})
 };
 
 export default getDoiMailData;

@@ -20,6 +20,10 @@ const SendMailSchema = new SimpleSchema({
     type: String,
     regEx: SimpleSchema.RegEx.Email
   },
+  senderName: {
+    type: String,
+    optional: true
+  },
   subject: {
     type: String,
   },
@@ -46,7 +50,7 @@ const sendMail = (mail) => {
   try {
 
     const ourMail = mail;
-    logConfirm('sending email with data:',{from: mail.from, to:mail.to, subject:mail.subject,returnPath:mail.returnPath});
+    logConfirm('sending email with data:',{from: mail.from, to:mail.to, senderName: mail.senderName, subject:mail.subject,returnPath:mail.returnPath});
     SendMailSchema.validate(ourMail);
 
     const doiVerificationUrl = getUrl() + API_PATH + VERSION + "/" + DOI_VERIFY_ROUTE + "?recipient_mail="+mail.to+"&sender_mail="+
@@ -56,7 +60,7 @@ const sendMail = (mail) => {
 
     logConfirm('confirmationUrl:' + doiVerificationUrl);
     let doichainEmailFooterText = "\n\nAn email permission will be stored on Doichain for:\n"
-    doichainEmailFooterText+="Sender Email: "+mail.from+"\n"
+    doichainEmailFooterText+="Sender Email: "+mail.from+" ("+mail.senderName+")"+"\n"
     doichainEmailFooterText+="Recipient Email: "+mail.to+"\n"
     doichainEmailFooterText+="NameId on Doichain: "+mail.nameId+"\n"
     doichainEmailFooterText+="PublicKey of Requester: "+mail.publicKey+"\n"
@@ -64,6 +68,7 @@ const sendMail = (mail) => {
 
     let doichainEmailFooterHTML = "<p>An email permission will be stored on Doichain for:<br>"
     doichainEmailFooterHTML+="<ul><li>Sender Email: "+mail.from+"</li>"
+    doichainEmailFooterHTML+="<ul><li>Sender Name: "+mail.senderName+"</li>"
     doichainEmailFooterHTML+="<li>Recipient Email: "+mail.to+"</li>"
     doichainEmailFooterHTML+="<li>NameId on Doichain: "+nameIdVerificationUrl+"</li>"
     doichainEmailFooterHTML+="<li>PublicKey of Sender: "+mail.publicKey+"</li>"
@@ -71,8 +76,10 @@ const sendMail = (mail) => {
 
     //overwrite from with from from validator (right now we use the validators email address to send the email)
     mail.from = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
+    const from = mail.senderName?mail.senderName+"<"+mail.from+">":mail.from //use a senderName if given
+
     let emailToSend={
-      from: mail.from,
+      from: from,
       to: mail.to,
       subject: mail.subject,
       headers: {

@@ -4,7 +4,6 @@ import { CONFIRM_CLIENT } from '../../../startup/server/doichain-configuration.j
 import {
     getWif,
     signMessage,
-    getTransaction,
     nameDoi,
     nameShow,
     getRawTransaction, validateAddress

@@ -1,7 +1,7 @@
 import { CONFIRM_CLIENT} from '../../../startup/server/doichain-configuration.js';
 import {
     getBlock, getBlockCount,
-    getBlockHash, getRawTransaction,
+    getBlockHash,
     getTransaction,
     getWif,
     nameList, nameShow
@@ -102,7 +102,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
             console.log("lastlastBlockHeight "+lastBlockHeight + " height:" + nameId.height, nameId.name)
 
             if (lastBlockHeight <= nameId.height) {
-                const tx = getTransaction(CONFIRM_CLIENT, nameId.txid)
+                const tx = getTransaction(CONFIRM_CLIENT, nameId.txid,true)
 
                 if(nameId.name.startsWith(TX_VERIFIED_EMAIL_NAME_START)){ //TODO count own email verification requests and confirmations
                     console.log("seems to be a email verification name_op please count separately \n"+nameId.name,nameId.value?'confirmed':'not confirmed')

@@ -16,7 +16,7 @@ import addSendMailJob from '../jobs/add_send_mail.js'
 import {logConfirm, logError} from "../../../startup/server/log-configuration"
 import updateDoichainEntry from "../opt-ins/update_doichain_entry"
 import decryptMessage from "../doichain/decrypt_message";
-import {getRawTransaction, getTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
+import {getRawTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
 import {isRegtest} from "../../../startup/server/dapp-configuration";
@@ -50,17 +50,14 @@ const fetchDoiMailData = (data) => {
 
         const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
         let address
-        let outputIndex = 0
         rawTransaction.vout.forEach(function (output) {
             if(!address){
-                const our_address = rawTransaction.vout[outputIndex++].scriptPubKey.addresses[0]
-                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){
+                const our_address = output.scriptPubKey.addresses[0]
+                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){ //TODO please validate more efficiently using our publicKeySet
                     address = our_address
                 }
             }
         })
-
-        //console.log("address of our transaction",address)
 
         //we sign the nameId of this permission request with the correct privateKey so the requested can see it was us and not somebody else
         const privateKey = getWif(CONFIRM_CLIENT,address)  //we need the correct address otherwise - we might sign with the wrong privatKey
@@ -175,6 +172,7 @@ const fetchDoiMailData = (data) => {
         addSendMailJob({
             from: responseData.data.sender,
             to: responseData.data.recipient,
+            senderName: responseData.data.senderName,
             subject: responseData.data.subject,
             message: template,
             contentType: responseData.data.contentType,

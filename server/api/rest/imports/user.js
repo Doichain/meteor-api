@@ -8,22 +8,26 @@ import {logMain, logSend} from "../../../../imports/startup/server/log-configura
 const mailTemplateSchema = new SimpleSchema({
     subject: {
         type: String,
-        optional:true 
+        optional:true
+    },
+    senderName: {
+        type: String,
+        optional:true
     },
     redirect: {
         type: String,
    //    regEx: "@(https?|http)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
-        optional:true 
+        optional:true
     },
     returnPath: {
         type: String,
         regEx: SimpleSchema.RegEx.Email,
-        optional:true 
+        optional:true
     },
     templateURL:{
         type: String,
     //    regEx: "@(https?|http)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
-        optional:true 
+        optional:true
     }
 });
 
@@ -42,7 +46,7 @@ const createUserSchema = new SimpleSchema({
     },
     mailTemplate:{
         type: mailTemplateSchema,
-        optional:true 
+        optional:true
     }
   });
 
@@ -102,17 +106,18 @@ const collectionOptions =
                     }
                     else{
                         userId = Accounts.createUser({username:params.username,email:params.email,password:params.password, profile:{}});
-                    }    
+                    }
                     return {status: 'success', data: {userid: userId}};
                 } catch(error) {
                   return {statusCode: 400, body: {status: 'fail', message: error.message}};
                 }
-                
+
             }
         },
         put:
         {
-            action: function(){      
+            roleRequired : "admin",
+            action: function(){
                 const qParams = this.queryParams;
                 const bParams = this.bodyParams;
                 let params = {};
@@ -121,12 +126,7 @@ const collectionOptions =
                 if(qParams !== undefined) params = {...qParams}
                 if(bParams !== undefined) params = {...params, ...bParams}
 
-                try{ //TODO this is not necessary here and can probably go right into the definition of the REST METHOD next to put (!?!)
-                    if(!Roles.userIsInRole(uid, 'admin')){
-                        if(uid!==paramId){
-                            throw Error("No Permission");
-                        }
-                    }
+                try{
                     logSend('received params to update user:'+uid,params);
                     updateUserSchema.validate(params);
 
