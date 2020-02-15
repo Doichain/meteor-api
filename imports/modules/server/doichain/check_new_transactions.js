@@ -88,22 +88,18 @@ const checkNewTransaction = (txid, block) => {
                       if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
                           nameId = name.substring(("doi: " + TX_NAME_START).length);
                           logConfirm("nameId: " + nameId, tx.txid);
-                          const ety = nameShow(CONFIRM_CLIENT, nameId); //TODO in case this is not yet confirmed it must be taken from rawTX
-                          logConfirm("nameShow: " + nameId, ety);
-                          nameValue = ety.value
-                          logConfirm("nameValue " , nameValue)
-                          logConfirm("processedTxInOptIns " , processedTxInOptIns)
-                          logConfirm("isOwnerMyMAddress.ismine " , isOwnerMyMAddress)
-
+                          const nameRawTxVouts = getRawTransaction(CONFIRM_CLIENT,tx.txid).vout[n]
+                          nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                          logConfirm("nameValue: " + nameValue, nameValue);
                           if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
                               addNameTx(nameId, nameValue, address, tx.txid);
                       } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
                           nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
-                          const ety = nameShow(CONFIRM_CLIENT, nameId); //TODO in case this is not yet confirmed it must be taken from rawTX
-                          nameValue = ety.value
-                          logConfirm("nameShow: " + nameId, ety);
+                          const nameRawTxVouts = getRawTransaction(CONFIRM_CLIENT,tx.txid).vout[n]
+                          nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                          logConfirm("nameValue: " + nameValue, nameValue);
                           if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
-                              addVerifyEmailTx(nameId, nameValue, address, ety.txid)
+                              addVerifyEmailTx(nameId, nameValue, address, tx.txid)
                       }
 
                       let publicKey
