@@ -1,10 +1,12 @@
-import bitcore from "bitcore-doichain";
+import bitcore from "bitcore-doichain"
 import bitcoin from "bitcoinjs-lib"
+import base58 from 'bs58'
+import conv from 'binstring'
 import { Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE } from '../rest.js';
 import addOptIn from '../../../../imports/modules/server/opt-ins/add_and_write_to_blockchain.js';
 import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update_status.js';
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
-import {logError, logSend} from "../../../../imports/startup/server/log-configuration";
+import {logConfirm, logError, logSend} from "../../../../imports/startup/server/log-configuration";
 import {
     DOI_EXPORT_ROUTE, DOI_NAME_SHOW,
     DOICHAIN_BROADCAST_TX,
@@ -35,7 +37,8 @@ import {
     importAddress,
     listUnspent,
     sendRawTransaction,
-    validateAddress,getWif
+    validateAddress,getWif,
+    getAddressesByAccount
 } from "../../doichain";
 
 /**
@@ -55,8 +58,9 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
             if(bParams !== undefined) params = {...params, ...bParams}
             logSend('parameter received from rpc client:',params);
             const senderEmail = params.sender_mail
-            const ourAddress = params.address
+            let ourAddress = params.address
 
+            if(!ourAddress) ourAddress = getAddressesByAccount(SEND_CLIENT)[0]
             const retValidateAddress = validateAddress(SEND_CLIENT,ourAddress)
 
             retValidateAddress.ismine?console.log("retValidateAddress.ismine:"+retValidateAddress.ismine):retValidateAddress
@@ -76,52 +80,62 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
             let nameDoiTx = ''
             let senderPublicKey = ''
 
-            if(senderEmail.constructor !== Array)
+            if (senderEmail.constructor !== Array)
                 emailsToVerify.push(senderEmail)
-                try {
-                    let ipfsHashes = []
-                    emailsToVerify.forEach((our_sender_email) => {
-                        console.log('preparing email for verification', our_sender_email)
-                        const parts = our_sender_email.split("@");
-                        const domain = parts[parts.length - 1];
-                        const publicKeyAndAddressOfValidator = getPublicKeyAndAddress({domain: domain});
+            try {
+                let ipfsHashes = []
+                emailsToVerify.forEach((our_sender_email) => {
+                    console.log('preparing email for verification', our_sender_email)
+                    const parts = our_sender_email.split("@");
+                    const domain = parts[parts.length - 1];
+                    const publicKeyAndAddressOfValidator = getPublicKeyAndAddress({domain: domain});
 
-                        //1. create a signature with our_sender_email and our private_key, use it as our nameId
-                        const signature =  getSignature({
-                                message: our_sender_email,
-                                privateKey:getPrivateKeyFromWif({wif:ourPrivateKey})
-                            })
-                        console.log(ourAddress+' signature for '+our_sender_email,ourPrivateKey)
-                        //2. store encrypted entry on ipfs and call name_doi on Doichain. Encrypted with PublicKey of validator
-                        // - recipient address is public key gathered by domain name (dns) - responsible validator (Bob)
-                        let nameId = "es/" + signature
-                        const encryptedObjectAsString =  encryptMessage({
-                                message: JSON.stringify({
-                                    sender_mail:our_sender_email,
-                                    address: ourAddress
-                                }),
-                                publicKey: publicKeyAndAddressOfValidator.publicKey})
+                    //1. create a signature with our_sender_email and our private_key, use it as our nameId
+                    const signature = getSignature({
+                        message: our_sender_email,
+                        privateKey: getPrivateKeyFromWif({wif: ourPrivateKey})
+                    })
+                    console.log('signature',signature)
+                    const retSignature = verifySignature({data: our_sender_email,
+                        publicKey:"0201bfa745b03a3e46fe014a219a7326dac611ac5b75e20c4cd69c012ae844a73e",
+                        signature:signature})
+                    logConfirm("retSignature "+retSignature);
 
-                        //TODO 1. when executing mameDoi make sure you send it from the above stated Doichain address otherwise things get confusing.
-                        const utxos = Async.runSync((done) => {
-                            const nodeUtxos = listOurUnspent(retValidateAddress) //retValidateAddress
-                            console.log('got utxos from node for'+retValidateAddress,nodeUtxos)
+
+                    console.log(ourAddress + ' signature for ' + our_sender_email, ourPrivateKey)
+                    //2. store encrypted entry on ipfs and call name_doi on Doichain. Encrypted with PublicKey of validator
+                    // - recipient address is public key gathered by domain name (dns) - responsible validator (Bob)
+                    let nameId = "es/" + signature
+                    const encryptedObjectAsString = encryptMessage({
+                        message: JSON.stringify({
+                            sender_mail: our_sender_email,
+                            address: ourAddress
+                        }),
+                        publicKey: publicKeyAndAddressOfValidator.publicKey
+                    })
+
+                    const utxos = Async.runSync((done) => {
+                        const nodeUtxos = listOurUnspent(retValidateAddress) //retValidateAddress
+                        const offchainUtxos = Transactions.find({address:ourAddress,confirmations:0}).fetch() //TODO
+
+                        console.log('got utxos from node for:' + retValidateAddress.address, nodeUtxos.length>0?nodeUtxos:offchainUtxos)
+
                             bitcore.getUTXOs4EmailVerificationRequest(
-                                    ourAddress,undefined,nodeUtxos).then((retUTXOs) => {
-                                    done(undefined, retUTXOs)
-                                }) //TODO we have no offchain-utxos here so far, but every transaction creates change we need to reuse in case we want another transacition before next block
-                        }).result
-                        if(!utxos)
-                            return {statusCode: 500, body: {status: 'fail', message: 'insufficient funds or wait for next block'}};
+                                ourAddress, offchainUtxos, nodeUtxos).then((retUTXOs) => {
+                                done(undefined, retUTXOs)
+                            })
+
+                    }).result
+
+                    console.log('utxos', utxos)
+                    if (utxos && utxos.utxos.length > 0) {
                         logSend('utxos found on Doichain node', utxos)
                         const our_data = Async.runSync((done) => {
-
                             addIPFS(encryptedObjectAsString).then((nameValue) => {
                                 try {
-                                    logSend('nameValue from ipfs is', nameValue)
+                                    logSend('nameValue (cid) from ipfs is', nameValue)
                                     const destAddress = publicKeyAndAddressOfValidator.destAddress
                                     const changeAddress = ourAddress //TODO always create a new address (from a new privateky) for now just send change back to us.
-
                                     const DOICHAIN = {
                                         messagePrefix: '\x19Doichain Signed Message:\n',
                                         bech32: 'dc',
@@ -166,22 +180,16 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                                     //  });
                                     //  console.log('adddress',address)
                                     const keypair = bitcoin.ECPair.fromWIF(ourPrivateKey, DOICHAIN_REGTEST);
-                                    var conv = require('binstring');
-                                    var base58 = require('bs58');
-
                                     let nameIdPart2 = ''
-                                    if(nameId.length>57) //we have only space for 77 chars in the name in case its longer as in signatures put the rest into the value
+                                    if (nameId.length > 57) //we have only space for 77 chars in the name in case its longer as in signatures put the rest into the value
                                     {
-                                        console.log('cutting nameId in two parts',nameId.length)
-                                        nameIdPart2 = nameId.substring(58,nameId.length)
-                                        nameId = nameId.substring(0,57)
-
-                                        console.log('nameIdPart2',nameIdPart2)
-                                        nameValue = nameIdPart2+' '+nameValue
+                                        nameIdPart2 = nameId.substring(58, nameId.length)
+                                        nameId = nameId.substring(0, 57)
+                                        nameValue = nameIdPart2 + ' ' + nameValue
                                     }
-                                    const op_name = conv(nameId,{in:'binary', out:'hex'})
-                                    let op_value = conv(nameValue, {in: 'binary', out:'hex'})
-                                    const op_address = conv(destAddress, {in: 'binary', out:'hex'})  //base58.decode(destAddress).toString('hex').substr(2, 40);
+                                    const op_name = conv(nameId, {in: 'binary', out: 'hex'})
+                                    let op_value = conv(nameValue, {in: 'binary', out: 'hex'})
+                                    const op_address = base58.decode(destAddress).toString('hex').substr(2, 40);
                                     const opCodesStackScript = bitcoin.script.fromASM(
                                         `
                                               OP_10
@@ -199,7 +207,8 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
 
                                     const input = utxos.utxos[0]
                                     const inputTxId = input.txid
-                                    const n = input.vout
+                                    console.log(input)
+                                    const n = input.vout?input.vout:input.n //in case of unconfirmed (local) utxos we use n
                                     //const inputRawTx = getRawTransaction(SEND_CLIENT, inputTxId)
                                     //const scriptPubKey = input.scriptPubKey
                                     /*  console.log(
@@ -212,8 +221,8 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                                     const txb = new bitcoin.TransactionBuilder(DOICHAIN_REGTEST)
                                     txb.addInput(inputTxId, n)
                                     txb.addOutput(destAddress, bitcore.constants.EMAIL_VERIFICATION_FEE.satoshis)
-                                    txb.addOutput(opCodesStackScript,bitcore.constants.NETWORK_FEE.satoshis)
-                                    txb.addOutput(changeAddress, parseInt(((utxos.change) * 100000000))-50000)
+                                    txb.addOutput(opCodesStackScript, bitcore.constants.NETWORK_FEE.satoshis)
+                                    txb.addOutput(changeAddress, parseInt(((utxos.change) * 100000000)) - 50000)
                                     txb.setVersion(0x7100) //TODO add this to constants
                                     txb.sign(0, keypair)
                                     const txSignedSerialized = txb.build().toHex()
@@ -248,17 +257,17 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                                     psbt.finalizeAllInputs();
                                     const txSignedSerialized = psbt.extractTransaction().toHex()
                                       */
-                                   // return
+                                    // return
 
                                     nameDoiTx = sendRawTransaction(SEND_CLIENT, txSignedSerialized)
                                     logSend('got response from Doichain after sending txid', nameDoiTx)
 
-                                    if (!nameDoiTx){
+                                    if (!nameDoiTx) {
                                         logError("problem with transaction no txid", nameDoiTx)
                                     }
                                     const txRaw = getRawTransaction(SEND_CLIENT, nameDoiTx)
                                     console.log('got raw tx', txRaw)
-                                   // const utxosResponse = bitcore.getOffchainUTXOs(changeAddress, txRaw)
+                                    // const utxosResponse = bitcore.getOffchainUTXOs(changeAddress, txRaw)
                                     //logSend('utxos from after sending rawTx for changeAddress' + changeAddress, utxosResponse)
 
                                     senderPublicKey = getPublicKeyOfOriginTxId(nameDoiTx)
@@ -279,15 +288,19 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                                 }
                             }) //addIpfs
                         }).result
-                        logSend('nameDoi sent to Doichain node to initiate email verification tx:',ipfsHashes)
-                    })
-                    return {status: 'success', data: {
-                            ipfsHashes: ipfsHashes,
-                            status: 'success',
-                            message: 'Email address sent to validator(s)'}};
-                } catch (error) {
-                    return {statusCode: 500, body: {status: 'fail', message: error.message}};
-                }
+                        logSend('nameDoi sent to Doichain node to initiate email verification tx:', ipfsHashes)
+                    }
+                })
+                return {
+                    status: 'success', data: {
+                        address: ourAddress,
+                        ipfsHashes: ipfsHashes,
+                        message: 'Email address sent to validator(s)'
+                    }
+                };
+            } catch (error) {
+                return {statusCode: 500, body: {status: 'fail', message: error.message}};
+            }
         } //action
     }
 });
@@ -486,9 +499,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             const params = this.queryParams;
             const ourAddress = params.address;
             try {
-                console.log('list transactions for address',ourAddress)
                 const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
-                console.log('data:',data)
                 if(data)
                     return {status: 'success',data};
                 else
@@ -572,7 +583,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         authRequired: false,
         action: function() {
             const params = this.bodyParams;
-            console.log('params',params)
+
             //is this a standard DOI coin transaction or a DOI request transaction?
             if((!params.nameId ||
                 !params.templateDataEncrypted ||

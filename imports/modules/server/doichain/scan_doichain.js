@@ -3,7 +3,7 @@ import {
     getBlock, getBlockCount,
     getBlockHash,
     getTransaction,
-    getWif,
+    getWif,getRawTransaction,
     nameList, nameShow
 } from "../../../../server/api/doichain";
 import storeMeta from "./store_meta";
@@ -241,7 +241,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
         //loop through all transactions
         txs.forEach(function (tx) {
             checkNewTransaction(null,block.hash)
-          /*  try {
+            try {
                 const txRawContent = getRawTransaction(CONFIRM_CLIENT,tx)
                 const outputs = txRawContent.vout
                 if(outputs.length===0) console.log(outputs)
@@ -279,7 +279,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
 
             }catch(exception){
                 logError('problem while scanning nameId exception - not counting tx:'+exception,getRawTransaction(CONFIRM_CLIENT,tx))
-            }*/
+            }
         })
     }
     console.log(rescan,lastBlockHeight)

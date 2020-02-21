@@ -72,8 +72,8 @@ const addDoichainEntry = (entry) => {
     })
     logConfirm('got private key of validator address',validatorAddress);
     const publicKey = getPublicKeyOfOriginTxId(ourEntry.txId);
-    const domain = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
-    logConfirm('decrypted message from domain: ',domain);
+    const doichainhostUrl = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
+    logConfirm('decrypted message from doichainhostUrl: ',doichainhostUrl);
 
     const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
     logConfirm('namePos:',namePos);
@@ -100,7 +100,7 @@ const addDoichainEntry = (entry) => {
     if(!masterDoi && !ourEntry.expired){
         addFetchDoiMailDataJob({
             name: ourEntry.name,
-            domain: domain,
+            domain: doichainhostUrl,
             txId: ourEntry.txId
         });
         logConfirm('New entry added: \n'+

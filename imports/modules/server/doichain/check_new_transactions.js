@@ -98,8 +98,10 @@ const checkNewTransaction = (txid, block) => {
                           const nameRawTxVouts = getRawTransaction(CONFIRM_CLIENT,tx.txid).vout[n]
                           nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                           logConfirm("nameValue: " + nameValue, nameValue);
-                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
-                              addVerifyEmailTx(nameId, nameValue, address, tx.txid)
+                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine){
+                             addVerifyEmailTx(nameId, nameValue, address, tx.txid)
+                          }
+
                       }
 
                       let publicKey
@@ -150,8 +152,11 @@ const checkNewTransaction = (txid, block) => {
   return true;
 };
 
-const addVerifyEmailTx = async (nameId,parentIpfsCid,validatorAddress,txid) => {
-    console.log("adding nameId to validator and requesting email verification",nameId)
+const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
+    console.log(nameValue)
+    nameId = nameId+nameValue.substring(0,nameValue.indexOf(" "))
+    const parentIpfsCid = nameValue.substring(nameValue.indexOf(" ")+1,nameValue.length)
+    console.log("adding nameId to validator and requesting email verification: "+nameId,parentIpfsCid)
     const dataFromIPFS = await getFromIPFS(parentIpfsCid)
     const privateKeyWif = getWif(CONFIRM_CLIENT, validatorAddress)
     const privateKey = getPrivateKeyFromWif({wif: privateKeyWif})
@@ -159,17 +164,19 @@ const addVerifyEmailTx = async (nameId,parentIpfsCid,validatorAddress,txid) => {
         message: dataFromIPFS,
         privateKey: privateKey
     })
+
     const publicKey = validateAddress(CONFIRM_CLIENT, validatorAddress).pubkey
     const confirmationToken = randomBytes(32).toString('hex');
     const dataObjectFromIPFS = JSON.parse(decryptedDataObjectFromIPFS)
-
-    const signature = nameId.substring(3)
+    console.log('dataObjectFromIPFS',dataObjectFromIPFS)
+    const signature = nameId
+    console.log('signature to verify',signature)
     const senderPublicKey = getPublicKeyOfOriginTxId(txid)
     console.log('senderPublicKey',senderPublicKey)
 
     const retSignature = verifySignature({data: dataObjectFromIPFS.sender_mail,publicKey:senderPublicKey,signature:signature})
-    if(!retSignature)  throw new Meteor.Error(
-        'namecoin.checkNewTransactions.addVerifyEmailTx.exception for public key '+senderPublicKey);
+    logConfirm("retSignature "+retSignature);
+    return
 
     logConfirm("decryptedDataObjectFromIPFS ", JSON.parse(decryptedDataObjectFromIPFS));
 

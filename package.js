@@ -49,7 +49,7 @@ Npm.depends({
     'hashids':'1.2.2',
     'eccrypto':'1.1.2',
     'crypto':'1.0.1',
-    "bitcore-doichain":"0.1.28",
+    "bitcore-doichain":"0.1.30",
     "bitcoinjs-lib":"5.1.7",
     'bitcore-message':'0.12.0'
 });

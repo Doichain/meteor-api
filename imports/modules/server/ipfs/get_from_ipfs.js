@@ -10,7 +10,7 @@ import {IPFS} from "../../../../server/api/ipfs";
 const getFromIPFS = async (cid) => {
     let data
     await (async function() {
-        console.log('now calling ipfs')
+        console.log('getFromIPFS with cid '+cid)
         const lite = await IPFS()
         data = await lite.getFile(cid)
         console.log("got an email from alice to verify",data.toString())

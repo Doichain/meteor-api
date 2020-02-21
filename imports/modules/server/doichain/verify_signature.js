@@ -31,9 +31,9 @@ var doichainMainnet = bitcore.Networks.add({
     name:  'doichain',
     alias: 'doichain',
     // https://github.com/namecoin/namecore/commit/4b33389f2ed7809404b1a96ae358e148a765ab6f
-    pubkeyhash: 111, //mainnet 52  //111 testnet  //0x34 (bitcoin?)
+    pubkeyhash: 52, //mainnet 52  //111 testnet  //0x34 (bitcoin?)
     privatekey: 0xB4,  //TODO this doesn't seem correct
-    scripthash: 13, //TODO  please double check ?
+    scripthash: 13,
     // xpubkey: 0x043587cf,
     // xprivkey: 0x04358394,
     // xpubkey: null, // HD extended pubkey (nonexistant in namecoin o.g.)
@@ -49,7 +49,7 @@ const doichainTestnet = bitcore.Networks.add({
     alias: 'doichain-testnet',
     pubkeyhash: 111,  //mainnet 52  //111 testnet  //0x34 (bitcoin?)
     privatekey: 0xB4,  //TODO  please double check ?
-    scripthash: 13, //TODO  please double check ?
+    scripthash: 196,
     networkMagic: 0xf9beb4fe, //TODO  please double check ?
     port: 18338,
     dnsSeeds: []
@@ -67,7 +67,7 @@ const verifySignature = (data) => {
             bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain')
 
         const address = bitcore.Address.fromPublicKey(new bitcore.PublicKey(ourData.publicKey));
-        const verify = Message(ourData.data).verify(address, ourData.signature)
+        const verify = Message(ourData.data).verify(address,ourData.signature)
         try {
             return verify
         } catch (error) {

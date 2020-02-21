@@ -4,7 +4,6 @@ import {logBlockchain, logError} from "../../imports/startup/server/log-configur
 const NAMESPACE = 'e/';
 const NAMESPACE_VERIFIED_EMAIL = 'es/';
 const DOI_FEE = '0.03';
-const VERIEFIED_EMAIL_FEE = '0.011';
 
 export function getWif(client, address) {
   if(!address){
@@ -261,7 +260,7 @@ export function getTransaction(client, txid, watchOnly) {
 
 function doichain_gettransaction(client, txid, watchOnly,callback) {
     client.cmd('gettransaction', txid, watchOnly, function(err, data) {
-        if(err)  logError('doichain_gettransaction:',err);
+        if(err && err.toString().indexOf("Invalid or non-wallet transaction id")===-1)  logError('doichain_gettransaction:',err);
         callback(err, data);
     });
 }
