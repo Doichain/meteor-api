@@ -36,6 +36,8 @@ const checkNewTransaction = (txid, block) => {
           let lastCheckedBlock = block
           let txs
 
+          //TODO if validator dApp is offline and comes back online here we need to check if the incoming block is really the latest block, if not take a earlier transactions too!
+
           /*
           let lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
           if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;
@@ -56,7 +58,7 @@ const checkNewTransaction = (txid, block) => {
               console.log('got txid directly ', txIdMemCache)
           }
           else {
-              txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx
+              txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx //TODO instead use listSinceBlock as commented above
               console.log('got txs from block ', txs)
           }
 
@@ -118,7 +120,7 @@ const checkNewTransaction = (txid, block) => {
                               console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
                           }
                       }
-                      const senderAddress = publicKey ? bitcore.getAddressOfPublicKey(publicKey).toString() : firstOutsAddress
+                      const senderAddress = publicKey ? bitcore.getAddressOfPublicKey(publicKey,network).toString() : firstOutsAddress
                       console.log('isOwnerMyMAddress: ' + isOwnerMyMAddress.address, isOwnerMyMAddress.ismine)
                       const isSenderMyMAddress = validateAddress(CONFIRM_CLIENT, senderAddress)
                       console.log('isSenderMyMAddress: ' + senderAddress, isSenderMyMAddress.ismine)

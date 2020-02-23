@@ -116,7 +116,7 @@ const collectionOptions =
         },
         put:
         {
-            roleRequired : "admin",
+            //roleRequired : "admin", //admin is not required here - normal use can update his profile
             action: function(){
                 const qParams = this.queryParams;
                 const bParams = this.bodyParams;
