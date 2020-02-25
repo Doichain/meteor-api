@@ -28,9 +28,10 @@ import checkNewTransaction, {TX_NAME_START, TX_VERIFIED_EMAIL_NAME_START} from "
 import updateMeta from "./update_meta";
 
 
-const scan_Doichain = async (rescan) => {
+const scan_Doichain = async (rescan,firstBlock) => {
 
-    let firstBlock = getBlockHash(CONFIRM_CLIENT,0)
+    if(!firstBlock)
+        firstBlock = getBlockHash(CONFIRM_CLIENT,0)
 
     if(!rescan && Meta.findOne({key: LAST_CHECKED_BLOCK_KEY})){
         firstBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY}).value;
@@ -142,6 +143,7 @@ const scan_DoichainOwn = async (rescan,firstBlock) => {
                         logMain('decrypted opt-in from dapp url:' + domain, ourConfirmedDois);
                     }
 
+
                     const optInFound = {
                         nameId: thisNameId,
                         address: address,
@@ -240,7 +242,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
         const txs = block.tx
         //loop through all transactions
         txs.forEach(function (tx) {
-            checkNewTransaction(null,block.hash)
+            if(rescan) checkNewTransaction(tx) //check also transactions
             try {
                 const txRawContent = getRawTransaction(CONFIRM_CLIENT,tx)
                 const outputs = txRawContent.vout

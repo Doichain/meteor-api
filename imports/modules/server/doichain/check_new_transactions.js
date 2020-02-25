@@ -2,7 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import bitcore from "bitcore-doichain";
 import {randomBytes} from "crypto";
 import { nameShow, getRawTransaction,getBlock,getTransaction} from '../../../../server/api/doichain.js';
-import {getUrl} from "../../../startup/server/dapp-configuration";
+import {getUrl, isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
 import { SEND_CLIENT, CONFIRM_CLIENT } from '../../../startup/server/doichain-configuration.js';
 import addDoichainEntry from './add_entry_and_fetch_data.js'
 import addOrUpdateMeta from '../meta/addOrUpdate.js';
@@ -11,7 +11,7 @@ import { OptIns} from "../../../api/opt-ins/opt-ins";
 import { Transactions} from "../../../api/transactions/transactions";
 import {logBlockchain, logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
-import {getRawMemPool, getWif, validateAddress} from "../../../../server/api/doichain";
+import {getBlockHash, getRawMemPool, getWif, listSinceBlock, validateAddress} from "../../../../server/api/doichain";
 import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
 import {
     API_PATH,
@@ -22,7 +22,7 @@ import getFromIPFS from "../ipfs/get_from_ipfs";
 import {IPFS} from "../../../../server/api/ipfs";
 import encryptMessage from "./encrypt_message";
 import verifySignature from "./verify_signature";
-import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction} from "./getPublicKeyOfOriginTransaction";
+import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 import decryptMessage from "./decrypt_message";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 import addSendVerifyEmailMailJob from "../jobs/add_send_verify_email_mail";
@@ -32,49 +32,42 @@ export const TX_VERIFIED_EMAIL_NAME_START = "es/";
 const checkNewTransaction = (txid, block) => {
   try {
       if (block || txid) {
-          logConfirm("blocknotfiy called - check_new_transactions for all tx of the block", block);
-          let lastCheckedBlock = block
+          if(block) logConfirm("blocknotfiy called", block);
+          if(txid)logConfirm("walletnotfiy called", txid);
           let txs
-
-          //TODO if validator dApp is offline and comes back online here we need to check if the incoming block is really the latest block, if not take a earlier transactions too!
-
-          /*
-          let lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY});
-          if(lastCheckedBlock !== undefined) lastCheckedBlock = lastCheckedBlock.value;
-          logConfirm("lastCheckedBlock",lastCheckedBlock);
-
-          const ret = listSinceBlock(CONFIRM_CLIENT, lastCheckedBlock);
-          const txs = ret.transactions;
-          lastCheckedBlock = ret.lastblock;
-          if(!ret || !txs || txs.length===0){
-              logConfirm('updating meta lastCheckedBlock',lastCheckedBlock)
-              addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
-              return;
-          }*/
           let txIdMemCache
           if(txid){
               txIdMemCache = txid
-              txs = [txIdMemCache]
+              txs = [{txid:txIdMemCache}]
               console.log('got txid directly ', txIdMemCache)
           }
           else {
-              txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx //TODO instead use listSinceBlock as commented above
-              console.log('got txs from block ', txs)
+              //txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx
+              let lastCheckedBlock = Meta.findOne({key: LAST_CHECKED_BLOCK_KEY}); //TODO if dapp gets initialized first time nothing gets called
+              if(lastCheckedBlock) lastCheckedBlock = lastCheckedBlock.value;
+              else lastCheckedBlock = getBlockHash(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,1)
+              logConfirm("lastCheckedBlock",lastCheckedBlock);
+              const ret = listSinceBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, lastCheckedBlock);
+              txs = ret.transactions;
+              lastCheckedBlock = ret.lastblock;
+              logConfirm('updating meta lastCheckedBlock',lastCheckedBlock)
+              addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
           }
 
           txs.forEach(our_txid => {
-              logConfirm('now checking txid:',our_txid)
               let tx
               try {
-                  tx = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, our_txid,true)
+                  tx = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, our_txid.txid,true)
               }catch(e){
-                  logConfirm("tx not ours");
+                  logConfirm("tx not ours",our_txid.txid);
               }
-
               //if a memcache transaction comes right before the block, it could be the block confirms it already and then it should not be added at the same time
-              const isConfirmedMemCacheTransaction = (txIdMemCache?true:false) && tx.confirmations>0
-              logConfirm("checking tx ... (txIdMemCache)"+txIdMemCache, tx);
-              if(tx && !isConfirmedMemCacheTransaction){
+             // const isConfirmedMemCacheTransaction = (txIdMemCache?true:false) && tx && tx.confirmations>0
+             // logConfirm("checking tx ... (txIdMemCache)"+isConfirmedMemCacheTransaction, tx);
+              if(tx) { //&& !isConfirmedMemCacheTransaction){
+
+                  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics
+
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
                       const amount = detail.amount
@@ -84,45 +77,44 @@ const checkNewTransaction = (txid, block) => {
                       const name = detail.name
                       let nameId
                       let nameValue
-                      const isOwnerMyMAddress = validateAddress(CONFIRM_CLIENT, address) //address of this output
+                      const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
-
                       if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
                           nameId = name.substring(("doi: " + TX_NAME_START).length);
                           logConfirm("nameId: " + nameId, tx.txid);
-                          const nameRawTxVouts = getRawTransaction(CONFIRM_CLIENT,tx.txid).vout[n]
+                          const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
                           nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                           logConfirm("nameValue: " + nameValue, nameValue);
                           if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
                               addNameTx(nameId, nameValue, address, tx.txid);
                       } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
                           nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
-                          const nameRawTxVouts = getRawTransaction(CONFIRM_CLIENT,tx.txid).vout[n]
+                          const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
                           nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                           logConfirm("nameValue: " + nameValue, nameValue);
                           if (!processedTxInOptIns && isOwnerMyMAddress.ismine){
                              addVerifyEmailTx(nameId, nameValue, address, tx.txid)
                           }
-
                       }
-
                       let publicKey
                       let firstOutsAddress = 'coinbase'
                       if (!publicKey) publicKey = getPublicKeyOfOriginTxId(tx.txid) //in case we have a confirmed block
-
                       if (!publicKey) { //handle Coinbase transaction please refactor with the same procedure in memcache tx
-                          const rawTx = getRawTransaction(CONFIRM_CLIENT, tx.txid)
+                          const rawTx = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, tx.txid)
                           const txIdOfInput = rawTx.vin[0].txid
                           if (txIdOfInput) {
-                              //console.log("txIdOfInput",txIdOfInput)
-                              const rawTxInput = getRawTransaction(CONFIRM_CLIENT, txIdOfInput)
+                              const rawTxInput = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txIdOfInput)
                               firstOutsAddress = rawTxInput.vout[0].scriptPubKey.addresses[0]
                               console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
                           }
                       }
+
+                      let network = bitcore.Networks.get("doichain")
+                      if(isRegtest() || isTestnet()) network = bitcore.Networks.get("doichain-testnet")
+
                       const senderAddress = publicKey ? bitcore.getAddressOfPublicKey(publicKey,network).toString() : firstOutsAddress
                       console.log('isOwnerMyMAddress: ' + isOwnerMyMAddress.address, isOwnerMyMAddress.ismine)
-                      const isSenderMyMAddress = validateAddress(CONFIRM_CLIENT, senderAddress)
+                      const isSenderMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, senderAddress)
                       console.log('isSenderMyMAddress: ' + senderAddress, isSenderMyMAddress.ismine)
                       if ((isOwnerMyMAddress.ismine
                           || isOwnerMyMAddress.iswatchonly
@@ -143,10 +135,9 @@ const checkNewTransaction = (txid, block) => {
                           } //we add this again, since we are interested about the confirmation
                   });
               }
-              addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
-              logConfirm("transactions updated - lastCheckedBlock:", lastCheckedBlock);
           })
-          logConfirm("working with tx finished");
+         // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
+         // logConfirm("transactions updated - lastCheckedBlock:", lastCheckedBlock);
       }
   } catch(exception) {
         throw new Meteor.Error('doichain.checkNewTransactions.exception', exception);

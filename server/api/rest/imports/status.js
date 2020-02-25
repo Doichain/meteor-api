@@ -44,7 +44,7 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
         logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),_.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');
         if(!_.find(txidFilter, (ourTx) => ourTx.tx===tx)) {
           txidFilter.push({tx:tx, date:new Date()})
-          checkNewTransaction(tx,null);
+          checkNewTransaction(tx);
           console.log('txidFilter now',txidFilter)
         }
 
@@ -72,7 +72,7 @@ Api.addRoute(DOI_BLOCKNOTIFY_ROUTE, {authRequired: false},{
     action: function() {
       const params = this.queryParams;
       try {
-          checkNewTransaction(null,params.block);
+          checkNewTransaction(undefined,params.block);
           updateMeta();
         return {status: 'success',  data: Meta.findOne({"key" : "blocks"}).value}
       } catch(error) {
