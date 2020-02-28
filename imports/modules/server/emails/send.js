@@ -60,7 +60,7 @@ const sendMail = (mail) => {
 
     logConfirm('confirmationUrl:' + doiVerificationUrl);
     let doichainEmailFooterText = "\n\nAn email permission will be stored on Doichain for:\n"
-    doichainEmailFooterText+="Sender Email: "+mail.from+" ("+mail.senderName+")"+"\n"
+    doichainEmailFooterText+="Sender Email: "+mail.senderName+" ("+mail.from+")"+"\n"
     doichainEmailFooterText+="Recipient Email: "+mail.to+"\n"
     doichainEmailFooterText+="NameId on Doichain: "+mail.nameId+"\n"
     doichainEmailFooterText+="PublicKey of Requester: "+mail.publicKey+"\n"
@@ -68,7 +68,7 @@ const sendMail = (mail) => {
 
     let doichainEmailFooterHTML = "<p>An email permission will be stored on Doichain for:<br>"
     doichainEmailFooterHTML+="<ul><li>Sender Email: "+mail.from+"</li>"
-    doichainEmailFooterHTML+="<ul><li>Sender Name: "+mail.senderName+"</li>"
+    doichainEmailFooterHTML+="<li>Sender Name: "+mail.senderName+"</li>"
     doichainEmailFooterHTML+="<li>Recipient Email: "+mail.to+"</li>"
     doichainEmailFooterHTML+="<li>NameId on Doichain: "+nameIdVerificationUrl+"</li>"
     doichainEmailFooterHTML+="<li>PublicKey of Sender: "+mail.publicKey+"</li>"
@@ -89,15 +89,15 @@ const sendMail = (mail) => {
 
     switch (mail.contentType) {
       case "text":
-        emailToSend.text=mail.message+"\n"+doichainEmailFooterText;
+        emailToSend.text=mail.message+"\n"+doichainEmailFooterText
         break;
       case "html":
-        emailToSend.html=mail.message+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>";
+        emailToSend.html=mail.message+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>"
         break;
       case "json":
         let mailParts=JSON.parse(mail.message);
         emailToSend.text=mailParts.text+"\n"+doichainEmailFooterText;
-        emailToSend.html=mailParts.html+doichainEmailFooterText;
+        emailToSend.html=mailParts.html+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>"
         break;
       default:
         emailToSend.html=mail.message+doichainEmailFooterText; //downward compatible to 0.0.8
