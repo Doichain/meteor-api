@@ -169,7 +169,6 @@ const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
 
     const retSignature = verifySignature({data: dataObjectFromIPFS.sender_mail,publicKey:senderPublicKey,signature:signature})
     logConfirm("retSignature "+retSignature);
-    return
 
     logConfirm("decryptedDataObjectFromIPFS ", JSON.parse(decryptedDataObjectFromIPFS));
 

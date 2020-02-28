@@ -45,21 +45,26 @@ Api.addRoute(EMAIL_VERIFY_CONFIRMATION_ROUTE + '/:token/:cid/:address', {authReq
         logConfirm('REST email/confirm :', {token: token , cid: cid, address: address, host: ip});
         const privateKeyWif = getWif(CONFIRM_CLIENT, address) //TODO incase we support multiple private keys we should check which one we are using here (which address)
         const privateKey = getPrivateKeyFromWif({wif: privateKeyWif})
-        const our_data = Async.runSync((done) => {
+        logConfirm('privateKey',privateKey)
+
+        const ipfsData = Async.runSync((done) => {
           getFromIPFS(cid).then((ipfsData) => {
             done(null, ipfsData);
           })
         }).result
+
+        logConfirm('ipfsData',ipfsData.toString())
         const decryptedDataObjectFromIPFS = decryptMessage({
-          message: our_data.toString(),
+          message: ipfsData.toString(),
           privateKey: privateKey
         })
+        logConfirm('decryptedDataObjectFromIPFS',decryptedDataObjectFromIPFS)
         const dataObjectFromIPFS = JSON.parse(decryptedDataObjectFromIPFS)
         let status = 'fail'
-        if(dataObjectFromIPFS.confirmationToken = token){ //confirm in blockchain
+        if(dataObjectFromIPFS.confirmationToken === token){ //confirm in blockchain
           status='success'
-          nameDoiTx = nameDoi(SEND_CLIENT, dataObjectFromIPFS.nameId, 'verified', publicKeyAndAddress.destAddress);
-          //TODO write signature to blockchain send it back to Alice
+          const nameDoiTx = nameDoi(CONFIRM_CLIENT, dataObjectFromIPFS.nameId, 'verified',false);
+          logConfirm('writing to blockchain',nameDoiTx)
         }
 
         logConfirm("dataFromIPFS (confirmed email token", JSON.parse(decryptedDataObjectFromIPFS));

@@ -67,8 +67,8 @@ const verifySignature = (data) => {
             bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain')
 
         const address = bitcore.Address.fromPublicKey(new bitcore.PublicKey(ourData.publicKey));
-        const verify = Message(ourData.data).verify(address,ourData.signature)
         try {
+            const verify = Message(ourData.data).verify(address, ourData.signature)
             return verify
         } catch (error) {
             logError(error)

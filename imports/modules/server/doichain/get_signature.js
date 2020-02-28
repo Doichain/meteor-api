@@ -17,6 +17,7 @@ const getSignature = (data) => {
   try {
     const ourData = data;
     GetSignatureSchema.validate(ourData);
+    console.log("getSignature from",ourData)
     if(isRegtest() || isTestnet())
       bitcore.Networks.defaultNetwork =  bitcore.Networks.get('doichain-testnet')
     else

@@ -95,6 +95,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                         message: our_sender_email,
                         privateKey: getPrivateKeyFromWif({wif: ourPrivateKey})
                     })
+                    console.log('ourPrivateKey',ourPrivateKey)
                     console.log('signature',signature)
                     const retSignature = verifySignature({data: our_sender_email,
                         publicKey:"0201bfa745b03a3e46fe014a219a7326dac611ac5b75e20c4cd69c012ae844a73e",
@@ -183,7 +184,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
                                     let nameIdPart2 = ''
                                     if (nameId.length > 57) //we have only space for 77 chars in the name in case its longer as in signatures put the rest into the value
                                     {
-                                        nameIdPart2 = nameId.substring(58, nameId.length)
+                                        nameIdPart2 = nameId.substring(57, nameId.length)
                                         nameId = nameId.substring(0, 57)
                                         nameValue = nameIdPart2 + ' ' + nameValue
                                     }
@@ -207,8 +208,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
 
                                     const input = utxos.utxos[0]
                                     const inputTxId = input.txid
-                                    console.log(input)
-                                    const n = input.vout?input.vout:input.n //in case of unconfirmed (local) utxos we use n
+                                    const n = (input.vout!==undefined)?input.vout:input.n //in case of unconfirmed (local) utxos we use n
                                     //const inputRawTx = getRawTransaction(SEND_CLIENT, inputTxId)
                                     //const scriptPubKey = input.scriptPubKey
                                     /*  console.log(
