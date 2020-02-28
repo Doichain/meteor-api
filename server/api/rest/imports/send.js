@@ -410,7 +410,7 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
           logSend('REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template',JSON.stringify(params));
           const optIn = OptIns.findOne({nameId:params.name_id})
           logSend('found DOI in db',optIn)
-          if (optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
+          if (optIn && optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
               const validatorPublicKey = optIn.validatorPublicKey
               console.log('getting public key of origin transaction for later use',optIn.txId)
               const recipientPublicKey = getPublicKeyOfOriginTxId(optIn.txId);  //TODO  //recipient here means peters public key (which funnily is not the recipient but the sender in this case (!!?!!)

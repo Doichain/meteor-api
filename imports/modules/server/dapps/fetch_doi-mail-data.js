@@ -53,7 +53,7 @@ const fetchDoiMailData = (data) => {
         rawTransaction.vout.forEach(function (output) {
             if(!address){
                 const our_address = output.scriptPubKey.addresses[0]
-                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){ //TODO please validate more efficiently using our publicKeySet
+                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){ //TODO please validate more efficiently using own internal publicKeySet
                     address = our_address
                 }
             }
@@ -125,11 +125,10 @@ const fetchDoiMailData = (data) => {
         logConfirm('opt-in found:', optIn);
         if (optIn.confirmationToken !== undefined) return;
 
-        const token = generateDoiToken({id: optIn._id});
-        logConfirm('generated confirmationToken:', token);
-        const confirmationHash = generateDoiHash({id: optIn._id, token: token, redirect: responseData.data.redirect});
-        logConfirm('generated confirmationHash:', confirmationHash);
-        const confirmationUrl = getUrl() + API_PATH + VERSION + "/" + DOI_CONFIRMATION_ROUTE + "/" + encodeURIComponent(confirmationHash);
+        const token = generateDoiToken({id: optIn._id})
+        logConfirm('generated confirmationToken:', token)
+        OptIns.update({_id: optInId},{$set:{token: token, redirect:responseData.data.redirect}})
+        const confirmationUrl = getUrl() + API_PATH + VERSION + "/" + DOI_CONFIRMATION_ROUTE + "/" + encodeURIComponent(token);
         logConfirm('confirmationUrl:' + confirmationUrl);
         let template = undefined;
 
@@ -177,8 +176,8 @@ const fetchDoiMailData = (data) => {
             message: template,
             contentType: responseData.data.contentType,
             returnPath: responseData.data.returnPath,
-            nameId: ourData.name,
-            publicKey: publicKey,
+            nameId: ourData.name, //we need this to verify a DOI from every Doichain node
+            publicKey: publicKey, //we need this to verify a DOI from every Doichain node
         });
         OptIns.upsert({nameId: ourData.name},{$push:{status:'added to email queue'}});
     } catch (ex) {

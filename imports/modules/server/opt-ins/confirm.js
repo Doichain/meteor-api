@@ -9,25 +9,23 @@ import addUpdateBlockchainJob from '../jobs/add_update_blockchain.js';
 import {logConfirm} from "../../../startup/server/log-configuration";
 
 const ConfirmOptInSchema = new SimpleSchema({
-  host: {
-    type: String
-  },
-  hash: {
-    type: String
-  }
+    host: {
+        type: String
+    },
+    token: {
+        type: String
+    }
 });
 
 const confirmOptIn = (request) => {
   try {
     const ourRequest = request;
     ConfirmOptInSchema.validate(ourRequest);
-    const decoded = decodeDoiHash({hash: request.hash});
-    console.log('decoded hash',decoded)
-    const optIn = OptIns.findOne({_id: decoded.id});
-    if(optIn === undefined || optIn.confirmationToken !== decoded.token) throw "Invalid hash";
-    if(optIn.confirmationToken === decoded.token && optIn.confirmedAt != undefined){ // Opt-In was already confirmed on email click
+    const optIn = OptIns.findOne({token: ourRequest.token});
+    if(optIn === undefined) throw "Invalid token - exiting confirmation";
+    if(optIn.confirmedAt !== undefined){ // Opt-In was already confirmed on email click
       logConfirm("OptIn already confirmed: ",optIn);
-      return decoded.redirect;
+      return optIn.redirect;
     }
     const confirmedAt = new Date();
     console.log('found opt in to confirm',optIn)
@@ -38,11 +36,10 @@ const confirmOptIn = (request) => {
     if(entries === undefined) throw "Doichain entry/entries not found";
 
     entries.forEach(entry => {
-        logConfirm('confirming DoiChainEntry:',entry);
+        logConfirm('confirming DoiChainEntry / respective masterDoi:',entry);
 
         const value = JSON.parse(entry.value);
         logConfirm('getSignature (only of value!)', value);
-
         logConfirm('creating DOI signature with address'+entry.address,value.signature);
         const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature);
         logConfirm('got doiSignature:',doiSignature);
@@ -61,8 +58,8 @@ const confirmOptIn = (request) => {
             host: ourRequest.host
         });
     });
-    logConfirm('redirecting user to:',decoded.redirect);
-    return decoded.redirect;
+    logConfirm('redirecting user to:',optIn.redirect);
+    return optIn.redirect;
   } catch (exception) {
     throw new Meteor.Error('opt-ins.confirm.exception', exception);
   }

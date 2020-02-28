@@ -135,6 +135,14 @@ OptIns.schema = new SimpleSchema({
     type: String,
     optional: true
   },
+  token:{
+    type: String,
+    optional: true
+  },
+  redirect:{
+    type: String,
+    optional: true
+  },
   confirmations: {
     type: SimpleSchema.Integer,
     optional: true,

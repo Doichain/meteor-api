@@ -8,25 +8,24 @@ import decryptMessage from "../../../../imports/modules/server/doichain/decrypt_
 import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
 import {IPFS} from "../../ipfs";
 //doku of meteor-restivus https://github.com/kahmali/meteor-restivus
-Api.addRoute(DOI_CONFIRMATION_ROUTE+'/:hash', {authRequired: false}, {
+Api.addRoute(DOI_CONFIRMATION_ROUTE + '/:token', {authRequired: false}, {
   get: {
-    action: function() {
-      const hash = this.urlParams.hash;
+    action: function () {
+      // const hash = this.urlParams.hash;
+      const token = this.urlParams.token
       try {
+        let ip = getRemoteIP(this.request)
+        if (ip.indexOf(',') != -1) ip = ip.substring(0, ip.indexOf(','));
 
-          let ip = getRemoteIP(this.request)
+        logConfirm('REST opt-in/confirm :', {token: token, host: ip});
+        const redirect = confirmOptIn({host: ip, token: token});
 
-        if(ip.indexOf(',')!=-1)ip=ip.substring(0,ip.indexOf(','));
-
-          logConfirm('REST opt-in/confirm :',{hash:hash, host:ip});
-          const redirect = confirmOptIn({host: ip, hash: hash});
-
-          return {
-            statusCode: 303,
-            headers: {'Content-Type': 'text/plain', 'Location': redirect},
-            body: 'Location: '+redirect
-          };
-      } catch(error) {
+        return {
+          statusCode: 303,
+          headers: {'Content-Type': 'text/plain', 'Location': redirect},
+          body: 'Location: ' + redirect
+        };
+      } catch (error) {
         return {statusCode: 500, body: {status: 'fail', message: error.message}};
       }
     }
