@@ -51,6 +51,7 @@ Npm.depends({
     'crypto':'1.0.1',
     "bitcore-doichain":"0.1.30",
     "bitcoinjs-lib":"5.1.7",
+    "doichain":"0.0.9",
     'bitcore-message':'0.12.0'
 });
 

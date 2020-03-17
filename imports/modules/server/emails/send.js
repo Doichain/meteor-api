@@ -89,15 +89,15 @@ const sendMail = (mail) => {
 
     switch (mail.contentType) {
       case "text":
-        emailToSend.text=mail.message+"\n"+doichainEmailFooterText
+        emailToSend.text=mail.message //+"\n"+doichainEmailFooterText //TODO enable this again
         break;
       case "html":
-        emailToSend.html=mail.message+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>"
+        emailToSend.html=mail.message //+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>" //TODO enable this again
         break;
       case "json":
         let mailParts=JSON.parse(mail.message);
-        emailToSend.text=mailParts.text+"\n"+doichainEmailFooterText;
-        emailToSend.html=mailParts.html+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>"
+        emailToSend.text=mailParts.text //+"\n"+doichainEmailFooterText; //TODO enable this again
+        emailToSend.html=mailParts.html //+"<table><tr><td>"+doichainEmailFooterHTML+"</td></tr></table>" //TODO enable this again
         break;
       default:
         emailToSend.html=mail.message+doichainEmailFooterText; //downward compatible to 0.0.8

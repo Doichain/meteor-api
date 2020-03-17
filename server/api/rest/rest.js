@@ -19,6 +19,7 @@ export const DOICHAIN_BROADCAST_TX = "sendrawtransaction";
 
 export const DOI_FETCH_ROUTE = "doi-mail";
 export const DOI_EXPORT_ROUTE = "export";
+export const DOI_TESTFOUNDING_ROUTE = "funding";
 export const DOI_MAILTEMPLATE_ROUTE = "template";
 export const API_PATH = "api/";
 export const VERSION = "v1";

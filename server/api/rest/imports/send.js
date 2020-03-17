@@ -1,5 +1,7 @@
 import bitcore from "bitcore-doichain"
 import bitcoin from "bitcoinjs-lib"
+import doichain from "doichain"
+
 import base58 from 'bs58'
 import conv from 'binstring'
 import { Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE } from '../rest.js';
@@ -8,7 +10,7 @@ import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
 import {logConfirm, logError, logSend} from "../../../../imports/startup/server/log-configuration";
 import {
-    DOI_EXPORT_ROUTE, DOI_NAME_SHOW,
+    DOI_EXPORT_ROUTE, DOI_NAME_SHOW, DOI_TESTFOUNDING_ROUTE,
     DOICHAIN_BROADCAST_TX,
     DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
     DOICHAIN_LIST_TXS,
@@ -37,12 +39,12 @@ import {
     importAddress,
     listUnspent,
     sendRawTransaction,
-    validateAddress,getWif,
-    getAddressesByAccount
+    validateAddress, getWif,
+    getAddressesByAccount, generateBlock, doichainSendToAddress,getBalance
 } from "../../doichain";
 
 /**
- * Verifies and sender email to belong to a certain wallet.
+ * Verifies a sender email to belong to a certain wallet.
  * Params:
  * - sender_email: the sender email address to be verified
  * - address (optional): a Doichain address of this wallet (if undefined) we use the first entry in the wallet (can be wrong!)
@@ -435,6 +437,50 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
   }
 });
 
+Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
+    get: {
+        //authRequired: true, TODO enable this
+        action: function() {
+            const params = this.queryParams;
+            try {
+                if(!isRegtest() && !isTestnet()) return {status: 'fail', error: 'function not available'};
+                //1. create new block (if regtest)
+                const balance = getBalance(SEND_CLIENT)
+                doichain.network.changeNetwork(isRegtest()?'regtest':'testnet')
+
+                if(isRegtest() && balance<=1) generateBlock(SEND_CLIENT,1)
+                if(isTestnet() && balance<=1)  return {status: 'fail', error: 'testnet coin faucet empty - please inform developers via telegram'};
+                //2. create new keyPair and Address
+
+                let ourAddress = params.address
+                let data = {address: ourAddress,amount:1}
+                if(!params.address){
+                    const keyPair = bitcoin.ECPair.makeRandom({ network: doichain.network.DEFAULT_NETWORK });
+                    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey , network: doichain.network.DEFAULT_NETWORK,});
+                    logSend('sending to address',address)
+                    ourAddress = address
+                    data.address = address
+                    data.wif = keyPair.toWIF()
+                    data.privateKey = keyPair.privateKey.toString('hex')
+                    data.publicKey = keyPair.publicKey.toString('hex')
+                }
+
+                //3. fund privateKey
+                const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,data.amount)
+                data.txid = txid
+                if(isRegtest()) generateBlock(SEND_CLIENT,1)
+
+
+                return {status: 'success', data};
+            } catch(error) {
+                logError('error while exporting confirmed dois',error);
+                return {status: 'fail', error: error.message};
+            }
+        }
+    }
+});
+
+
 Api.addRoute(DOI_EXPORT_ROUTE, {
     get: {
         authRequired: true,
@@ -474,7 +520,6 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
         action: function() {
             const params = this.queryParams;
             const domain = params.domain
-
             let ourOPT_IN_KEY=OPT_IN_KEY;
             if(isRegtest() || isTestnet())  ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
 
