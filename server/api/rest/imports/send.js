@@ -543,18 +543,31 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         action: function() {
             const params = this.queryParams;
             const ourAddress = params.address;
+
             try {
-                const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
-                if(data)
-                    return {status: 'success',data};
-                else
-                    return {status: 'success',data:[]};
+                const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
+
+                if(!addressValidation.isvalid){
+                    logError('doichain address not valid: '+ourAddress);
+                    return {status: 'fail',data:[],error: 'doichain address not valid: '+ourAddress};
+                }
+
+                if(!addressValidation.ismine && !addressValidation.iswatchonly)
+                    importAddress(SEND_CLIENT,ourAddress)
+
+                if(addressValidation.ismine || addressValidation.iswatchonly){
+                    const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
+                    if(data)
+                        return {status: 'success',data};
+                    else
+                        return {status: 'success',data:[]};
+                }else
+                    return {status: 'fail',data:[],error: "address not not valid or not imported yet"+ourAddress};
 
             } catch(error) {
                 logError('error getting transactions for address '+ourAddress,error);
-                return {status: 'fail', error: error.message};
+                return {status: 'fail',data:[],error: "address not not valid or not imported yet"+ourAddress};
             }
-
         }
     }
 })
