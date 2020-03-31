@@ -20,6 +20,7 @@ import {getRawTransaction, getWif, validateAddress} from "../../../../server/api
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
 import {isRegtest} from "../../../startup/server/dapp-configuration";
+import {getSettings} from "meteor/doichain:settings";
 
 const FetchDoiMailDataSchema = new SimpleSchema({
     name: {
@@ -167,11 +168,18 @@ const fetchDoiMailData = (data) => {
         logConfirm('sending email to peter for confirmation over bobs dApp',responseData);
 
         //TODO please fix (conventional dApp requests use responseData.data and direct txs of mobile clients use the other
+
         const publicKey = responseData.data.publicKey?responseData.data.publicKey:responseData.publicKey
+
+        const defaultFrom = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
+        const from = responseData.data.sender?responseData.data.sender:responseData.sender?responseData.sender:defaultFrom
+        const to = responseData.data.recipient?responseData.data.recipient:responseData.recipient
+        const senderName = responseData.data.senderName?responseData.data.senderName:responseData.senderName
+
         addSendMailJob({
-            from: responseData.data.sender,
-            to: responseData.data.recipient,
-            senderName: responseData.data.senderName,
+            from: from,
+            to: to,
+            senderName: senderName,
             subject: responseData.data.subject,
             message: template,
             contentType: responseData.data.contentType,
