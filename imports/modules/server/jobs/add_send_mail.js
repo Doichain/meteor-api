@@ -35,7 +35,7 @@ const AddSendMailJobSchema = new SimpleSchema({
   },
   publicKey: {
     type: String,
-    optional: true
+    optional: true  //TODO check if this is really needed here.
   }
 });
 
