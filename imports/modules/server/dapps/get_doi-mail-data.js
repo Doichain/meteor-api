@@ -100,11 +100,12 @@ const getDoiMailData = (data) => {
     // 4. Send dApp lock the data for this opt in
     logSend('verifying signature...');
 
+    /* TODO as soon as verified email is activated please activate
     if (!verifySignature({publicKey: publicKey, data: ourData.name_id, signature: ourData.signature})) {
       throw "signature incorrect - access denied";
     }
     OptIns.update({_id: optIn._id}, {$push: {status: 'signature verified'}})
-    logSend('signature verified');
+    logSend('signature verified');*/
 
     //TODO: Query for language
     let doiMailData;
