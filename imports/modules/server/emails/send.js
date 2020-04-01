@@ -43,6 +43,7 @@ const SendMailSchema = new SimpleSchema({
   },
   publicKey: {
     type: String,
+    optional: true
   }
 });
 
