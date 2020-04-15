@@ -439,9 +439,9 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
 
 Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
     get: {
-        //authRequired: true, TODO enable this
         action: function() {
-            const params = this.queryParams;
+            const params = this.queryParams
+            console.log('funding params:',params)
             try {
                 if(!isRegtest() && !isTestnet()) return {status: 'fail', error: 'function not available'};
                 //1. create new block (if regtest)
@@ -453,7 +453,9 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 //2. create new keyPair and Address
 
                 let ourAddress = params.address
-                let data = {address: ourAddress,amount:1}
+                const ourAmount = params.amount
+                let data = {address: ourAddress,amount:ourAmount}
+
                 if(!params.address){
                     const keyPair = bitcoin.ECPair.makeRandom({ network: doichain.network.DEFAULT_NETWORK });
                     const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey , network: doichain.network.DEFAULT_NETWORK,});
@@ -466,6 +468,7 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 }
 
                 //3. fund privateKey
+                logSend('sending to address',data.amount)
                 const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,data.amount)
                 data.txid = txid
                 if(isRegtest()) generateBlock(SEND_CLIENT,1)
@@ -553,7 +556,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
                 }
 
                 if(!addressValidation.ismine && !addressValidation.iswatchonly)
-                    importAddress(SEND_CLIENT,ourAddress)
+                    importAddress(SEND_CLIENT,ourAddress,false)
 
                 if(addressValidation.ismine || addressValidation.iswatchonly){
                     const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
@@ -602,7 +605,7 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
                 if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly))
                     return listOurUnspent(addressValidation)
                 if(addressValidation.isvalid && (!addressValidation.ismine && !addressValidation.iswatchonly)){
-                    importAddress(SEND_CLIENT,address)
+                    importAddress(SEND_CLIENT,address,false)
                     return listOurUnspent(addressValidation,'address imported sucessfully')
                 }
             } catch(error) {

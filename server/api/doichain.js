@@ -277,13 +277,13 @@ function doichain_getrawtransaction(client, txid, callback) {
     });
 }
 
-export function importAddress(client, address) {
+export function importAddress(client, address, rescan) {
     const syncFunc = Meteor.wrapAsync(doichain_importaddress);
-    return syncFunc(client, address);
+    return syncFunc(client, address, rescan);
 }
 
-function doichain_importaddress(client, address, callback) {
-    client.cmd('importaddress', address, address, true, function(err, data) {
+function doichain_importaddress(client, address, rescan, callback) {
+    client.cmd('importaddress', address, address, rescan, function(err, data) {
         if(err) { logError('doichain_importaddress:', err);}
         callback(err, data);
     });
