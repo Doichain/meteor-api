@@ -36,7 +36,8 @@ Transactions.schema = new SimpleSchema({
         type: String
     },
     n: {
-      type: Number
+      type: Number,
+      optional:true
     },
     category: {
         type: String
@@ -45,7 +46,8 @@ Transactions.schema = new SimpleSchema({
         type: Number
     },
     fee: {
-        type: Number
+        type: Number,
+        optional:true
     },
     confirmations : {
         type: Number
@@ -64,6 +66,14 @@ Transactions.schema = new SimpleSchema({
     nameValue: {
         type: String,
         optional: true
+    },
+    spent: {
+        type: Boolean,
+        optional:true
+    },
+    type: {
+        type: String,
+        optional:true
     },
     createdAt: {
         type: Date

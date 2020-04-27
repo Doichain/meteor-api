@@ -26,6 +26,8 @@ import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 import decryptMessage from "./decrypt_message";
 import getPrivateKeyFromWif from "./get_private-key_from_wif";
 import addSendVerifyEmailMailJob from "../jobs/add_send_verify_email_mail";
+import scan_Doichain from "./scan_doichain";
+import getAddress from "./get_address";
 export const TX_NAME_START = "e/";
 export const TX_VERIFIED_EMAIL_NAME_START = "es/";
 
@@ -34,12 +36,11 @@ const checkNewTransaction = (txid, block) => {
       if (block || txid) {
           if(block) logConfirm("blocknotfiy called", block);
           if(txid)logConfirm("walletnotfiy called", txid);
-          let txs
-          let txIdMemCache
+          let txs = []
           if(txid){
-              txIdMemCache = txid
-              txs = [{txid:txIdMemCache}]
-              console.log('got txid directly ', txIdMemCache)
+              const txMemcache = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txid,true)
+              txs = [txMemcache]
+              console.log('got txid from memcache ', txid)
           }
           else {
               //txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx
@@ -54,29 +55,21 @@ const checkNewTransaction = (txid, block) => {
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
           }
 
-          txs.forEach(our_txid => {
-              let tx
-              try {
-                  tx = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, our_txid.txid,true)
-              }catch(e){
-                  logConfirm("tx not ours",our_txid.txid);
-              }
-              //if a memcache transaction comes right before the block, it could be the block confirms it already and then it should not be added at the same time
-             // const isConfirmedMemCacheTransaction = (txIdMemCache?true:false) && tx && tx.confirmations>0
-             // logConfirm("checking tx ... (txIdMemCache)"+isConfirmedMemCacheTransaction, tx);
-              if(tx) { //&& !isConfirmedMemCacheTransaction){
+          txs.forEach(tx => {
 
-                  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics
+              if(tx) { //&& !isConfirmedMemCacheTransaction){
+                //  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics TODO check this do we need this here?
 
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
-                      const amount = detail.amount
-                      const category = detail.category
-                      const fee = detail.fee
+                      // const amount = detail.amount
+                      // const category = detail.category
+                      // const fee = detail.fee
                       const n = detail.vout
                       const name = detail.name
                       let nameId
                       let nameValue
+                      //TODO please check if this is a block and not our transaction
                       const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                       if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
@@ -108,39 +101,16 @@ const checkNewTransaction = (txid, block) => {
                               console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
                           }
                       }
-
-                      let network = bitcore.Networks.get("doichain")
-                      if(isRegtest() || isTestnet()) network = bitcore.Networks.get("doichain-testnet")
-
-                      const senderAddress = publicKey ? bitcore.getAddressOfPublicKey(publicKey,network).toString() : firstOutsAddress
-                      console.log('isOwnerMyMAddress: ' + isOwnerMyMAddress.address, isOwnerMyMAddress.ismine)
-                      const isSenderMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, senderAddress)
-                      console.log('isSenderMyMAddress: ' + senderAddress, isSenderMyMAddress.ismine)
-                      if ((isOwnerMyMAddress.ismine
-                          || isOwnerMyMAddress.iswatchonly
-                          || isSenderMyMAddress.ismine
-                          || isSenderMyMAddress.iswatchonly)
-                      && senderAddress!==address)
-                          {
-                              addCoinTx(tx.txid,
-                                  n,
-                                  category,
-                                  amount,
-                                  fee,
-                                  tx.confirmations,
-                                  senderAddress,
-                                  address,
-                                  nameId,
-                                  nameValue)
-                          } //we add this again, since we are interested about the confirmation
                   });
+                  addCoinTx(tx,tx.confirmations)
               }
-          })
+          }) //foreach tx
+
          // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
          // logConfirm("transactions updated - lastCheckedBlock:", lastCheckedBlock);
       }
   } catch(exception) {
-        throw new Meteor.Error('doichain.checkNewTransactions.exception', exception);
+        throw new Meteor.Error('doichain.checkNewTransactions.exceptiondoichain.checkNewTransactions.exception', exception);
   }
   return true;
 };
@@ -215,7 +185,7 @@ const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
 
 
 function addNameTx(name, value, address, txid) {
-
+    console.log('adding NamTx',txid)
     //cut away 'e/' in case it was delivered in a mempool transaction otherwise its not included.
     const txName = name.startsWith(TX_NAME_START)?name.substring(TX_NAME_START.length):name;
     addDoichainEntry({
@@ -227,44 +197,128 @@ function addNameTx(name, value, address, txid) {
 }
 
 /**
+ *
  * This method should add an incoing coin transaction weather its coming through memcash (unconfirmed) or in a new block (confirmed)
  *
  * @param value
  * @param address
  * @param txid
  */
-function addCoinTx(txid,n,category,amount,fee, confirmations,senderAddress,address,nameId,nameValue) {
-    //const our_address = address //(category==="send")?senderAddress:address
-    const our_address = (category==="send")?senderAddress:address
-    //const our_senderAddress = senderAddress //(category==="send")?address:senderAddress
-    const our_senderAddress = (category==="send")?address:senderAddress
-    console.log('adding coin to address: '+our_address, amount)
-    const tx = {
-        txid: txid,
-        n: n,
-        category: category,
-        amount: amount,
-        fee: fee ? fee : 0,
-        confirmations: confirmations,
-        senderAddress: our_senderAddress,
-        address: our_address,
-        nameId: nameId,
-        nameValue: nameValue
+function addCoinTx(tx,confirmations) {
+    const insertTx = (ourTx) => {
+        console.log(ourTx)
+        ourTx._id?ourTx._id=undefined:console.log('no _id') //we need to do this otherwise it cannot get added another time
+        ourTx.createdAt?ourTx.createdAt=undefined:console.log('no createdAt')
+        const recordId = Transactions.insert(ourTx)
+        console.log('record added with id:'+recordId)
+        if(recordId){
+            if(ourTx.amount>0) console.log(ourTx.senderAddress + " sent " + ourTx.amount + " DOI to address " + ourTx.address + " in txid:", ourTx.txid)
+            else console.log(ourTx.senderAddress + " received " + ourTx.amount + " DOI from "+ourTx.address+" in txid:", ourTx.txid)
+        }
     }
-    const insertTx = () => {
-        Transactions.remove({txid: txid, n: n,amount:amount})
-        const transactionsId = Transactions.insert(tx)
-        console.log(transactionsId + " transactionsId inserted local db")
-    }
-    insertTx()
-    logConfirm(senderAddress + " sent " + amount + " DOI to address " + address + " in txid:", txid);
 
-    const valueCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI})
-    if (valueCount) {
-        const oldValue = parseFloat(valueCount.value);
-        value += oldValue;
-    }
-    storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI, value);
+    const rawTx = getRawTransaction(SEND_CLIENT,tx.txid)
+    rawTx.vin.forEach(inTx => {
+        const tx = {
+            type: 'in',
+            confirmations: confirmations,
+        }
+
+        tx.txid = inTx.txid
+        tx.category = "send"
+        tx.senderAddress = 'coinbase'
+
+        let ourInTx
+        if(inTx.txid){
+            ourInTx =  getRawTransaction(SEND_CLIENT, inTx.txid)
+            //   console.log('inTx.vout'+inTx.vout)
+            //console.log("ourInTx.vout",ourInTx.vout)
+            tx.amount  = ourInTx.vout[inTx.vout].value*-1
+           // console.log('ourInTx.amount',tx.amount)
+        }
+        if(inTx.scriptSig){ //try to get the public key from the input of this transaction
+            const asm = inTx.scriptSig.asm
+            const indexOfPubKey = inTx.scriptSig.asm.indexOf('[ALL] ')
+            const lengthOfAsm = inTx.scriptSig.asm.length
+            const senderPublicKey =  (indexOfPubKey!=-1)?asm.substring(indexOfPubKey+6,lengthOfAsm):undefined
+            tx.senderAddress = senderPublicKey?getAddress({publicKey: senderPublicKey}):senderPublicKey
+            tx.address = ourInTx.vout[inTx.vout].scriptPubKey.addresses[0]
+          //  console.log('ourInTx.address', tx.address)
+            tx.txid = inTx.txid
+        }
+
+        const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, tx.senderAddress)
+
+        if( isMyMAddress.isvalid && isMyMAddress.ismine){
+            console.log('inserting tx ismine')
+            insertTx(tx)
+        }
+        console.log('isMyAddress.iswatchonly',isMyMAddress.iswatchonly)
+        if( isMyMAddress.isvalid && isMyMAddress.iswatchonly){
+            console.log('inserting tx iswatchonly')
+            insertTx(tx)
+        }
+
+    })
+    console.log('now checking outputs: ',rawTx.vout.length)
+    rawTx.vout.forEach(outTx => {
+
+        const myTx = {
+            type: 'out',
+            txid: rawTx.txid,
+            confirmations: confirmations
+        }
+
+        myTx.n = outTx.n
+        myTx.fee = outTx.fee?outTx.fee:0
+        myTx.nameId = outTx.nameId
+        myTx.nameValue = outTx.nameValue
+        myTx.address = outTx.scriptPubKey.addresses[0]
+        myTx.amount  = outTx.value?outTx.value:0
+        myTx.category = "receive"
+
+      //  const isSenderMyAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, tx.senderAddress)
+        const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
+      //  console.log("isMyMAddress",isMyMAddress)
+  /*      if(isSenderMyAddress.isvalid && isSenderMyAddress.ismine){
+            tx.amount  = outTx.value?(outTx.value*-1):0
+            tx.category = "send"
+            console.log('inserting vout isSenderMyAddress.ismine no'+tx.n,tx.amount )
+            insertTx(tx)
+        }
+        if(isSenderMyAddress.isvalid && isSenderMyAddress.watchonly){
+            tx.amount  = outTx.value?(outTx.value*-1):0
+            tx.category = "send"
+            console.log('inserting vout isSenderMyAddress.watchonly no'+tx.n,tx.amount )
+            insertTx(tx)
+        }*/
+
+        if(isMyMAddress.isvalid && isMyMAddress.ismine) {
+            myTx.category = "receive"
+            myTx.amount  = outTx.value<0?(outTx.value*-1):outTx.value
+            console.log('inserting vout isMyMAddress.ismine no'+myTx.n,myTx.amount )
+            insertTx(myTx)
+        }
+
+        if(isMyMAddress.isvalid && isMyMAddress.iswatchonly) {
+            myTx.category = "receive"
+            myTx.amount  = outTx.value<0?(outTx.value*-1):outTx.value
+            console.log('inserting vout isMyMAddress.watchonly no'+myTx.n,myTx.amount )
+            insertTx(myTx)
+        }
+
+
+        //update local dApp in case address belongs to this wallet
+        if(confirmations>0 && (isMyMAddress.ismine || isSenderMyAddress.ismine)){
+            const valueCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI})
+            let value = myTx.amount
+            if (valueCount) {
+                const oldValue = parseFloat(valueCount.value);
+                value += oldValue;
+            }
+            storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI, value);
+        }
+    })
 }
 
 export default checkNewTransaction;

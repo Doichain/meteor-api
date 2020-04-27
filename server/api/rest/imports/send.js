@@ -448,12 +448,12 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 const balance = getBalance(SEND_CLIENT)
                 doichain.network.changeNetwork(isRegtest()?'regtest':'testnet')
 
-                if(isRegtest() && balance<=1) generateBlock(SEND_CLIENT,1)
+               //TODO please enable again if(isRegtest() && balance<=1) generateBlock(SEND_CLIENT,1)
                 if(isTestnet() && balance<=1)  return {status: 'fail', error: 'testnet coin faucet empty - please inform developers via telegram'};
                 //2. create new keyPair and Address
 
                 let ourAddress = params.address
-                const ourAmount = params.amount
+                const ourAmount = params.amount?Number(params.amount):1
                 let data = {address: ourAddress,amount:ourAmount}
 
                 if(!params.address){
@@ -467,11 +467,14 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                     data.publicKey = keyPair.publicKey.toString('hex')
                 }
 
-                //3. fund privateKey
-                logSend('sending to address',data.amount)
-                const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,data.amount)
+                //3.
+                importAddress(SEND_CLIENT,ourAddress,false)
+                //4. fund privateKey
+                logSend('sending to address',ourAddress)
+
+                const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
                 data.txid = txid
-                if(isRegtest()) generateBlock(SEND_CLIENT,1)
+                //if(isRegtest()) generateBlock(SEND_CLIENT,1) // TODO enable!
 
 
                 return {status: 'success', data};
@@ -522,7 +525,7 @@ Api.addRoute(DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
-            const domain = params.domain
+            const domain = params.domain?params.domain:'undefined'
             let ourOPT_IN_KEY=OPT_IN_KEY;
             if(isRegtest() || isTestnet())  ourOPT_IN_KEY = OPT_IN_KEY_TESTNET;
 
@@ -545,7 +548,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
-            const ourAddress = params.address;
+            let ourAddress = params.address?params.address:'undefined';
 
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
@@ -653,10 +656,20 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 logSend("sending single transaction",params.tx)
 
                 try {
+                    //1. First import the address so we get notified by the node for transactions
+                    if(params.address) importAddress(SEND_CLIENT,params.address,false)
+                    //2 . Send transaction to node
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
                     if(!data) logError("problem with transaction not txid",data)
-                    const txRaw = getRawTransaction(SEND_CLIENT,data)
-                    logSend(txRaw)
+                    //3. get raw transaction of created txid in mempool
+                    let txRaw = getRawTransaction(SEND_CLIENT,data)
+
+                    //4. take spent inputs from response and mark it in our wallet as spent
+                    txRaw.vin.forEach(oldInputTx => {
+                        const recordId = Transactions.update({txid:oldInputTx.txid}, {$set:{spent:true}})
+                        console.log('set '+oldInputTx.txid+' as spent',recordId)
+                    })
+
                     return {status: 'success', txRaw};
                 } catch(error) {
                     logError('error broadcasting transaction to doichain network',error);

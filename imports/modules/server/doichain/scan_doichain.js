@@ -255,7 +255,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
                         if(thisOutput.scriptPubKey){
                             if(thisOutput.scriptPubKey.nameOp.value){
                                 const nameValue =  JSON.parse(thisOutput.scriptPubKey.nameOp.value)
-                                const hasSignature =nameValue.signature?true:false
+                                const hasSignature = nameValue.signature?true:false
                                 const hasDoiSignature = nameValue.doiSignature?true:false
 
                                 if(hasDoiSignature) allConfirmedDois++
@@ -280,6 +280,7 @@ const scan_DoichainComplete = async (rescan,firstBlock) => {
                 })
 
             }catch(exception){
+                scanRunning=false
                 logError('problem while scanning nameId exception - not counting tx:'+exception,getRawTransaction(CONFIRM_CLIENT,tx))
             }
         })
