@@ -558,8 +558,11 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
                     return {status: 'fail',data:[],error: 'doichain address not valid: '+ourAddress};
                 }
 
-                if(!addressValidation.ismine && !addressValidation.iswatchonly)
+                if(!addressValidation.ismine && !addressValidation.iswatchonly){
+                    logSend('importing address' +
+                        ' to Doichain node',ourAddress)
                     importAddress(SEND_CLIENT,ourAddress,false)
+                }
 
                 if(addressValidation.ismine || addressValidation.iswatchonly){
                     const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()

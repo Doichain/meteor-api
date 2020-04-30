@@ -38,23 +38,18 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       const params = this.queryParams;
       const tx = params.tx;
       try {
-        console.log('txidFilter',txidFilter)
-        const foundTxs = _.find(txidFilter, (ourTx) => ourTx.tx===tx)
-        console.log("foundTxs",foundTxs)
-        logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),_.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');
+       // const foundTxs = _.find(txidFilter, (ourTx) => ourTx.tx===tx)
+       // logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),
+         //   _.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');
         if(!_.find(txidFilter, (ourTx) => ourTx.tx===tx)) {
           txidFilter.push({tx:tx, date:new Date()})
           checkNewTransaction(tx);
-          //console.log('txidFilter now',txidFilter)
         }
-
         //we cleanup the txidFilter after we put a value inside - which should protect us for double calls (for the change) which is anyways recorded by our later logic
         for(let i = 0; i<txidFilter.length;i++ ){
-          //console.log('txidFilter[i].date.getTime()'+new Date(txidFilter[i].date.getTime()+10000).toISOString(),new Date().toISOString())
           if(txidFilter[i].date.getTime()+(1000*10) <  new Date().getTime()) //if older then 1 minute we delete them from the txfilter
             logMain("deleting tx from txidFilter: "+i,txidFilter[i])
             txidFilter.splice(i, 1);
-            //console.log('txFilter length (should be empty)',txidFilter.length)
         }
 
         return {status: 'success',  data:'tx:'+tx+' was read from blockchain'};
