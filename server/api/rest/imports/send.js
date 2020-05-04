@@ -668,9 +668,10 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                     let txRaw = getRawTransaction(SEND_CLIENT,data)
 
                     //4. take spent inputs from response and mark it in our wallet as spent
+
                     txRaw.vin.forEach(oldInputTx => {
-                        const recordId = Transactions.update({txid:oldInputTx.txid}, {$set:{spent:true}})
-                        console.log('set '+oldInputTx.txid+' as spent',recordId)
+                        const recordId = Transactions.update({txid:oldInputTx.txid, n:oldInputTx.vout}, {$set:{spent:true}})
+                        console.log('set '+oldInputTx.txid+' n'+oldInputTx.vout+' as spent',recordId)
                     })
 
                     return {status: 'success', txRaw};
@@ -701,6 +702,12 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                         validatorPublicKey: validatorPublicKey
                     });
                     logSend("optInId stored:"+optInId);
+
+                    txRaw.vin.forEach(oldInputTx => {
+                        const recordId = Transactions.update({txid:oldInputTx.txid, n:oldInputTx.n}, {$set:{spent:true}})
+                        console.log('set '+oldInputTx.txid+' n'+oldInputTx.n+' as spent',recordId)
+                    })
+
                     return {status: 'success', txRaw};
                 } catch(error) {
                     logError('error broadcasting transaction to doichain network',error);
