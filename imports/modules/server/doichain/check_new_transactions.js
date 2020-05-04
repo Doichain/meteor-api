@@ -215,7 +215,10 @@ function addCoinTx(tx,confirmations) {
     const insertTx = (ourTx) => {
         ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
         ourTx.createdAt?ourTx.createdAt=undefined:null
-        Transactions.remove({txid: ourTx.txid, n:ourTx.n}) //when a block gets created we need to delete the old transaction before adding it aagain
+        const query = {txid: ourTx.txid, n:ourTx.n, address: ourTx.address}
+       // console.log(Transactions.find({txid: ourTx.txid, n:ourTx.n}).fetch())
+        //1. First remove data from memcache if this is
+        Transactions.remove(query) //when a block gets created we need to delete the old transaction before adding it aagain
         const recordId = Transactions.insert(ourTx)
         if(recordId){
            // if(ourTx.amount>0) console.log(ourTx.senderAddress + " sent " + ourTx.amount + " DOI to address " + ourTx.address + " in txid:", ourTx.txid)
