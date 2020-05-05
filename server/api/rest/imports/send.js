@@ -474,7 +474,7 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
 
                 const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
                 data.txid = txid
-                //if(isRegtest()) generateBlock(SEND_CLIENT,1) // TODO enable!
+                if(isRegtest()) generateBlock(SEND_CLIENT,1)
 
 
                 return {status: 'success', data};
