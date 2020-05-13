@@ -33,14 +33,14 @@ export const TX_VERIFIED_EMAIL_NAME_START = "es/";
 const checkNewTransaction = (txid, block) => {
   try {
       if (block || txid) {
-          if(block) logConfirm("blocknotfiy called", block);
-          if(txid)logConfirm("walletnotfiy called", txid);
+       //   if(block) logConfirm("blocknotfiy called", block);
+        //  if(txid)logConfirm("walletnotfiy called", txid);
           let txs = []
           if(txid){
               try {
                   const txMemcache = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txid,true)
                   txs = [txMemcache]
-                  console.log('got txid from memcache ', txid)
+                 // console.log('got txid from memcache ', txid)
               }catch(e){
 
               }
@@ -59,39 +59,35 @@ const checkNewTransaction = (txid, block) => {
               addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
           }
 
-          console.log('checking txs')
           txs.forEach(tx => {
               console.log('checking tx',tx.txid)
-              if(tx) { //&& !isConfirmedMemCacheTransaction){
                 //  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics TODO check this do we need this here?
 
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
-                      // const amount = detail.amount
-                      // const category = detail.category
-                      // const fee = detail.fee
                       const n = detail.vout
                       const name = detail.name
                       let nameId
                       let nameValue
-                      //TODO please check if this is a block and not our transaction
                       const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
-                      if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
-                          nameId = name.substring(("doi: " + TX_NAME_START).length);
-                          logConfirm("nameId: " + nameId, tx.txid);
-                          const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                          nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
-                          logConfirm("nameValue: " + nameValue, nameValue);
-                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine)
-                              addNameTx(nameId, nameValue, address, tx.txid);
-                      } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
-                          nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
-                          const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                          nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
-                          logConfirm("nameValue: " + nameValue, nameValue);
-                          if (!processedTxInOptIns && isOwnerMyMAddress.ismine){
-                             addVerifyEmailTx(nameId, nameValue, address, tx.txid)
+                      if(isOwnerMyMAddress.ismine){
+                          if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
+                              nameId = name.substring(("doi: " + TX_NAME_START).length);
+                              logConfirm("nameId: " + nameId, tx.txid);
+                              const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
+                              nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                              logConfirm("nameValue: " + nameValue, nameValue);
+                              if (!processedTxInOptIns)
+                                  addNameTx(nameId, nameValue, address, tx.txid);
+                          } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
+                              nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
+                              const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
+                              nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                              logConfirm("nameValue: " + nameValue, nameValue);
+                              if (!processedTxInOptIns){
+                                  addVerifyEmailTx(nameId, nameValue, address, tx.txid)
+                              }
                           }
                       }
                       /*let publicKey
@@ -106,11 +102,9 @@ const checkNewTransaction = (txid, block) => {
                               console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
                           }
                       }*/
-                  });
+                  })
                   addCoinTx(tx,tx.confirmations)
                   console.log('end checking tx',tx.txid)
-              }
-          console.log('doing another round on checking tx')
           }) //foreach tx
 
          // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
@@ -241,13 +235,10 @@ function addCoinTx(tx,confirmations) {
         let ourInTx
         if(!inTx.coinbase) {
             ourInTx = getRawTransaction(SEND_CLIENT, inTx.txid)
-            //   console.log('inTx.vout'+inTx.vout)
-            //console.log("ourInTx.vout",ourInTx.vout)
             ourTx.amount = ourInTx.vout[inTx.vout].value * -1
-            // console.log('ourInTx.amount',tx.amount)
             ourTx.txid = inTx.txid
 
-            if (inTx.scriptSig) { //try to get the public key from the input of this transaction
+            if (inTx.scriptSig &&  inTx.scriptSig.asm.indexOf('[ALL] ') !==-1 ) { //try to get the public key from the input of this transaction
                 const asm = inTx.scriptSig.asm
                 const indexOfPubKey = inTx.scriptSig.asm.indexOf('[ALL] ')
                 const lengthOfAsm = inTx.scriptSig.asm.length
@@ -265,7 +256,6 @@ function addCoinTx(tx,confirmations) {
                 insertTx(ourTx)
             }
         }
-
     })
 
     rawTx.vout.forEach(outTx => {
