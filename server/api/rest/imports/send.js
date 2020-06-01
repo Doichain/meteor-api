@@ -561,7 +561,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
 
                 if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     logSend('importing address' +
-                        ' to Doichain node',ourAddress)
+                        ' to Doichain node',ourAddress) //TODO only rescan if it is not a completely new address
                     importAddress(SEND_CLIENT,ourAddress,true)
                 }
 

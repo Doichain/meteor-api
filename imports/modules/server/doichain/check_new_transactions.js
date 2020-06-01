@@ -208,7 +208,7 @@ function addNameTx(name, value, address, txid) {
 function addCoinTx(tx,confirmations) {
     const insertTx = (ourTx) => {
         ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
-        ourTx.createdAt?ourTx.createdAt=undefined:null
+       // ourTx.createdAt?ourTx.createdAt=undefined:null
         const query = {txid: ourTx.txid, n:ourTx.n, type: ourTx.type, address: ourTx.address} //we shuould also not delete an output (for an input)
         //console.log("deleting:",Transactions.find(query).fetch())
         //1. First remove data from memcache if this is
@@ -237,7 +237,8 @@ function addCoinTx(tx,confirmations) {
             ourInTx = getRawTransaction(SEND_CLIENT, inTx.txid)
             ourTx.amount = ourInTx.vout[inTx.vout].value * -1
             ourTx.txid = inTx.txid
-
+            ourTx.spent = true
+            ourTx.createdAt = ourInTx.time?new Date(ourInTx.time*1000):new Date()
             if (inTx.scriptSig &&  inTx.scriptSig.asm.indexOf('[ALL] ') !==-1 ) { //try to get the public key from the input of this transaction
                 const asm = inTx.scriptSig.asm
                 const indexOfPubKey = inTx.scriptSig.asm.indexOf('[ALL] ')
@@ -274,7 +275,8 @@ function addCoinTx(tx,confirmations) {
             myTx.address = outTx.scriptPubKey.addresses[0]
             myTx.amount  = outTx.value?outTx.value:0
             myTx.category = "receive"
-
+            myTx.createdAt = rawTx.time?new Date(rawTx.time*1000):new Date()
+            console.log(rawTx.time, new Date(rawTx.time*1000))
             const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
 
             if(isMyMAddress.isvalid && isMyMAddress.ismine) {
