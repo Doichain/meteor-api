@@ -1,9 +1,8 @@
-import { Api, DOI_CONFIRMATION_ROUTE } from '../rest.js';
+import { Api, DOI_CONFIRMATION_ROUTE,EMAIL_VERIFY_CONFIRMATION_ROUTE } from '../rest.js'
+import {CONFIRM_CLIENT} from "../../../../imports/startup/server/doichain-configuration"
 import confirmOptIn from '../../../../imports/modules/server/opt-ins/confirm.js'
 import {logConfirm} from "../../../../imports/startup/server/log-configuration";
-import {EMAIL_VERIFY_CONFIRMATION_ROUTE} from "../rest";
 import {getWif, nameDoi} from "../../doichain";
-import {CONFIRM_CLIENT, SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 import decryptMessage from "../../../../imports/modules/server/doichain/decrypt_message";
 import getPrivateKeyFromWif from "../../../../imports/modules/server/doichain/get_private-key_from_wif";
 import {IPFS} from "../../ipfs";

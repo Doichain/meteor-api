@@ -1,7 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import { OptIns } from '../../../api/opt-ins/opt-ins.js';
-import getKeyPair from './get_key-pair.js';
+import {generateNameId as doichainGenerateNameId} from "doichain";
+//import getKeyPair from './get_key-pair.js';
 import {logSend} from "../../../startup/server/log-configuration";
 
 const GenerateNameIdSchema = new SimpleSchema({
@@ -28,7 +29,7 @@ const generateNameId = (optIn) => {
         logSend("used master_doi as nameId index "+optIn.index+"storage:",nameId);
     }
     else{
-        nameId = getKeyPair().privateKey;
+        nameId = doichainGenerateNameId()//getKeyPair().privateKey;
         logSend("generated nameId for doichain storage:",nameId);
     }
 

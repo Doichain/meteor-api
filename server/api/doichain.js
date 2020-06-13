@@ -283,7 +283,7 @@ export function importAddress(client, address, rescan) {
 }
 
 function doichain_importaddress(client, address, rescan, callback) {
-    client.cmd('importaddress', address, address, rescan, function(err, data) {
+    client.cmd('importaddress', address, '', rescan, function(err, data) {
         if(err) { logError('doichain_importaddress:', err);}
         callback(err, data);
     });

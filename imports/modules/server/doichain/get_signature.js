@@ -1,9 +1,6 @@
-import { Meteor } from 'meteor/meteor';
+//import { Meteor } from 'meteor/meteor';
+import {getSignature as getDoichainSignature} from 'doichain'
 import SimpleSchema from 'simpl-schema';
-import {isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
-const Message = require('bitcore-message');
-const bitcore = require('bitcore');
-
 const GetSignatureSchema = new SimpleSchema({
   message: {
     type: String
@@ -12,6 +9,12 @@ const GetSignatureSchema = new SimpleSchema({
     type: String
   }
 });
+
+import {isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
+/*const Message = require('bitcore-message');
+const bitcore = require('bitcore');
+
+
 
 const getSignature = (data) => {
   try {
@@ -29,4 +32,13 @@ const getSignature = (data) => {
   }
 };
 
-export default getSignature;
+export default getSignature;*/
+
+const getSignature = (data) => {
+  const ourData = data;
+  console.log('bla2')
+  GetSignatureSchema.validate(ourData);
+  console.log('bla2',ourData)
+  return getDoichainSignature(ourData.message,ourData.privateKey)
+}
+export default getSignature

@@ -1,5 +1,4 @@
 import { Meteor } from 'meteor/meteor';
-import bitcore from "bitcore-doichain";
 import {randomBytes} from "crypto";
 import { nameShow, getRawTransaction,getBlock,getTransaction} from '../../../../server/api/doichain.js';
 import {getUrl, isRegtest, isTestnet} from "../../../startup/server/dapp-configuration";
@@ -9,7 +8,7 @@ import addOrUpdateMeta from '../meta/addOrUpdate.js';
 import { Meta } from '../../../api/meta/meta.js';
 import { OptIns} from "../../../api/opt-ins/opt-ins";
 import { Transactions} from "../../../api/transactions/transactions";
-import {logBlockchain, logConfirm} from "../../../startup/server/log-configuration";
+import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
 import {getBlockHash, getRawMemPool, getWif, listSinceBlock, validateAddress} from "../../../../server/api/doichain";
 import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
@@ -60,9 +59,8 @@ const checkNewTransaction = (txid, block) => {
           }
 
           txs.forEach(tx => {
-              console.log('checking tx',tx.txid)
                 //  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics TODO check this do we need this here?
-
+                  //console.log('txs.forEach.tx',tx)
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
                       const n = detail.vout
@@ -90,18 +88,6 @@ const checkNewTransaction = (txid, block) => {
                               }
                           }
                       }
-                      /*let publicKey
-                      let firstOutsAddress = 'coinbase'
-                      if (!publicKey) publicKey = getPublicKeyOfOriginTxId(tx.txid) //in case we have a confirmed block
-                      if (!publicKey) { //handle Coinbase transaction please refactor with the same procedure in memcache tx
-                          const rawTx = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, tx.txid)
-                          const txIdOfInput = rawTx.vin[0].txid
-                          if (txIdOfInput) {
-                              const rawTxInput = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txIdOfInput)
-                              firstOutsAddress = rawTxInput.vout[0].scriptPubKey.addresses[0]
-                              console.log('getting first outputs address of the coinbase transaction:' + firstOutsAddress)
-                          }
-                      }*/
                   })
                   addCoinTx(tx,tx.confirmations)
                   console.log('end checking tx',tx.txid)
@@ -117,7 +103,6 @@ const checkNewTransaction = (txid, block) => {
 };
 
 const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
-    console.log(nameValue)
     nameId = nameId+nameValue.substring(0,nameValue.indexOf(" "))
     const parentIpfsCid = nameValue.substring(nameValue.indexOf(" ")+1,nameValue.length)
     console.log("adding nameId to validator and requesting email verification: "+nameId,parentIpfsCid)
@@ -188,7 +173,8 @@ const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
 function addNameTx(name, value, address, txid) {
     console.log('adding NamTx',txid)
     //cut away 'e/' in case it was delivered in a mempool transaction otherwise its not included.
-    const txName = name.startsWith(TX_NAME_START)?name.substring(TX_NAME_START.length):name;
+    //const txName = name.startsWith(TX_NAME_START)?name.substring(TX_NAME_START.length):name;
+    const txName = name.startsWith(TX_NAME_START)?name:"e/"+name
     addDoichainEntry({
         name: txName,
         value: value,
@@ -206,18 +192,24 @@ function addNameTx(name, value, address, txid) {
  * @param txid
  */
 function addCoinTx(tx,confirmations) {
+
     const insertTx = (ourTx) => {
-        ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
-       // ourTx.createdAt?ourTx.createdAt=undefined:null
+        //ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
         const query = {txid: ourTx.txid, n:ourTx.n, type: ourTx.type, address: ourTx.address} //we shuould also not delete an output (for an input)
-        //console.log("deleting:",Transactions.find(query).fetch())
-        //1. First remove data from memcache if this is
-        Transactions.remove(query) //when a block gets created we need to delete the old transaction before adding it aagain
-        console.log('inserting',ourTx)
-        const recordId = Transactions.insert(ourTx)
-        if(recordId){
-           // if(ourTx.amount>0) console.log(ourTx.senderAddress + " sent " + ourTx.amount + " DOI to address " + ourTx.address + " in txid:", ourTx.txid)
-           // else console.log(ourTx.senderAddress + " received " + ourTx.amount + " DOI from "+ourTx.address+" in txid:", ourTx.txid)
+        console.log("updating: ",Transactions.find(query).fetch())
+        const foundUpdateTxs = Transactions.find(query).fetch()
+        if( foundUpdateTxs && foundUpdateTxs.length>0){
+            console.log(foundUpdateTxs.length+" txs found for updating")
+            //ourTx.createdAt?ourTx.createdAt=undefined:null
+
+            //1. First remove data from memcache if this is
+            Transactions.update(query,{$set:ourTx}) //when a block gets created we need to delete the old transaction before adding it aagain
+            // console.log('inserting',ourTx)
+            console.log("updated:",Transactions.find(query).fetch())
+        }else{
+            console.log('inserting: ',ourTx)
+            const recordId = Transactions.insert(ourTx)
+           // console.log('insertedId',recordId)
         }
     }
 
@@ -260,23 +252,29 @@ function addCoinTx(tx,confirmations) {
     })
 
     rawTx.vout.forEach(outTx => {
-
+        //console.log('rawTx.vout',outTx)
         if(outTx.scriptPubKey.type!=='nulldata'){ //nulldata outputs don't have an address and other data
             const myTx = {
                 type: 'out',
                 txid: rawTx.txid,
                 confirmations: confirmations
             }
-
+            //check if we have a nameOp
+            if(outTx.scriptPubKey && outTx.scriptPubKey.nameOp){
+                myTx.nameId = outTx.scriptPubKey.nameOp.name
+                myTx.nameValue = outTx.scriptPubKey.nameOp.value
+            }
             myTx.n = outTx.n
             myTx.fee = outTx.fee?outTx.fee:0
-            myTx.nameId = outTx.nameId
-            myTx.nameValue = outTx.nameValue
+
             myTx.address = outTx.scriptPubKey.addresses[0]
             myTx.amount  = outTx.value?outTx.value:0
             myTx.category = "receive"
-            myTx.createdAt = rawTx.time?new Date(rawTx.time*1000):new Date()
-            console.log(rawTx.time, new Date(rawTx.time*1000))
+            myTx.createdAt = rawTx.time?new Date(rawTx.time*1000):new Date() //no time in mempool tx - but in block
+           // if(!rawTx.time){
+               /// console.log('no time in rawTx',rawTx)
+           // }else console.log('no time in rawTx',rawTx.time)
+
             const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
 
             if(isMyMAddress.isvalid && isMyMAddress.ismine) {

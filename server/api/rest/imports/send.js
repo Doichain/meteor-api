@@ -1,4 +1,4 @@
-import bitcore from "bitcore-doichain"
+//import bitcore from "bitcore-doichain"
 import bitcoin from "bitcoinjs-lib"
 import doichain from "doichain"
 
@@ -403,34 +403,36 @@ Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
     }
   }
 });
-
+/**
+ * This url is called from the validator (bob) on the DOI requesting party (alice)
+ */
 Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
   get: {
     action: function() {
       const params = this.queryParams;
       try {
-          logSend('REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template',JSON.stringify(params));
+          logSend(`REST API - ${DOI_FETCH_ROUTE} called by the validator to request email template`,JSON.stringify(params));
           const optIn = OptIns.findOne({nameId:params.name_id})
           logSend('found DOI in db',optIn)
           if (optIn && optIn.templateDataEncrypted!==undefined) { //if this was send from an offchain app - it contains a validatorPublicKey and templateDataEncrypted
-              const validatorPublicKey = optIn.validatorPublicKey
-              console.log('getting public key of origin transaction for later use',optIn.txId)
+              const validatorPublicKey = params.validatorPublicKey  //gets transmitted by the mobile Wallet - but could be also send via the parameter
+              logSend('alice: getting public key of origin transaction for later use',optIn.txId)
               const recipientPublicKey = getPublicKeyOfOriginTxId(optIn.txId);  //TODO  //recipient here means peters public key (which funnily is not the recipient but the sender in this case (!!?!!)
               const templateDataEncrypted = optIn.templateDataEncrypted //TODO make sure its not getting too big and data are deleted after a certain time in any case and / or when template was picked up
 
-              //check signature of the calling party (we allow only the repsonsible validator to ask for templateData
+              //check signature of the calling party (we allow only the responsible validator to ask for templateData
               if(!verifySignature({publicKey: validatorPublicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
 
-              logSend("return encrypted template data for nameId",{nameId:optIn.nameId});
+              logSend("alice: return encrypted template data for nameId",{nameId:optIn.nameId});
               return {status: 'success',  encryptedData:templateDataEncrypted, publicKey: recipientPublicKey};
           }
           else{ //classic template request stored by a dApp
               const data = getDoiMailData(params);
-              logSend('got doi-mail-data (including template) returning to validator',{senderName: data.senderName, subject:data.subject, recipient:data.recipient, redirect:data.redirect});
+              logSend('alice: got doi-mail-data (including template) returning to validator',{senderName: data.senderName, subject:data.subject, recipient:data.recipient, redirect:data.redirect});
               return {status: 'success', data};
           }
       } catch(error) {
-        logError('error while getting DoiMailData',error);
+        logError('alice: Error while getting DoiMailData',error);
         return {status: 'fail', error: error.message};
       }
     }
@@ -548,9 +550,10 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
+            console.log("DOICHAIN_LIST_TXS",params)
             let ourAddress = params.address?params.address:'undefined';
-           // const rescan = params.rescan?params.rescan:false
-
+            const rescan =  params.rescan?JSON.parse(params.rescan):false
+            console.log('rescan is:',rescan)
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
 
@@ -562,7 +565,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
                 if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     logSend('importing address' +
                         ' to Doichain node',ourAddress) //TODO only rescan if it is not a completely new address
-                    importAddress(SEND_CLIENT,ourAddress,true)
+                    importAddress(SEND_CLIENT,ourAddress,rescan)
                 }
 
                 if(addressValidation.ismine || addressValidation.iswatchonly){
@@ -651,11 +654,16 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         authRequired: false,
         action: function() {
             const params = this.bodyParams;
-
+            var tx = bitcoin.Transaction.fromHex(params.tx); //https://github.com/you21979/node-multisig-wallet/blob/master/lib/txdecoder.js
+            var txid = tx.getId();
+            console.log('params',params)
+           // console.log('txid from',txid);
+           // console.log('rawTx from doiContact',tx)
             //is this a standard DOI coin transaction or a DOI request transaction?
             if((!params.nameId ||
-                !params.templateDataEncrypted ||
-                !params.validatorPublicKey)
+                !params.templateDataEncrypted //||
+                //!params.validatorPublicKey
+                )
                 && params.tx){
                 logSend("sending single transaction",params.tx)
 
@@ -685,8 +693,8 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill the validator database
                 const tx = params.tx //serialized raw transactino to broadcast
                 const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId //TODO security please ensure ddos attacks - cleanup or make sure template size can be limited in configuration
-                const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template //TODO please validate if this is a publickey (and not a ton of books)
-                logSend("storing validatorPublicKey:"+validatorPublicKey);
+             //   const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template
+              //  logSend("storing validatorPublicKey:"+validatorPublicKey);
                 try {
                     //1. send tx to doichain
                     const data = sendRawTransaction(SEND_CLIENT,tx)
@@ -700,7 +708,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                         publicKey: publicKey,
                         status: ['received'],
                         templateDataEncrypted:templateDataEncrypted, //encrypted TemplateData
-                        validatorPublicKey: validatorPublicKey
+                   //     validatorPublicKey: validatorPublicKey
                     });
                     logSend("optInId stored:"+optInId);
 

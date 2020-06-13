@@ -1,5 +1,6 @@
 import {Meteor} from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
+import {decryptStandardECIES} from "doichain";
 import crypto from 'crypto';
 import ecies from 'standard-ecies';
 import CryptoJS from 'crypto-js'
@@ -33,8 +34,14 @@ const DecryptMessageSchema = new SimpleSchema({
 const decryptMessage = (data) => {
     try {
         const ourData = data;
-        DecryptMessageSchema.validate(ourData);
-        const privateKey = Buffer.from(ourData.privateKey, 'hex');
+        console.log('decrypting Message with data:',data)
+     //   const privateKey = Buffer.from(ourData.privateKey, 'hex');
+     //   const message = Buffer.from(ourData.message, 'hex');
+        const decryptedMessage =  decryptStandardECIES(ourData.privateKey,ourData.message)
+        console.log('decryptedMessage',decryptedMessage)
+        return decryptedMessage
+       // DecryptMessageSchema.validate(ourData);
+  /*
         const ecdh = crypto.createECDH('secp256k1');
         ecdh.setPrivateKey(privateKey, 'hex');
         try {
@@ -49,11 +56,11 @@ const decryptMessage = (data) => {
             const bytes = CryptoJS.AES.decrypt(ourData.message, secret);
             const message = bytes.toString(CryptoJS.enc.Utf8);
             return message
-        }
+        }*/
     } catch (exception1) {
-        console.log('exception 1', exception1)
+       // console.log('exception 1', exception1)
         throw new Meteor.Error('doichain.decryptMessage.exception', exception1);
     }
-};
+}
 
 export default decryptMessage;

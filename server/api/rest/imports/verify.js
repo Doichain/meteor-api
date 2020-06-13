@@ -1,7 +1,7 @@
 import { Api } from '../rest.js';
 import verifyOptIn from '../../../../imports/modules/server/opt-ins/verify.js';
 import verifyLocal from "../../../../imports/modules/server/opt-ins/verify_local";
-import {logConfirm, logVerify} from "../../../../imports/startup/server/log-configuration";
+import {logVerify} from "../../../../imports/startup/server/log-configuration";
 
 Api.addRoute('opt-in/verify', {authRequired: true}, {
   get: {

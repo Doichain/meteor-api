@@ -19,6 +19,10 @@ const GetDoiMailDataSchema = new SimpleSchema({
   },
   signature: {
     type: String
+  },
+  validatorPublicKey: {
+    type: String,
+    optional:true
   }
 });
 
@@ -61,6 +65,7 @@ const getDoiMailData = (data) => {
   try {
 
     const ourData = data;
+    console.log('GetDoiMailDataSchema',data)
     GetDoiMailDataSchema.validate(ourData);
     optIn = OptIns.findOne({nameId: ourData.name_id});
 

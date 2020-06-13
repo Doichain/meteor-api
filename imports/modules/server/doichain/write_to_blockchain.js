@@ -4,7 +4,8 @@ import { OptIns } from '../../../api/opt-ins/opt-ins.js';
 import { Senders } from '../../../api/senders/senders.js';
 import { Recipients } from '../../../api/recipients/recipients.js';
 import generateNameId from './generate_name-id.js';
-import getSignature from './get_signature.js';
+const bitcoin = require('bitcoinjs-lib')
+import {getSignature, network} from 'doichain'
 import getDataHash from './get_data-hash.js';
 import addInsertBlockchainJob from '../jobs/add_insert_blockchain.js';
 import {logSend} from "../../../startup/server/log-configuration";
@@ -23,10 +24,12 @@ const writeToBlockchain = (data) => {
     const optIn = OptIns.findOne({_id: data.id});
     const recipient = Recipients.findOne({_id: optIn.recipient});
     const sender = Senders.findOne({_id: optIn.sender});
-    logSend("optIn data:",{index:ourData.index, optIn:optIn,recipient:recipient,sender: sender});
+    //logSend("optIn data:",{index:ourData.index, optIn:optIn,recipient:recipient,sender: sender});
 
     const nameId = generateNameId({id: data.id,index:optIn.index,masterDoi:optIn.masterDoi });
-    const signature = getSignature({message: recipient.email+sender.email, privateKey: recipient.privateKey});
+    console.log('nameId generated:',nameId)
+    const keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(recipient.privateKey,'hex'),network.DEFAULT_NETWORK)
+    const signature = getSignature(recipient.email+sender.email,keyPair);
     logSend("generated signature from email recipient and sender:",signature);
 
     let dataHash = "";

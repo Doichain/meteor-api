@@ -1,7 +1,6 @@
 import {Meteor} from 'meteor/meteor'
 import SimpleSchema from 'simpl-schema'
-var bitcore = require('bitcore');
-import Message from 'bitcore-message';
+const bitcoin = require('bitcoinjs-lib')
 
 import {DOI_FETCH_ROUTE, DOI_CONFIRMATION_ROUTE, API_PATH, VERSION} from '../../../../server/api/rest/rest.js'
 import {getUrl} from '../../../startup/server/dapp-configuration.js'
@@ -18,7 +17,8 @@ import updateDoichainEntry from "../opt-ins/update_doichain_entry"
 import decryptMessage from "../doichain/decrypt_message";
 import {getRawTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
-import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
+//import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
+import {network,getPrivateKeyFromWif,getSignature} from "doichain"
 import {isRegtest} from "../../../startup/server/dapp-configuration";
 import {getSettings} from "meteor/doichain:settings";
 
@@ -31,12 +31,16 @@ const FetchDoiMailDataSchema = new SimpleSchema({
     },
     txId: {
         type: String
+    },
+    validatorPublicKey : {
+        type: String,
+        optional: true
     }
 });
 
 /**
  *
- * Is called when a doichain doi transaction hits the dApp in confirmation mode. (Validator - Bob)
+ * Is called in validator when a DOI transaction hits the dApp. (validator - Bob)
  *  - requests the template from the dApp in send mode (Alice) (getHttpGet)
  *
  * @param data
@@ -44,33 +48,42 @@ const FetchDoiMailDataSchema = new SimpleSchema({
 const fetchDoiMailData = (data) => {
     const ourData = data;
     try {
+        console.log('fetchDoiMailData params',data)
         FetchDoiMailDataSchema.validate(ourData);
         if(isRegtest()) ourData.domain = "http://localhost:3000/"
 
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE
 
         const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
-        let address
+        let address = ''
+        let validatorPublicKey = ''
         rawTransaction.vout.forEach(function (output) {
             if(!address){
                 const our_address = output.scriptPubKey.addresses[0]
-                if(validateAddress(CONFIRM_CLIENT,our_address).ismine){ //TODO please validate more efficiently using own internal publicKeySet
+                const validatAddress = validateAddress(CONFIRM_CLIENT,our_address)
+                if(validatAddress.ismine){ //TODO please validate more efficiently using own internal publicKeySet
                     address = our_address
+                    validatorPublicKey  = validatAddress.pubkey
                 }
             }
         })
 
         //we sign the nameId of this permission request with the correct privateKey so the requested can see it was us and not somebody else
-        const privateKey = getWif(CONFIRM_CLIENT,address)  //we need the correct address otherwise - we might sign with the wrong privatKey
-        const signature = Message(ourData.name).sign(new bitcore.PrivateKey.fromString(privateKey));
-
+        //const privateKey = getWif(CONFIRM_CLIENT,address)  //we need the correct address otherwise - we might sign with the wrong privatKey
+        //const signature = Message(ourData.name).sign(new bitcore.PrivateKey.fromString(privateKey));
+        const privateKeyWif = getWif(CONFIRM_CLIENT,address)
+       // const privateKey = getPrivateKeyFromWif(privateKeyWif)
+        const keyPair = bitcoin.ECPair.fromWIF(privateKeyWif,GLOBAL.DEFAULT_NETWORK)
+        const signature = getSignature(ourData.name,keyPair)
         if(!signature){
             const error = 'Could not create signature with configured CONFIRM_ADDRESS in settings. Wrong address or missing private key'
             OptIns.upsert({nameId: ourData.name},{$push:{status:'error', error:error}})
             throw error;
         }
 
-        const query = "name_id=" + encodeURIComponent(ourData.name) + "&signature=" + encodeURIComponent(signature);
+        const query = "name_id=" + encodeURIComponent(ourData.name) + "&signature=" +
+            encodeURIComponent(signature)+"&validatorPublicKey=" +
+            encodeURIComponent(validatorPublicKey);
         logConfirm('calling for doi-email-template:' + url + ' query:', query);
 
         const response = getHttpGET(url, query);
@@ -83,10 +96,8 @@ const fetchDoiMailData = (data) => {
             const publicKey = getPublicKeyOfOriginTxId(ourData.txId);
             const wif = getWif(CONFIRM_CLIENT, address);
             const privateKey = getPrivateKeyFromWif({wif: wif});
-
-            decryptedData = JSON.parse(  //TODO getWif is not good here... we need to ask the correct address!
-                decryptMessage({publicKey: publicKey, privateKey:privateKey, message: response.data.encryptedData}))
-
+            const decryptedMessage =  decryptMessage({publicKey: publicKey, privateKey:privateKey, message: response.data.encryptedData})
+            decryptedData = JSON.parse(decryptedMessage)  //TODO getWif is not good here... we need to ask the correct address!
             responseData.data = decryptedData
         }
 

@@ -108,7 +108,7 @@ const update = (data, job) => {
         if(exception.toString().indexOf("there is already a registration for this doi name")==-1) {
             OptIns.update({nameId: ourData.nameId}, {$set: {error: JSON.stringify(exception.message)}});
         }
-        throw new Meteor.Error('doichain.update.exception', exception);
+        throw new Meteor.Error('doichain.update.exception name_doi', exception);
     }
 
   } catch(exception) {

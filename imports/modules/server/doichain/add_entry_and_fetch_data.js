@@ -1,14 +1,15 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
+const bitcoin = require('bitcoinjs-lib')
+import {decryptStandardECIES,getPrivateKeyFromWif,network} from "doichain";
+
 import { CONFIRM_CLIENT, CONFIRM_ADDRESS } from '../../../startup/server/doichain-configuration.js';
 import { getWif } from '../../../../server/api/doichain.js';
 import { DoichainEntries } from '../../../api/doichain/entries.js';
 import addFetchDoiMailDataJob from '../jobs/add_fetch-doi-mail-data.js';
-import getPrivateKeyFromWif from './get_private-key_from_wif.js';
-import decryptMessage from './decrypt_message.js';
 import {logConfirm, logSend} from "../../../startup/server/log-configuration";
-import getPublicKeyOfOriginTxId from "./getPublicKeyOfOriginTransaction";
 import {getRawTransaction} from "../../../../server/api/doichain";
+
 
 const AddDoichainEntrySchema = new SimpleSchema({
   name: {
@@ -26,74 +27,85 @@ const AddDoichainEntrySchema = new SimpleSchema({
 });
 
 /**
- * Inserts
+ * Inserts a DoichainEntry to local database when arrving on validator (Bob)
  *
  * @param entry
  * @returns {*}
  */
 const addDoichainEntry = (entry) => {
+
   try {
 
     const ourEntry = entry;
-    logConfirm('adding DoichainEntry on validator (Bob) ...',ourEntry.name);
+    logConfirm('adding DoichainEntry on validator (Bob) ...',ourEntry);
     AddDoichainEntrySchema.validate(ourEntry);
 
-    const ety = DoichainEntries.findOne({name: ourEntry.name});
-    if(ety !== undefined){
-        logConfirm('returning locally saved entry with _id:'+ety._id);
-        return ety._id;
-    }
+      const ety = DoichainEntries.findOne({name: ourEntry.name});
+      if (ety !== undefined) {
+          logConfirm('returning locally saved entry with _id:' + ety._id);
+          return ety._id;
+      }
 
-    const value = JSON.parse(ourEntry.value);
-    if(value.doiSignature!==undefined){
-        logConfirm('seems like we are rescanning blockchain, this doi permission was has already a doi signuate (exiting):',value.doiSignature);
-        return
-    }
-    if(value.from === undefined) throw "From was not given, or DOI signature already written";
+      let value  //contains to retrieve the template from
+      try {
+          value = JSON.parse(ourEntry.value);
+          if (value.doiSignature !== undefined) {
+              logConfirm('seems like we are rescanning blockchain, this doi permission was has already a doi signuate (exiting):', value.doiSignature);
+              return
+          }
 
-    let privateKey = null
-    let validatorAddress = null;
-    logConfirm("getting raw transaction for tx",ourEntry.txId)
-    const vouts = getRawTransaction(CONFIRM_CLIENT,ourEntry.txId).vout
-    vouts.forEach((output) => {
-        if(output.scriptPubKey.nameOp) {
-            logConfirm('validator parses output of incoming soi permission to find read address', output.scriptPubKey.nameOp.name)
-            logConfirm('output.scriptPubKey.nameOp', output.scriptPubKey.nameOp)
-            logConfirm('output.scriptPubKey.addresses', output.scriptPubKey.addresses)
+          if (value.from === undefined) throw "From was not given, or DOI signature already written";
+      } catch (ex) {
+          throw "Error value parsing nameValue " + ex.toString
+      }
 
-            const nameId = entry.name.startsWith("e/")?entry.name:"e/"+entry.name
-            if(output.scriptPubKey && output.scriptPubKey.nameOp &&
-                output.scriptPubKey.nameOp.name===nameId){
-                validatorAddress = output.scriptPubKey.addresses[0]
-                privateKey = getPrivateKeyFromWif({wif:getWif(CONFIRM_CLIENT,validatorAddress)});
-                logConfirm("privateKey",privateKey)
-            }
-        }else{logConfirm("no name op transaction")}
-    })
-    logConfirm('got private key of validator address',validatorAddress);
-    const publicKey = getPublicKeyOfOriginTxId(ourEntry.txId);
-    const doichainhostUrl = decryptMessage({privateKey: privateKey, publicKey: publicKey, message: value.from});
-    logConfirm('decrypted message from doichainhostUrl: ',doichainhostUrl);
 
-    const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
-    logConfirm('namePos:',namePos);
+      let privateKeyWif = undefined
+      let validatorAddress = undefined;
+      logConfirm("getting raw transaction for tx", ourEntry.txId)
+      const vouts = getRawTransaction(CONFIRM_CLIENT, ourEntry.txId).vout
+      vouts.forEach((output) => {
+          if (output.scriptPubKey.nameOp) {
+              logConfirm('validator parses output of incoming soi permission to find read address', output.scriptPubKey.nameOp.name)
+              logConfirm('output.scriptPubKey.nameOp', output.scriptPubKey.nameOp)
+              logConfirm('output.scriptPubKey.addresses', output.scriptPubKey.addresses)
 
-    const masterDoi = (namePos!=-1)?ourEntry.name.substring(0,namePos):undefined;
-    logConfirm('masterDoi:',masterDoi);
+              const nameId = entry.name.startsWith("e/") ? entry.name : "e/" + entry.name
+              if (output.scriptPubKey && output.scriptPubKey.nameOp &&
+                  output.scriptPubKey.nameOp.name === nameId) {
+                  validatorAddress = output.scriptPubKey.addresses[0]
+                  privateKeyWif = getWif(CONFIRM_CLIENT, validatorAddress);
+                  //privateKeyWif=getPrivateKeyFromWif({wif:getWif(CONFIRM_CLIENT,validatorAddress)});
+                  logConfirm('got private key of validator address', validatorAddress);
+              }
+          } else {
+              logConfirm("no name op transaction")
+          }
+      })
+      const keypair = bitcoin.ECPair.fromWIF(privateKeyWif, GLOBAL.DEFAULT_NETWORK)
+      const privateKey = keypair.privateKey.toString('hex')
+      const doichainhostUrl = decryptStandardECIES(privateKey, value.from)
+      logConfirm('decrypted message from doichainhostUrl: ', doichainhostUrl);
 
-    const index = masterDoi?ourEntry.name.substring(namePos+1):undefined;
-    logConfirm('index:',index);
+      const namePos = ourEntry.name.indexOf('-'); //if this is not a co-registration fetch mail.
+      logConfirm('namePos:', namePos);
 
-    const id = DoichainEntries.insert({
-        name: ourEntry.name,
-        value: ourEntry.value,
-        address: ourEntry.address,
-        masterDoi: masterDoi,
-        index: index,
-        txId: ourEntry.txId,
-        expiresIn: ourEntry.expiresIn,
-        expired: ourEntry.expired
-    });
+      const masterDoi = (namePos != -1) ? ourEntry.name.substring(0, namePos) : undefined;
+      logConfirm('masterDoi:', masterDoi);
+
+      const index = masterDoi ? ourEntry.name.substring(namePos + 1) : undefined;
+      logConfirm('index:', index);
+
+      const id = DoichainEntries.insert({
+          name: ourEntry.name,
+          value: ourEntry.value,
+          address: ourEntry.address,
+          masterDoi: masterDoi,
+          index: index,
+          txId: ourEntry.txId,
+          expiresIn: ourEntry.expiresIn,
+          expired: ourEntry.expired
+      });
 
     logConfirm('DoichainEntry added on validator (Bob):', {id:id,name:ourEntry.name,masterDoi:masterDoi,index:index});
 
