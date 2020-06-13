@@ -1,10 +1,8 @@
 //import bitcore from "bitcore-doichain"
 import bitcoin from "bitcoinjs-lib"
 import doichain from "doichain"
-
 import base58 from 'bs58'
 import conv from 'binstring'
-import { Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE } from '../rest.js';
 import addOptIn from '../../../../imports/modules/server/opt-ins/add_and_write_to_blockchain.js';
 import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update_status.js';
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
@@ -14,7 +12,8 @@ import {
     DOICHAIN_BROADCAST_TX,
     DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
     DOICHAIN_LIST_TXS,
-    DOICHAIN_LIST_UNSPENT, EMAIL_VERIFY_ROUTE
+    DOICHAIN_LIST_UNSPENT, EMAIL_VERIFY_ROUTE,
+    Api, DOI_FETCH_ROUTE, DOI_CONFIRMATION_NOTIFY_ROUTE
 } from "../rest";
 import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
@@ -656,9 +655,6 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
             const params = this.bodyParams;
             var tx = bitcoin.Transaction.fromHex(params.tx); //https://github.com/you21979/node-multisig-wallet/blob/master/lib/txdecoder.js
             var txid = tx.getId();
-            console.log('params',params)
-           // console.log('txid from',txid);
-           // console.log('rawTx from doiContact',tx)
             //is this a standard DOI coin transaction or a DOI request transaction?
             if((!params.nameId ||
                 !params.templateDataEncrypted //||
@@ -690,7 +686,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                 }
             }
             else{
-                const nameid = params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill the validator database
+                const nameId = params.nameId // before we cut e away params.nameId.substring(2,params.nameId.length) //the nameId (~ primarykey under which the doi permission is stored on the blockchain) //TODO please ensure this is a nameID and doesn't store a TON of books to kill the validator database
                 const tx = params.tx //serialized raw transactino to broadcast
                 const templateDataEncrypted = params.templateDataEncrypted  //store this template together with the nameId //TODO security please ensure ddos attacks - cleanup or make sure template size can be limited in configuration
              //   const validatorPublicKey = params.validatorPublicKey //is needed to make sure the responsible validator alone can request the template
@@ -703,7 +699,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
                     const txId = txRaw.txid
                     //2. store templateData together with nameId temporary in doichain dApps database
                     const optInId = OptIns.insert({
-                        nameId:nameid,
+                        nameId:nameId,
                         txId: txId,
                         publicKey: publicKey,
                         status: ['received'],

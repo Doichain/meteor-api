@@ -18,7 +18,7 @@ import decryptMessage from "../doichain/decrypt_message";
 import {getRawTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 //import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
-import {network,getPrivateKeyFromWif,getSignature} from "doichain"
+import {network, getPrivateKeyFromWif, getSignature, decryptStandardECIES} from "doichain"
 import {isRegtest} from "../../../startup/server/dapp-configuration";
 import {getSettings} from "meteor/doichain:settings";
 
@@ -48,7 +48,7 @@ const FetchDoiMailDataSchema = new SimpleSchema({
 const fetchDoiMailData = (data) => {
     const ourData = data;
     try {
-        console.log('fetchDoiMailData params',data)
+        console.log('Bob: fetchDoiMailData params',data)
         FetchDoiMailDataSchema.validate(ourData);
         if(isRegtest()) ourData.domain = "http://localhost:3000/"
 
@@ -71,7 +71,9 @@ const fetchDoiMailData = (data) => {
         //we sign the nameId of this permission request with the correct privateKey so the requested can see it was us and not somebody else
         //const privateKey = getWif(CONFIRM_CLIENT,address)  //we need the correct address otherwise - we might sign with the wrong privatKey
         //const signature = Message(ourData.name).sign(new bitcore.PrivateKey.fromString(privateKey));
+        console.log('address',address)
         const privateKeyWif = getWif(CONFIRM_CLIENT,address)
+        console.log('privateKeyWif',privateKeyWif)
        // const privateKey = getPrivateKeyFromWif(privateKeyWif)
         const keyPair = bitcoin.ECPair.fromWIF(privateKeyWif,GLOBAL.DEFAULT_NETWORK)
         const signature = getSignature(ourData.name,keyPair)
@@ -92,11 +94,8 @@ const fetchDoiMailData = (data) => {
         let decryptedData
         if(response.data) responseData = response.data
         if(response.data.encryptedData){  //in case data coming from a mobile client (not from a dApp)
-
-            const publicKey = getPublicKeyOfOriginTxId(ourData.txId);
-            const wif = getWif(CONFIRM_CLIENT, address);
-            const privateKey = getPrivateKeyFromWif({wif: wif});
-            const decryptedMessage =  decryptMessage({publicKey: publicKey, privateKey:privateKey, message: response.data.encryptedData})
+            const privateKey = getPrivateKeyFromWif(privateKeyWif);
+            const decryptedMessage =  decryptStandardECIES(privateKey,response.data.encryptedData) //decryptMessage({publicKey: publicKey, privateKey:privateKey, message: response.data.encryptedData})
             decryptedData = JSON.parse(decryptedMessage)  //TODO getWif is not good here... we need to ask the correct address!
             responseData.data = decryptedData
         }

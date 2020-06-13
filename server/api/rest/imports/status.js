@@ -18,11 +18,11 @@ Api.addRoute('status', {authRequired: false}, {
     action: function() {
       try {
         const data = getInfo(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
-        data.allRequestedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS}).value
-        data.allConfirmedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS}).value
-        data.ourRequestedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS}).value
-        data.ourConfirmedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS}).value
-        data.version = JSON.parse(Meta.findOne({key: 'version'}).value)
+        data.allRequestedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_ALLREQUESTEDDOIS})?.value
+        data.allConfirmedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_ALLCONFIRMEDDOIS})?.value
+        data.ourRequestedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_OURREQUESTEDDOIS})?.value
+        data.ourConfirmedDOIs = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_OURCONFIRMEDDOIS})?.value
+        data.version = JSON.parse(Meta.findOne({key: 'version'})?.value)
         return {"status": "success", "data":data};
       }catch(ex){
             return {"status": "failed", "data": ex.toString()};
