@@ -1,9 +1,6 @@
 import {Meteor} from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import {decryptStandardECIES} from "doichain";
-import crypto from 'crypto';
-import ecies from 'standard-ecies';
-import CryptoJS from 'crypto-js'
 
 const DecryptMessageSchema = new SimpleSchema({
     privateKey: {

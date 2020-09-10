@@ -37,6 +37,8 @@ const verifyOptIn = (data) => {
 
     const publicKey = ourData.public_key?ourData.public_key:ourData.recipient_public_key  //TODO remove this in future versions update documentation
 
+    console.log('publicKey',publicKey)
+
     const firstCheck = verifySignature({
       data: ourData.recipient_mail+ourData.sender_mail,
       signature: entryData.signature,
