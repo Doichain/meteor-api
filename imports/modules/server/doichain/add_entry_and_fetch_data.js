@@ -71,12 +71,14 @@ const addDoichainEntry = (entry) => {
               logConfirm('output.scriptPubKey.addresses', output.scriptPubKey.addresses)
 
               const nameId = entry.name.startsWith("e/") ? entry.name : "e/" + entry.name
+              console.log('nameID is',nameId)
               if (output.scriptPubKey && output.scriptPubKey.nameOp &&
                   output.scriptPubKey.nameOp.name === nameId) {
                   validatorAddress = output.scriptPubKey.addresses[0]
+                  logConfirm("getting privateKey of validatorAddress",validatorAddress)
                   privateKeyWif = getWif(CONFIRM_CLIENT, validatorAddress);
                   //privateKeyWif=getPrivateKeyFromWif({wif:getWif(CONFIRM_CLIENT,validatorAddress)});
-                  logConfirm('got private key of validator address', validatorAddress);
+                  logConfirm('got private key of validator address', validatorAddress)
               }
           } else {
               logConfirm("no name op transaction")

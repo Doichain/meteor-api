@@ -1,17 +1,17 @@
 import { Meteor } from 'meteor/meteor';
 import {logBlockchain, logError} from "../../imports/startup/server/log-configuration";
 
-const NAMESPACE = 'e/';
-const NAMESPACE_VERIFIED_EMAIL = 'es/';
-const DOI_FEE = '0.03';
+export const NAMESPACE = 'e/';
+export const NAMESPACE_VERIFIED_EMAIL = 'es/';
+export const DOI_FEE = '0.03';
 
 export function getWif(client, address) {
   if(!address){
-        address = getAddressesByAccount(client,"")[0];
+        address = getaddressesbylabel(client,"")[0];
         logBlockchain('address was not defined so getting the first existing one of the wallet:',address);
   }
   if(!address){
-        address = getNewAddress(client,"");
+        address = getNewAddress(client,"*");
         logBlockchain('address was never defined  at all generated new address for this wallet:',address);
   }
   const syncFunc = Meteor.wrapAsync(doichain_dumpprivkey);
@@ -33,35 +33,35 @@ export function generateBlock(client, blocks) {
 
 function doichain_generateBlock(client, blocks, callback) {
     const ourBlocks = blocks;
-    client.cmd('generate', ourBlocks, function(err, data) {
+    client.cmd('-generate', ourBlocks, function(err, data) {
         if(err)  logError('doichain_generate:',err);
         callback(err, data);
     });
 }
 
 export function validateAddress(client, address) {
-    const syncFunc = Meteor.wrapAsync(doichain_validateaddress);
+    const syncFunc = Meteor.wrapAsync(doichain_getaddressinfo);
     return syncFunc(client, address);
 }
 
-function doichain_validateaddress(client, address, callback) {
+function doichain_getaddressinfo(client, address, callback) {
     const ourAddress = address;
-    client.cmd('validateaddress', ourAddress, function(err, data) {
-        if(err)  logError('validateaddress:',{address:address,err:err,client:client});
+    client.cmd('getaddressinfo', ourAddress, function(err, data) {
+        if(err)  logError('getaddressinfo:',{address:address,err:err,client:client});
         callback(err, data);
     });
 }
 
-export function getAddressesByAccount(client, account) {
-    const syncFunc = Meteor.wrapAsync(doichain_getaddressesbyaccount);
+export function getaddressesbylabel(client, account) {
+    const syncFunc = Meteor.wrapAsync(doichain_getaddressesbylabel);
     const our_account = account!==undefined?account:"";
     return syncFunc(client, our_account);
 }
 
-function doichain_getaddressesbyaccount(client, account, callback) {
+function doichain_getaddressesbylabel(client, account, callback) {
     const ourAccount = account;
-    client.cmd('getaddressesbyaccount', ourAccount, function(err, data) {
-        if(err)  logError('getaddressesbyaccount:',err);
+    client.cmd('getaddressesbylabel', ourAccount, function(err, data) {
+        if(err)  logError('getaddressesbylabel:',err);
         callback(err, data);
     });
 }
@@ -259,7 +259,10 @@ export function getTransaction(client, txid, watchOnly) {
 }
 
 function doichain_gettransaction(client, txid, watchOnly,callback) {
+
     client.cmd('gettransaction', txid, watchOnly, function(err, data) {
+        if(err)  logError('gettransaction txid:',txid);
+        if(err)  logError('gettransaction watchOnly:',watchOnly);
         if(err && err.toString().indexOf("Invalid or non-wallet transaction id")===-1)  logError('doichain_gettransaction:',err);
         callback(err, data);
     });

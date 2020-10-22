@@ -1,5 +1,5 @@
 import namecoin from 'namecoin';
-import {getAddressesByAccount, getNewAddress, validateAddress} from "../../../server/api/doichain";
+import {getaddressesbylabel, getNewAddress, validateAddress} from "../../../server/api/doichain";
 import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
@@ -11,11 +11,16 @@ export const SEND_CLIENT = sendClient;
 var confirmClient = undefined;
 var confirmAddress = undefined;
 //if(isAppType(CONFIRM_APP)) {
-  confirmClient = createClient("confirm");
-  const addressesOfAccount = getAddressesByAccount(confirmClient);
+confirmClient = createClient("confirm");
+let addressesOfAccount = []
+  try {
+       addressesOfAccount = getaddressesbylabel(confirmClient);
+  }catch(ex){
+      logError('new wallet need to create an address first');
+  } 
   if(addressesOfAccount.length>0)   confirmAddress = getSettings('confirm.doichain.address',addressesOfAccount[0]);
-  else confirmAddress = getSettings('confirm.doichain.address',getNewAddress(confirmClient,""));
-
+  else confirmAddress = getSettings('confirm.doichain.address',getNewAddress(confirmClient,""));  
+  
   try{
     //TODO find a better place to validate this address in future
     const validateAddressOutput = validateAddress(confirmClient,confirmAddress)

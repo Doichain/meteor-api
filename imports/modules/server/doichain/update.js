@@ -95,8 +95,9 @@ const update = (data, job) => {
 
     try {
         //TODO alice gets informed also in case something is wrong with the update
+        logConfirm('contacting send dApp (Alice) about confirmed doi via url:'+url+' with updateData'+JSON.stringify(updateData));
         const response = getHttpPUT(url, updateData);
-        logConfirm('informed send dApp (Alice) about confirmed doi on url:'+url+' with updateData'+JSON.stringify(updateData)+" response:",response.data);
+        logConfirm("response:",response.data)
 
         const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
         logConfirm('name_doi of transaction txid:',txid);

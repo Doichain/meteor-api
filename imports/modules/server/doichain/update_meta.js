@@ -1,4 +1,4 @@
-import {getAddressesByAccount, getBalance, getInfo} from "../../../../server/api/doichain";
+import {getaddressesbylabel, getBalance, getInfo} from "../../../../server/api/doichain";
 import {CONFIRM_CLIENT, SEND_CLIENT} from "../../../startup/server/doichain-configuration";
 import storeMeta from "./store_meta";
 import {logError,logBlockchain} from "../../../../imports/startup/server/log-configuration"
@@ -22,7 +22,7 @@ function updateMeta(){
         storeMeta(BLOCKCHAIN_INFO_VAL_BALANCE,balance)
         const unconfirmedBalance=0 //TODO if a new block comes in unconfirmed balance is usually 0 (but not always)  //getBalance(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
         storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,unconfirmedBalance)
-        const addresses_by_account=getAddressesByAccount(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
+        const addresses_by_account=getaddressesbylabel(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
         storeMeta(ADDRESSES_BY_ACCOUNT,addresses_by_account)
         logBlockchain('updated meta data blocks:',data.blocks)
     }catch (e) {

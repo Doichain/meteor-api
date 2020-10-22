@@ -26,7 +26,7 @@ Meteor.startup(() => {
     try {
       const properties = propertiesReader(doichainConfPath)
       rpcpassword =  properties.get('rpcpassword')
-      console.log('password from rpcpassword',rpcpassword)
+      console.log('password from doichain.conf',rpcpassword)
     }catch(e){
       console.log('problem reading doichain.conf in ',doichainConfPath)
     }

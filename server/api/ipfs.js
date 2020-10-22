@@ -1,4 +1,8 @@
 import {isRegtest} from "../../imports/startup/server/dapp-configuration";
+/*
+
+To enable this please use default ipfs-js not textile version!
+
 import {setupLibP2PHost, MemoryDatastore} from "@textile/ipfs-lite/dist/setup";
 import {BlockStore, Peer} from "@textile/ipfs-lite";
 
@@ -24,4 +28,4 @@ export const IPFS = async () => {
         console.log('returning existing ipfs host')
         return lite
     }
-}
+} */

@@ -60,7 +60,7 @@ const checkNewTransaction = (txid, block) => {
 
           txs.forEach(tx => {
                 //  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics TODO check this do we need this here?
-                  //console.log('txs.forEach.tx',tx)
+                  console.log('txs.forEach.tx',tx)
                   tx.details.forEach((detail) => { //each tx can have many outputs
                       const address = detail.address
                       const n = detail.vout
@@ -68,18 +68,20 @@ const checkNewTransaction = (txid, block) => {
                       let nameId
                       let nameValue
                       const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
+                      console.log('isOwnerMyMAddress',isOwnerMyMAddress)
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                       if(isOwnerMyMAddress.ismine){
-                          if (name && name.startsWith("doi: " + TX_NAME_START)) { //doi permission e/ or email verification es/
-                              nameId = name.substring(("doi: " + TX_NAME_START).length);
+                          console.log('is mine ',name)
+                          if (name && name.startsWith("doi: '" + TX_NAME_START)) { //doi permission e/ or email verification es/
+                              nameId = name.substring(("doi: '" + TX_NAME_START).length,name.length-1);
                               logConfirm("nameId: " + nameId, tx.txid);
                               const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
                               nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns)
                                   addNameTx(nameId, nameValue, address, tx.txid);
-                          } else if (name && name.startsWith("doi: " + TX_VERIFIED_EMAIL_NAME_START)) {
-                              nameId = name.substring(("doi: " + TX_VERIFIED_EMAIL_NAME_START).length);
+                          } else if (name && name.startsWith("doi: '" + TX_VERIFIED_EMAIL_NAME_START)) {
+                              nameId = name.substring(("doi: '" + TX_VERIFIED_EMAIL_NAME_START).length,name.length-1);
                               const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
                               nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
@@ -171,7 +173,7 @@ const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
 
 
 function addNameTx(name, value, address, txid) {
-    console.log('adding NamTx',txid)
+    console.log('adding NameTx',name)
     //cut away 'e/' in case it was delivered in a mempool transaction otherwise its not included.
     //const txName = name.startsWith(TX_NAME_START)?name.substring(TX_NAME_START.length):name;
     const txName = name.startsWith(TX_NAME_START)?name:"e/"+name

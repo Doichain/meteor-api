@@ -39,7 +39,7 @@ import {
     listUnspent,
     sendRawTransaction,
     validateAddress, getWif,
-    getAddressesByAccount, generateBlock, doichainSendToAddress,getBalance
+    getaddressesbylabel, generateBlock, doichainSendToAddress,getBalance
 } from "../../doichain";
 
 /**
@@ -61,7 +61,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
             const senderEmail = params.sender_mail
             let ourAddress = params.address
 
-            if(!ourAddress) ourAddress = getAddressesByAccount(SEND_CLIENT)[0]
+            if(!ourAddress) ourAddress = getaddressesbylabel(SEND_CLIENT)[0]
             const retValidateAddress = validateAddress(SEND_CLIENT,ourAddress)
 
             retValidateAddress.ismine?console.log("retValidateAddress.ismine:"+retValidateAddress.ismine):retValidateAddress
