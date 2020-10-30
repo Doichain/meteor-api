@@ -37,13 +37,11 @@ const checkNewTransaction = (txid, block) => {
           let txs = []
           if(txid){
               try {
-                  const txMemcache = getTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txid,true)
+                  const txMemcache = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, txid,true)
                   txs = [txMemcache]
-                 // console.log('got txid from memcache ', txid)
               }catch(e){
-
+                logConfirm("exception",e);
               }
-
           }
           else {
               //txs = getBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, block).tx
@@ -59,31 +57,41 @@ const checkNewTransaction = (txid, block) => {
           }
 
           txs.forEach(tx => {
-                //  if(block)scan_Doichain(false,block) //do not complete rescan - just index block for statistics TODO check this do we need this here?
-                  console.log('txs.forEach.tx',tx)
-                  tx.details.forEach((detail) => { //each tx can have many outputs
-                      const address = detail.address
-                      const n = detail.vout
-                      const name = detail.name
+                  
+                 // console.log('txs.forEach.tx',tx)
+                  tx.vout.forEach((vout) => { //each tx can have many outputs
+                    //console.log("vout",vout)
+                      const address = vout.scriptPubKey.addresses[0]
+                      console.log(address)
+                     // const n = vout.n
+                      let nameOp 
                       let nameId
                       let nameValue
+                      let name 
+                      if(vout.scriptPubKey.nameOp){
+                        nameOp =  vout.scriptPubKey.nameOp.op
+                        name = vout.scriptPubKey.nameOp.name
+                        nameValue = vout.scriptPubKey.nameOp.value
+                        console.log('nameOp',nameOp)
+                        console.log('name',name)
+                        console.log('nameValue',nameValue)
+                      }
                       const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
-                      console.log('isOwnerMyMAddress',isOwnerMyMAddress)
+                  
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                       if(isOwnerMyMAddress.ismine){
-                          console.log('is mine ',name)
-                          if (name && name.startsWith("doi: '" + TX_NAME_START)) { //doi permission e/ or email verification es/
-                              nameId = name.substring(("doi: '" + TX_NAME_START).length,name.length-1);
+                          if (nameOp==='name_doi' && name.startsWith(TX_NAME_START)) { //doi permission e/ or email verification es/
+                              nameId = name.substring((TX_NAME_START).length,name.length);
                               logConfirm("nameId: " + nameId, tx.txid);
-                              const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                              nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                             // const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
+                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns)
                                   addNameTx(nameId, nameValue, address, tx.txid);
-                          } else if (name && name.startsWith("doi: '" + TX_VERIFIED_EMAIL_NAME_START)) {
-                              nameId = name.substring(("doi: '" + TX_VERIFIED_EMAIL_NAME_START).length,name.length-1);
-                              const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                              nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
+                          } else if (nameOp==='name_doi' && name.startsWith(TX_VERIFIED_EMAIL_NAME_START)) {
+                              nameId = name.substring((TX_VERIFIED_EMAIL_NAME_START).length,name.length);
+                            //  const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
+                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns){
                                   addVerifyEmailTx(nameId, nameValue, address, tx.txid)
@@ -91,8 +99,8 @@ const checkNewTransaction = (txid, block) => {
                           }
                       }
                   })
-                  addCoinTx(tx,tx.confirmations)
-                  console.log('end checking tx',tx.txid)
+                  addCoinTx(tx,tx.confirmations) //we store all coin transactions which the node notifies  
+                  //console.log('end checking tx',tx.txid)
           }) //foreach tx
 
          // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});

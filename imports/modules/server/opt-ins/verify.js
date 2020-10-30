@@ -2,7 +2,8 @@ import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import { VERIFY_CLIENT } from '../../../startup/server/doichain-configuration.js';
 import { nameShow } from '../../../../server/api/doichain.js';
-import verifySignature from '../doichain/verify_signature.js';
+import {verifySignature} from "doichain"
+//import verifySignature from '../doichain/verify_signature.js';
 import getPublicKeyAndAddress from "../doichain/get_publickey_and_address_by_domain";
 
 const VerifyOptInSchema = new SimpleSchema({
@@ -36,14 +37,25 @@ const verifyOptIn = (data) => {
     const entryData = JSON.parse(entry.value);
 
     const publicKey = ourData.public_key?ourData.public_key:ourData.recipient_public_key  //TODO remove this in future versions update documentation
+    var publicKeyBuffer = Buffer.from(publicKey, 'hex')
+    var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
+    logVerify("publicKey",keyPair.publicKey.toString('hex'))
+  //  logVerify('GLOBAL.DEFAULT_NETWORK',GLOBAL.DEFAULT_NETWORK)
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
 
-    console.log('publicKey',publicKey)
-
+/*
     const firstCheck = verifySignature({
       data: ourData.recipient_mail+ourData.sender_mail,
       signature: entryData.signature,
       publicKey: publicKey
     });
+*/
+    const firstCheck = verifySignature(
+      // data: entryData.signature, //we had this before! 
+          ourData.recipient_mail+ourData.sender_mail,
+          address,
+          entryData.signature
+     ) 
 
     if(!firstCheck) return {soiSignatureStatus: "failed"};
     const parts = ourData.recipient_mail.split("@"); //TODO put this into getPublicKeyAndAddress
@@ -51,11 +63,18 @@ const verifyOptIn = (data) => {
     const publicKeyAndAddress = getPublicKeyAndAddress({domain: domain});
 
     if(!entryData.signature||!entryData.doiSignature)return {doiSignatureStatus: "missing"};
-    const secondCheck = verifySignature({
-      data: entryData.signature,
+   /* const secondCheck = verifySignature({
+     // data: entryData.signature, //we had this before! 
+      data: ourData.name_id,
       signature: entryData.doiSignature,
       publicKey: publicKeyAndAddress.publicKey
-    })
+    }) */
+      const secondCheck = verifySignature(
+     // data: entryData.signature, //we had this before! 
+        ourData.name_id,
+        publicKeyAndAddress.destAddress,
+        entryData.doiSignature
+    ) 
 
     if(!secondCheck) return {doiSignatureStatus: "failed"};
     return true;

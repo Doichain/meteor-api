@@ -71,7 +71,7 @@ const addDoichainEntry = (entry) => {
               logConfirm('output.scriptPubKey.addresses', output.scriptPubKey.addresses)
 
               const nameId = entry.name.startsWith("e/") ? entry.name : "e/" + entry.name
-              console.log('nameID is',nameId)
+              console.log('nameId is',nameId)
               if (output.scriptPubKey && output.scriptPubKey.nameOp &&
                   output.scriptPubKey.nameOp.name === nameId) {
                   validatorAddress = output.scriptPubKey.addresses[0]

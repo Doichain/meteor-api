@@ -39,9 +39,10 @@ const confirmOptIn = (request) => {
         logConfirm('confirming DoiChainEntry / respective masterDoi:',entry);
 
         const value = JSON.parse(entry.value);
-        logConfirm('getSignature (only of value!)', value);
-        logConfirm('creating DOI signature with address'+entry.address,value.signature);
-        const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature);
+        logConfirm('getSignature', value);
+        logConfirm('creating DOI signature with name '+entry.address,entry.name);
+        //const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature); //signature over signature
+        const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, entry.name); //signature over 
         logConfirm('got doiSignature:',doiSignature);
         const fromHostUrl = value.from;
 

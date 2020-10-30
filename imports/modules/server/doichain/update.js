@@ -74,7 +74,7 @@ const update = (data, job) => {
 
     const wif = getWif(CONFIRM_CLIENT, address);
     const privateKey = getPrivateKeyFromWif({wif: wif});
-    logConfirm('got private key (will not show it here) in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
+    logConfirm('got private key in order to decrypt Send-dApp host url from value:',ourData.fromHostUrl);
 
     const publicKey = getPublicKeyOfOriginTxId(name_data.txid);
     let ourfromHostUrl = decryptMessage({publicKey: publicKey, privateKey: privateKey, message: ourData.fromHostUrl});
@@ -83,7 +83,7 @@ const update = (data, job) => {
     logConfirm('decrypted fromHostUrl',ourfromHostUrl);
     const url = ourfromHostUrl+API_PATH+VERSION+"/"+DOI_CONFIRMATION_NOTIFY_ROUTE;
 
-    logConfirm('creating signature with ADDRESS'+CONFIRM_ADDRESS+" nameId:",ourData.value);  //TODO CONFIRM_ADDRESS should be the related to the public key configured in the DNS
+    logConfirm('creating signature with ADDRESS '+CONFIRM_ADDRESS+" nameId:",ourData.value);  //TODO CONFIRM_ADDRESS should be the related to the public key configured in the DNS
     const signature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, ourData.nameId); //second signature here over nameId
     logConfirm('signature created:',signature);
 
@@ -94,15 +94,14 @@ const update = (data, job) => {
     };
 
     try {
-        //TODO alice gets informed also in case something is wrong with the update
+        const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
+        logConfirm('name_doi of transaction txid:',txid);
+        OptIns.update({nameId: ourData.nameId}, {$push: {status: 'DOI written' }});
+        //here alice gets informed about the update - alice checks the signature of the DOI signature whihc is not valid at this time!
+        //TODO alice should try to take the information from mempool and exract the doi signature from raw transaction
         logConfirm('contacting send dApp (Alice) about confirmed doi via url:'+url+' with updateData'+JSON.stringify(updateData));
         const response = getHttpPUT(url, updateData);
         logConfirm("response:",response.data)
-
-        const txid = nameDoi(CONFIRM_CLIENT, ourData.nameId, ourData.value, null);
-        logConfirm('name_doi of transaction txid:',txid);
-
-        OptIns.update({nameId: ourData.nameId}, {$push: {status: 'DOI written' }});
         job.done();
     }catch(exception){
         logConfirm('this nameDOI doesn´t have a block yet and will be updated with the next block and with the next queue start:',ourData.nameId);

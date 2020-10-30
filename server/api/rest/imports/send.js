@@ -355,7 +355,7 @@ Api.addRoute(DOI_NAME_SHOW, {authRequired: false}, {
 )
 
 
-Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {
+Api.addRoute(DOI_CONFIRMATION_NOTIFY_ROUTE, {authRequired: false}, {
   post: {
     authRequired: true,
     action: function() {

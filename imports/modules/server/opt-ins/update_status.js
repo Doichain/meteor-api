@@ -1,9 +1,9 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
+import {verifySignature} from "doichain"
 import { OptIns } from '../../../api/opt-ins/opt-ins.js';
 import { Recipients } from '../../../api/recipients/recipients.js';
-import verifySignature from '../doichain/verify_signature.js';
-import {logSend} from "../../../startup/server/log-configuration";
+import {logError, logSend} from "../../../startup/server/log-configuration";
 import getPublicKeyAndAddress from "../doichain/get_publickey_and_address_by_domain";
 
 const UpdateOptInStatusSchema = new SimpleSchema({
@@ -23,7 +23,7 @@ const UpdateOptInStatusSchema = new SimpleSchema({
 const updateOptInStatus = (data) => {
   try {
     const ourData = data;
-    logSend('confirm dApp confirms optIn:',JSON.stringify(data));
+    logSend('validator dApp confirmed optIn:',JSON.stringify(data));
     UpdateOptInStatusSchema.validate(ourData);
     const optIn = OptIns.findOne({nameId: ourData.nameId});
     if(optIn === undefined) throw "Opt-In not found";
@@ -41,9 +41,14 @@ const updateOptInStatus = (data) => {
       const domain = parts[parts.length-1];
       const publicKeyAndAddress = getPublicKeyAndAddress({domain:domain});
 
-      //TODO getting information from Bob that a certain nameId (DOI) got confirmed.
-      if(!verifySignature({publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})) {
-        throw "Access denied";
+      //TODO getting information from Bob that a certain nameId (DOI) got confirmed. 
+      //checking signature over the nameId
+
+      if(!verifySignature(ourData.nameId,ourData.signature,publicKeyAndAddress.destAddress)){
+      //if(!verifySignature({publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})) {
+        const err = "Access denied Signature not verfied"
+        //logError(err,{publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})
+        throw err
       }
       logSend('signature valid for publicKey', publicKeyAndAddress.publicKey);
     }
