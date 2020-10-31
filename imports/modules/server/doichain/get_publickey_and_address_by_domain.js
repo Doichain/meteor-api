@@ -16,7 +16,7 @@ const getPublicKeyAndAddress = (data) => {
 
     let publicKey = getOptInKey({domain: ourData.domain}).key;
     const destAddress =  getAddress({publicKey: publicKey});
-    logSend('destAddress ', destAddress);
+    logSend('destAddress validator via dns ', destAddress);
     return {publicKey:publicKey,destAddress:destAddress};
 };
 

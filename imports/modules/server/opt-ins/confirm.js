@@ -1,5 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
+import bitcoin from 'bitcoinjs-lib';
+import { getSignature } from "doichain";
+import { getWif } from "../../../../server/api/doichain";
 import { CONFIRM_CLIENT, CONFIRM_ADDRESS } from '../../../startup/server/doichain-configuration.js';
 import { OptIns } from '../../../api/opt-ins/opt-ins.js';
 import { DoichainEntries } from '../../../api/doichain/entries.js';
@@ -40,9 +43,11 @@ const confirmOptIn = (request) => {
 
         const value = JSON.parse(entry.value);
         logConfirm('getSignature', value);
-        logConfirm('creating DOI signature with name '+entry.address,entry.name);
-        //const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature); //signature over signature
-        const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, entry.name); //signature over 
+        logConfirm('creating DOI signature with soi signature '+entry.address,value.signature);
+        const wif = getWif(CONFIRM_CLIENT, entry.address);
+        const keyPair = bitcoin.ECPair.fromWIF(wif, GLOBAL.DEFAULT_NETWORK);
+        const doiSignature = getSignature(value.signature, keyPair)
+       // const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature); //signature over signature
         logConfirm('got doiSignature:',doiSignature);
         const fromHostUrl = value.from;
 

@@ -44,9 +44,9 @@ const updateOptInStatus = (data) => {
       //TODO getting information from Bob that a certain nameId (DOI) got confirmed. 
       //checking signature over the nameId
 
-      if(!verifySignature(ourData.nameId,ourData.signature,publicKeyAndAddress.destAddress)){
+      if(!verifySignature(ourData.nameId,publicKeyAndAddress.destAddress,ourData.signature)){
       //if(!verifySignature({publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})) {
-        const err = "Access denied Signature not verfied"
+        const err = "Access denied Signature of nameId not verfied"
         //logError(err,{publicKey: publicKeyAndAddress.publicKey, data: ourData.nameId, signature: ourData.signature})
         throw err
       }

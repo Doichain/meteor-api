@@ -1,9 +1,10 @@
 import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
+const bitcoin = require('bitcoinjs-lib');
+import {verifySignature} from "doichain";
+import {logVerify} from "../../../startup/server/log-configuration";
 import { VERIFY_CLIENT } from '../../../startup/server/doichain-configuration.js';
 import { nameShow } from '../../../../server/api/doichain.js';
-import {verifySignature} from "doichain"
-//import verifySignature from '../doichain/verify_signature.js';
 import getPublicKeyAndAddress from "../doichain/get_publickey_and_address_by_domain";
 
 const VerifyOptInSchema = new SimpleSchema({
@@ -69,9 +70,15 @@ const verifyOptIn = (data) => {
       signature: entryData.doiSignature,
       publicKey: publicKeyAndAddress.publicKey
     }) */
+    console.log("second verification",{
+       data: entryData.signature,
+       address:  publicKeyAndAddress.destAddress,
+       signature: entryData.doiSignature
+     })
+
       const secondCheck = verifySignature(
      // data: entryData.signature, //we had this before! 
-        ourData.name_id,
+        entryData.signature,
         publicKeyAndAddress.destAddress,
         entryData.doiSignature
     ) 
