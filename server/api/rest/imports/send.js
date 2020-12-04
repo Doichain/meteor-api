@@ -556,11 +556,6 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
 
-                if(!addressValidation.isvalid){
-                    logError('doichain address not valid: '+ourAddress);
-                    return {status: 'fail',data:[],error: 'doichain address not valid: '+ourAddress};
-                }
-
                 if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     logSend('importing address' +
                         ' to Doichain node',ourAddress) //TODO only rescan if it is not a completely new address
@@ -578,7 +573,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
 
             } catch(error) {
                 logError('error getting transactions for address '+ourAddress,error);
-                return {status: 'fail',data:[],error: "address not not valid or not imported yet"+ourAddress};
+                return {status: 'fail',data:[],error: "address not valid or not imported yet: "+ourAddress};
             }
         }
     }
