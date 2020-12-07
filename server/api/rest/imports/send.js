@@ -38,6 +38,7 @@ import {
     importAddress,
     listUnspent,
     sendRawTransaction,
+    getNewAddress,
     validateAddress, getWif,
     getaddressesbylabel, generateBlock, doichainSendToAddress,getBalance
 } from "../../doichain";
@@ -475,7 +476,10 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
 
                 const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
                 data.txid = txid
-                if(isRegtest()) generateBlock(SEND_CLIENT,1)
+                if(isRegtest()) {
+                    const rewardAddress = getNewAddress(SEND_CLIENT,"");
+                    generateBlock(SEND_CLIENT, 1, rewardAddress)
+                } 
 
 
                 return {status: 'success', data};

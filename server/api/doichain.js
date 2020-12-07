@@ -26,14 +26,15 @@ function doichain_dumpprivkey(client, address, callback) {
   });
 }
 
-export function generateBlock(client, blocks) {
+export function generateBlock(client, blocks, address) {
     const syncFunc = Meteor.wrapAsync(doichain_generateBlock);
-    return syncFunc(client, blocks);
+    return syncFunc(client, blocks, address);
 }
 
-function doichain_generateBlock(client, blocks, callback) {
+function doichain_generateBlock(client, blocks, address, callback) {
     const ourBlocks = blocks;
-    client.cmd('-generate', ourBlocks, function(err, data) {
+    const ourAddress = address;
+    client.cmd('generatetoaddress', ourBlocks, ourAddress, function(err, data) {
         if(err)  logError('doichain_generate:',err);
         callback(err, data);
     });
