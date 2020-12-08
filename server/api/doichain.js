@@ -34,10 +34,24 @@ export function generateBlock(client, blocks) {
 function doichain_generateBlock(client, blocks, callback) {
     const ourBlocks = blocks;
     client.cmd('-generate', ourBlocks, function(err, data) {
-        if(err)  logError('doichain_generate:',err);
+        if(err)  logError('doichain_generateBlock:',err);
         callback(err, data);
     });
 }
+
+export function generateToAddress(client, blocks, address) {
+    const syncFunc = Meteor.wrapAsync(doichain_generateToAddress);
+    return syncFunc(client, blocks, address);
+}
+
+function doichain_generateToAddress(client, blocks, address, callback) {
+    const ourBlocks = blocks;
+    client.cmd('generatetoaddress', ourBlocks, address, function(err, data) {
+        if(err)  logError('doichain_generateToAddress:',err);
+        callback(err, data);
+    });
+}
+
 
 export function validateAddress(client, address) {
     const syncFunc = Meteor.wrapAsync(doichain_getaddressinfo);

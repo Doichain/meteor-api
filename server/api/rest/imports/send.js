@@ -39,7 +39,7 @@ import {
     listUnspent,
     sendRawTransaction,
     validateAddress, getWif,
-    getaddressesbylabel, generateBlock, doichainSendToAddress,getBalance
+    getaddressesbylabel, generateToAddress, doichainSendToAddress,getBalance
 } from "../../doichain";
 
 /**
@@ -473,14 +473,17 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 //4. fund privateKey
                 logSend('sending to address',ourAddress)
 
-                const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
-                data.txid = txid
-                if(isRegtest()) generateBlock(SEND_CLIENT,1)
 
-
+                if(isRegtest()){
+                    const txid = generateToAddress(SEND_CLIENT,1,ourAddress)
+                    data.txid = txid
+                }else{
+                    const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
+                    data.txid = txid
+                }
                 return {status: 'success', data};
             } catch(error) {
-                logError('error while exporting confirmed dois',error);
+                logError('error while funding account in regtest',error);
                 return {status: 'fail', error: error.message};
             }
         }
@@ -556,8 +559,8 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
 
-                if(!addressValidation.isvalid){
-                    logError('doichain address not valid: '+ourAddress);
+                if(addressValidation.err){
+                    logError('doichain address not valid: '+addressValidation);
                     return {status: 'fail',data:[],error: 'doichain address not valid: '+ourAddress};
                 }
 
