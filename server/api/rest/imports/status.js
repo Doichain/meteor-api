@@ -39,6 +39,7 @@ Api.addRoute(DOI_WALLETNOTIFY_ROUTE, {authRequired: false},{
       const params = this.queryParams;
       const tx = params.tx;
       try {
+        console.info('received  walletnotfiy for tx',tx)
        // const foundTxs = _.find(txidFilter, (ourTx) => ourTx.tx===tx)
        // logConfirm('walletnotfiy called - checking transaction with tx:' +(tx?tx:' block arrived or no txid in parameter'),
          //   _.find(txidFilter,  (ourTx) => ourTx.tx==tx)?'found':'not found');

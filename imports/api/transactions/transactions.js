@@ -50,7 +50,9 @@ Transactions.schema = new SimpleSchema({
         optional:true
     },
     confirmations : {
-        type: Number
+        type: Number,
+        optional:true,
+        defaultValue: 0
     },
     senderAddress:{
         type: String,

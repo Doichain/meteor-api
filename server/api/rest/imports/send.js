@@ -664,12 +664,14 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 try {
                     //1. First import the address so we get notified by the node for transactions
-                    if(params.address) importAddress(SEND_CLIENT,params.address,false)
+                    // if(params.address) importAddress(SEND_CLIENT,params.address,false)
                     //2 . Send transaction to node
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
+                    console.info('txid from broadcasted tx was',data)
                     if(!data) logError("problem with transaction not txid",data)
                     //3. get raw transaction of created txid in mempool
                     let txRaw = getRawTransaction(SEND_CLIENT,data)
+                    console.info('raw transaction received on Doichain', txRaw)
 
                     //4. take spent inputs from response and mark it in our wallet as spent
 
