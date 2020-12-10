@@ -58,7 +58,7 @@ const checkNewTransaction = (txid, block) => {
 
           txs.forEach(tx => {
                   
-                 // console.log('txs.forEach.tx',tx)
+                //  console.log('txs.forEach.tx',tx)
                   tx.vout.forEach((vout) => { //each tx can have many outputs
                     //console.log("vout",vout)
                       const address = vout.scriptPubKey.addresses[0]
@@ -202,7 +202,7 @@ function addNameTx(name, value, address, txid) {
  * @param txid
  */
 function addCoinTx(tx,confirmations) {
-
+console.log("addingCoinTx")
     const insertTx = (ourTx) => {
         //ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
         const query = {txid: ourTx.txid, n:ourTx.n, type: ourTx.type, address: ourTx.address} //we shuould also not delete an output (for an input)
@@ -251,11 +251,7 @@ function addCoinTx(tx,confirmations) {
             }
 
             const isMyAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, ourTx.senderAddress)
-            if (isMyAddress.isvalid && isMyAddress.ismine) {
-                insertTx(ourTx)
-            }
-
-            if (isMyAddress.isvalid && isMyAddress.iswatchonly) {
+            if (isMyAddress.ismine || isMyAddress.iswatchonly) {
                 insertTx(ourTx)
             }
         }
@@ -287,18 +283,11 @@ function addCoinTx(tx,confirmations) {
 
             const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
 
-            if(isMyMAddress.isvalid && isMyMAddress.ismine) {
+            if(isMyMAddress.ismine || isMyMAddress.iswatchonly) {
                 myTx.category = "receive"
                 myTx.amount  = outTx.value<0?(outTx.value*-1):outTx.value
                 insertTx(myTx)
             }
-
-            if(isMyMAddress.isvalid && isMyMAddress.iswatchonly) {
-                myTx.category = "receive"
-                myTx.amount  = outTx.value<0?(outTx.value*-1):outTx.value
-                insertTx(myTx)
-            }
-
             //update local dApp in case address belongs to this wallet
             if(confirmations>0 && isMyMAddress.ismine){
                 const valueCount = Meta.findOne({key: BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI})

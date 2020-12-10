@@ -38,6 +38,7 @@ import {
     importAddress,
     listUnspent,
     sendRawTransaction,
+    getNewAddress,
     validateAddress, getWif,
     getaddressesbylabel, generateToAddress, doichainSendToAddress,getBalance
 } from "../../doichain";
@@ -472,8 +473,6 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 importAddress(SEND_CLIENT,ourAddress,false)
                 //4. fund privateKey
                 logSend('sending to address',ourAddress)
-
-
                 if(isRegtest()){
                     const txid = generateToAddress(SEND_CLIENT,1,ourAddress)
                     data.txid = txid
@@ -559,11 +558,6 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             try {
                 const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
 
-                if(addressValidation.err){
-                    logError('doichain address not valid: '+addressValidation);
-                    return {status: 'fail',data:[],error: 'doichain address not valid: '+ourAddress};
-                }
-
                 if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     logSend('importing address' +
                         ' to Doichain node',ourAddress) //TODO only rescan if it is not a completely new address
@@ -581,7 +575,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
 
             } catch(error) {
                 logError('error getting transactions for address '+ourAddress,error);
-                return {status: 'fail',data:[],error: "address not not valid or not imported yet"+ourAddress};
+                return {status: 'fail',data:[],error: "address not valid or not imported yet: "+ourAddress};
             }
         }
     }
@@ -657,7 +651,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
         action: function() {
             const params = this.bodyParams;
             var tx = bitcoin.Transaction.fromHex(params.tx); //https://github.com/you21979/node-multisig-wallet/blob/master/lib/txdecoder.js
-            var txid = tx.getId();
+            //var txid = tx.getId();
             //is this a standard DOI coin transaction or a DOI request transaction?
             if((!params.nameId ||
                 !params.templateDataEncrypted //||
@@ -668,7 +662,7 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 try {
                     //1. First import the address so we get notified by the node for transactions
-                    if(params.address) importAddress(SEND_CLIENT,params.address,false)
+                    //if(params.address) importAddress(SEND_CLIENT,params.address,false) we don't 
                     //2 . Send transaction to node
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
                     if(!data) logError("problem with transaction not txid",data)
