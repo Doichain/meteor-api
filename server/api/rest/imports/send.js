@@ -21,7 +21,7 @@ import {Transactions} from "../../../../imports/api/transactions/transactions";
 import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, } from "../../dns";
 import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
-import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
+// import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
 import {Meta} from "../../../../imports/api/meta/meta";
 import {BLOCKCHAIN_INFO_VAL_BLOCKS} from "../../../../imports/startup/both/constants";
@@ -33,6 +33,7 @@ import {IPFS} from "../../ipfs";
 import getAddress from "../../../../imports/modules/server/doichain/get_address";
 import getPublicKeyOfOriginTxId, {getPublicKeyOfRawTransaction}
     from "../../../../imports/modules/server/doichain/getPublicKeyOfOriginTransaction";
+import {verifySignature} from "doichain";
 import {
     getRawTransaction,
     importAddress,
@@ -421,7 +422,13 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
               const templateDataEncrypted = optIn.templateDataEncrypted //TODO make sure its not getting too big and data are deleted after a certain time in any case and / or when template was picked up
 
               //check signature of the calling party (we allow only the responsible validator to ask for templateData
-              if(!verifySignature({publicKey: validatorPublicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
+            //   if(!verifySignature({publicKey: validatorPublicKey, data: optIn.nameId, signature: params.signature})) throw "validator signature incorrect - template access denied";
+            var publicKeyBuffer = Buffer.from(validatorPublicKey, 'hex')
+            var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
+            logSend("publicKey",keyPair.publicKey.toString('hex'))
+          //  logVerify('GLOBAL.DEFAULT_NETWORK',GLOBAL.DEFAULT_NETWORK)
+            const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
+              if(!verifySignature(optIn.nameId, address, params.signature)) throw "validator signature incorrect - template access denied";
 
               logSend("alice: return encrypted template data for nameId",{nameId:optIn.nameId});
               return {status: 'success',  encryptedData:templateDataEncrypted, publicKey: recipientPublicKey};
@@ -662,12 +669,14 @@ Api.addRoute(DOICHAIN_BROADCAST_TX, {
 
                 try {
                     //1. First import the address so we get notified by the node for transactions
-                    //if(params.address) importAddress(SEND_CLIENT,params.address,false) we don't 
+                    // if(params.address) importAddress(SEND_CLIENT,params.address,false)
                     //2 . Send transaction to node
                     const data = sendRawTransaction(SEND_CLIENT,params.tx)
+                    console.info('txid from broadcasted tx was',data)
                     if(!data) logError("problem with transaction not txid",data)
                     //3. get raw transaction of created txid in mempool
                     let txRaw = getRawTransaction(SEND_CLIENT,data)
+                    console.info('raw transaction received on Doichain', txRaw)
 
                     //4. take spent inputs from response and mark it in our wallet as spent
 

@@ -114,6 +114,7 @@ const sendMail = (mail) => {
     if(emailToSend){
       Email.send(emailToSend);
       OptIns.update({nameId: mail.nameId},{$push:{status:'email sent'}});
+      console.log(emailToSend)
     }
     else{
       const error = 'Error creating email'

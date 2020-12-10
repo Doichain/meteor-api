@@ -18,7 +18,7 @@ import decryptMessage from "../doichain/decrypt_message";
 import {getRawTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 //import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
-import {network, getPrivateKeyFromWif, getSignature, decryptStandardECIES} from "doichain"
+import {network, getPrivateKeyFromWif, verifySignature, getSignature, decryptStandardECIES} from "doichain"
 import {isRegtest} from "../../../startup/server/dapp-configuration";
 import {getSettings} from "meteor/doichain:settings";
 
@@ -77,6 +77,8 @@ const fetchDoiMailData = (data) => {
        // const privateKey = getPrivateKeyFromWif(privateKeyWif)
         const keyPair = bitcoin.ECPair.fromWIF(privateKeyWif,GLOBAL.DEFAULT_NETWORK)
         const signature = getSignature(ourData.name,keyPair)
+        const valid = verifySignature(ourData.name, address, signature)
+        console.log("outOfVerifySignature", valid)
         if(!signature){
             const error = 'Could not create signature with configured CONFIRM_ADDRESS in settings. Wrong address or missing private key'
             OptIns.upsert({nameId: ourData.name},{$push:{status:'error', error:error}})
