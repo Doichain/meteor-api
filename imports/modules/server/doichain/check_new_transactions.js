@@ -57,9 +57,8 @@ const checkNewTransaction = (txid, block) => {
           }
 
           txs.forEach(tx => {
-                  
+                console.log("tx",tx)
                   tx.vout.forEach((vout) => { //each tx can have many outputs
-                    //console.log("vout",vout)
                       const address = vout.scriptPubKey.addresses[0]
                       console.log(address)
                      // const n = vout.n
@@ -201,6 +200,7 @@ function addNameTx(name, value, address, txid) {
  * @param txid
  */
 function addCoinTx(tx,confirmations) {
+    console.log('adding coinTx for tx',tx.txid)
     const insertTx = (ourTx) => {
         //ourTx._id?ourTx._id=undefined:null //we need to do this otherwise it cannot get added another time
         const query = {txid: ourTx.txid, n:ourTx.n, type: ourTx.type, address: ourTx.address} //we shuould also not delete an output (for an input)

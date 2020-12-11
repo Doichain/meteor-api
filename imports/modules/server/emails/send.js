@@ -59,7 +59,7 @@ const sendMail = (mail) => {
 
     const nameIdVerificationUrl = getUrl() + API_PATH + VERSION + "/" + DOI_EXPLORER + "?nameId="+mail.nameId;
 
-    logConfirm('confirmationUrl:' + doiVerificationUrl);
+    logConfirm('doiVerificationUrl:' + doiVerificationUrl);
     let doichainEmailFooterText = "\n\nAn email permission will be stored on Doichain for:\n"
     doichainEmailFooterText+="Sender Email: "+mail.senderName+" ("+mail.from+")"+"\n"
     doichainEmailFooterText+="Recipient Email: "+mail.to+"\n"

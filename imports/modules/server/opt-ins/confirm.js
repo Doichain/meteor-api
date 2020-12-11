@@ -30,7 +30,7 @@ const confirmOptIn = (request) => {
       logConfirm("OptIn already confirmed: ",optIn);
       return optIn.redirect;
     }
-    const confirmedAt = new Date();
+    
     console.log('found opt in to confirm',optIn)
     //TODO after confirmation we deleted the confonfirmationtoken, now we keep it. can this be a security problem?
     OptIns.update({_id : optIn._id},{$set:{confirmedAt: confirmedAt, confirmedBy: ourRequest.host}});
@@ -52,7 +52,7 @@ const confirmOptIn = (request) => {
         const fromHostUrl = value.from;
 
         delete value.from;
-        value.doiTimestamp = confirmedAt.toISOString();
+        //value.doiTimestamp = confirmedAt.toISOString(); not necessary because its the blocktime is fine (I guess)
         value.doiSignature = doiSignature;
         const jsonValue = JSON.stringify(value);
         logConfirm('updating Doichain nameId:'+optIn.nameId+' with value:',jsonValue);

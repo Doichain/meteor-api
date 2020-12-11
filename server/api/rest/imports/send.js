@@ -482,11 +482,11 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 logSend('sending to address',ourAddress)
                 if(isRegtest()){
                     const txid = generateToAddress(SEND_CLIENT,1,ourAddress)
-                    data.txid = txid
-                }else{
-                    const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
-                    data.txid = txid
+                    data.txid = txid //gets overwritten later.
                 }
+                const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
+                data.txid = txid
+            
                 return {status: 'success', data};
             } catch(error) {
                 logError('error while funding account in regtest',error);

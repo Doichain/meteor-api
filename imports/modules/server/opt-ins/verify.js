@@ -31,26 +31,29 @@ const VerifyOptInSchema = new SimpleSchema({
 
 const verifyOptIn = (data) => {
   try {
+    console.log('verifying doi',data)
     const ourData = data;
     VerifyOptInSchema.validate(ourData);
     const entry = nameShow(VERIFY_CLIENT, ourData.name_id);
+    console.log('verifying doi',entry)
     if(entry === undefined) return {nameIdFound: "failed"};
     const entryData = JSON.parse(entry.value);
 
+    console.info("ourData",ourData)
     const publicKey = ourData.public_key?ourData.public_key:ourData.recipient_public_key  //TODO remove this in future versions update documentation
     var publicKeyBuffer = Buffer.from(publicKey, 'hex')
     var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
     logVerify("publicKey",keyPair.publicKey.toString('hex'))
-  //  logVerify('GLOBAL.DEFAULT_NETWORK',GLOBAL.DEFAULT_NETWORK)
     const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
 
-/*
-    const firstCheck = verifySignature({
-      data: ourData.recipient_mail+ourData.sender_mail,
-      signature: entryData.signature,
-      publicKey: publicKey
-    });
-*/
+    console.log('address from publicKey',address)
+    console.info('ourData.recipient_mail+ourData.sender_mail',(ourData.recipient_mail+ourData.sender_mail))
+    console.log('verifySignature',verifySignature(
+          (ourData.recipient_mail+ourData.sender_mail),
+          address,
+          entryData.signature
+     ))
+
     const firstCheck = verifySignature(
       // data: entryData.signature, //we had this before! 
           ourData.recipient_mail+ourData.sender_mail,
@@ -58,7 +61,9 @@ const verifyOptIn = (data) => {
           entryData.signature
      ) 
 
+
     if(!firstCheck) return {soiSignatureStatus: "failed"};
+    else console.info('first signature check successful')
     const parts = ourData.recipient_mail.split("@"); //TODO put this into getPublicKeyAndAddress
     const domain = parts[parts.length-1];
     const publicKeyAndAddress = getPublicKeyAndAddress({domain: domain});

@@ -11,6 +11,7 @@ Api.addRoute(DOI_CONFIRMATION_ROUTE + '/:token', {authRequired: false}, {
   get: {
     action: function () {
       // const hash = this.urlParams.hash;
+      console.info('confirm called')
       const token = this.urlParams.token
       try {
         let ip = getRemoteIP(this.request)
