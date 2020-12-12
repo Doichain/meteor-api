@@ -77,7 +77,7 @@ const checkNewTransaction = (txid, block) => {
                       const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
                   
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
-                      if(isOwnerMyMAddress.ismine){
+                      if(isOwnerMyMAddress.ismine || isOwnerMyMAddress.iswatchonly){
                           if (nameOp==='name_doi' && name.startsWith(TX_NAME_START)) { //doi permission e/ or email verification es/
                               nameId = name.substring((TX_NAME_START).length,name.length);
                               logConfirm("nameId: " + nameId, tx.txid);
@@ -233,7 +233,7 @@ function addCoinTx(tx,confirmations) {
         ourTx.senderAddress = 'coinbase'
 
         let ourInTx
-        if(!inTx.coinbase) {
+        if(inTx.coinbase===undefined) {
             ourInTx = getRawTransaction(SEND_CLIENT, inTx.txid)
             ourTx.amount = ourInTx.vout[inTx.vout].value * -1
             ourTx.txid = inTx.txid
@@ -248,10 +248,15 @@ function addCoinTx(tx,confirmations) {
                 ourTx.address = ourInTx.vout[inTx.vout].scriptPubKey.addresses[0]
             }
 
-            const isMyAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, ourTx.senderAddress)
-            if (isMyAddress.ismine || isMyAddress.iswatchonly) {
-                insertTx(ourTx)
+            try{
+                const isMyAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, ourTx.senderAddress)
+                if (isMyAddress.ismine || isMyAddress.iswatchonly) {
+                    insertTx(ourTx)
+                }
+            }catch(e){
+                console.warn('senderAddress was a coinbase transaction')
             }
+
         }
     })
 

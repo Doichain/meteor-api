@@ -52,7 +52,7 @@ const confirmOptIn = (request) => {
         const fromHostUrl = value.from;
 
         delete value.from;
-        //value.doiTimestamp = confirmedAt.toISOString(); not necessary because its the blocktime is fine (I guess)
+        value.doiTimestamp = confirmedAt.toISOString(); // not necessary because its the blocktime is fine (I guess)
         value.doiSignature = doiSignature;
         const jsonValue = JSON.stringify(value);
         logConfirm('updating Doichain nameId:'+optIn.nameId+' with value:',jsonValue);
