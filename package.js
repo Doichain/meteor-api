@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.5.8',
+  version: '0.5.10',
   summary: 'Implements the Doichain Protocoll and provides a Doichain RPC API for Doichain nodes',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
