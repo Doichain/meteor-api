@@ -1,5 +1,5 @@
 import namecoin from 'namecoin';
-import {getaddressesbylabel, getNewAddress, validateAddress} from "../../../server/api/doichain";
+import {getaddressesbylabel, getNewAddress, getAddressInfo} from "../../../server/api/doichain";
 import {logError, logMain} from "./log-configuration";
 import { getSettings} from "meteor/doichain:settings";
 
@@ -23,7 +23,7 @@ let addressesOfAccount = []
   
   try{
     //TODO find a better place to validate this address in future
-    const validateAddressOutput = validateAddress(confirmClient,confirmAddress)
+    const validateAddressOutput = getAddressInfo(confirmClient,confirmAddress)
     if(validateAddressOutput === undefined ||
         !validateAddressOutput ||
         !validateAddressOutput.isvalid ||
