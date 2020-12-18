@@ -52,6 +52,7 @@ const fetchDoiMailData = (data) => {
         FetchDoiMailDataSchema.validate(ourData);
         if(isRegtest()) ourData.domain = "http://localhost:3000/"
 
+        if(!ourData.domain.endsWith("/")) ourData.domain=ourData.domain+"/"
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE
 
         const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)

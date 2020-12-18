@@ -81,15 +81,11 @@ const checkNewTransaction = (txid, block) => {
                           if (nameOp==='name_doi' && name.startsWith(TX_NAME_START)) { //doi permission e/ or email verification es/
                               nameId = name.substring((TX_NAME_START).length,name.length);
                               logConfirm("nameId: " + nameId, tx.txid);
-                             // const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns)
                                   addNameTx(nameId, nameValue, address, tx.txid);
                           } else if (nameOp==='name_doi' && name.startsWith(TX_VERIFIED_EMAIL_NAME_START)) {
                               nameId = name.substring((TX_VERIFIED_EMAIL_NAME_START).length,name.length);
-                            //  const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns){
                                   addVerifyEmailTx(nameId, nameValue, address, tx.txid)
@@ -98,7 +94,6 @@ const checkNewTransaction = (txid, block) => {
                       }
                   })
                   addCoinTx(tx,tx.confirmations) //we store all coin transactions which the node notifies  
-                  //console.log('end checking tx',tx.txid)
           }) //foreach tx
 
          // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});

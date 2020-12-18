@@ -607,16 +607,11 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
             try {
                 const addressValidation = getAddressInfo(SEND_CLIENT,address);
 
-                if(!addressValidation.isvalid){
-                    logError('doichain address not valid: '+address);
-                    return {status: 'fail', error: 'doichain address not valid: '+address};
-                }
-
-                if(addressValidation.isvalid && (addressValidation.ismine || addressValidation.iswatchonly))
+                if(addressValidation.ismine || addressValidation.iswatchonly)
                     return listOurUnspent(addressValidation)
-                if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly))
+                if(!addressValidation.ismine && addressValidation.iswatchonly)
                     return listOurUnspent(addressValidation)
-                if(addressValidation.isvalid && (!addressValidation.ismine && !addressValidation.iswatchonly)){
+                if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     importAddress(SEND_CLIENT,address,false)
                     return listOurUnspent(addressValidation,'address imported sucessfully')
                 }
