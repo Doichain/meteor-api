@@ -565,7 +565,7 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             try {
                 const addressValidation = getAddressInfo(SEND_CLIENT,ourAddress);
 
-                if(!addressValidation.ismine && !addressValidation.iswatchonly){
+                if(rescan || (!addressValidation.ismine && !addressValidation.iswatchonly)){
                     logSend(`importing address ${ourAddress} with rescan: ${rescan} to Doichain node`) 
                     importAddress(SEND_CLIENT,ourAddress,rescan)
                 }
