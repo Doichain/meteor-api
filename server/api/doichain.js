@@ -54,7 +54,7 @@ function doichain_generateToAddress(client, blocks, address, callback) {
 }
 
 
-export function validateAddress(client, address) {
+export function getAddressInfo(client, address) {
     const syncFunc = Meteor.wrapAsync(doichain_getaddressinfo);
     return syncFunc(client, address);
 }
