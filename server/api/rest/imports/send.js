@@ -8,7 +8,7 @@ import updateOptInStatus from '../../../../imports/modules/server/opt-ins/update
 import getDoiMailData from '../../../../imports/modules/server/dapps/get_doi-mail-data.js';
 import {logConfirm, logError, logSend} from "../../../../imports/startup/server/log-configuration";
 import {
-    DOI_EXPORT_ROUTE, DOI_NAME_SHOW, DOI_TESTFOUNDING_ROUTE,
+    DOI_EXPORT_ROUTE, DOI_NAME_SHOW, DOI_TESTFUNDING_ROUTE,
     DOICHAIN_BROADCAST_TX,
     DOICHAIN_GET_PUBLICKEY_BY_PUBLIC_DNS,
     DOICHAIN_LIST_TXS,
@@ -446,7 +446,7 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
   }
 });
 
-Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
+Api.addRoute(DOI_TESTFUNDING_ROUTE, {
     get: {
         action: function() {
             const params = this.queryParams
@@ -480,13 +480,13 @@ Api.addRoute(DOI_TESTFOUNDING_ROUTE, {
                 importAddress(SEND_CLIENT,ourAddress,false)
                 //4. fund privateKey
                 logSend('sending to address',ourAddress)
-                if(isRegtest()){
-                    const txid = generateToAddress(SEND_CLIENT,1,ourAddress)
-                    data.txid = txid //gets overwritten later.
-                }
                 const txid = doichainSendToAddress(SEND_CLIENT,ourAddress,ourAmount)
                 data.txid = txid
-            
+                if(isRegtest()){
+                    const aliceAddress = getNewAddress(SEND_CLIENT, "")
+                    const txid = generateToAddress(SEND_CLIENT,1,aliceAddress)
+                    data.txid = txid //gets overwritten later.
+                }          
                 return {status: 'success', data};
             } catch(error) {
                 logError('error while funding account in regtest',error);
