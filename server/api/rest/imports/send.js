@@ -40,7 +40,7 @@ import {
     listUnspent,
     sendRawTransaction,
     getNewAddress,
-    validateAddress, getWif,
+    getAddressInfo as getAddressInfo, getWif,
     getaddressesbylabel, generateToAddress, doichainSendToAddress,getBalance
 } from "../../doichain";
 
@@ -64,7 +64,7 @@ Api.addRoute(EMAIL_VERIFY_ROUTE, {
             let ourAddress = params.address
 
             if(!ourAddress) ourAddress = getaddressesbylabel(SEND_CLIENT)[0]
-            const retValidateAddress = validateAddress(SEND_CLIENT,ourAddress)
+            const retValidateAddress = getAddressInfo(SEND_CLIENT,ourAddress)
 
             retValidateAddress.ismine?console.log("retValidateAddress.ismine:"+retValidateAddress.ismine):retValidateAddress
             retValidateAddress.isvalid?console.log("retValidateAddress.valid:"+retValidateAddress.isvalid):'not valid'
@@ -563,11 +563,10 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
             const rescan =  params.rescan?JSON.parse(params.rescan):false
             console.log('rescan is:',rescan)
             try {
-                const addressValidation = validateAddress(SEND_CLIENT,ourAddress);
+                const addressValidation = getAddressInfo(SEND_CLIENT,ourAddress);
 
-                if(!addressValidation.ismine && !addressValidation.iswatchonly){
-                    logSend('importing address' +
-                        ' to Doichain node',ourAddress) //TODO only rescan if it is not a completely new address
+                if(rescan || (!addressValidation.ismine && !addressValidation.iswatchonly)){
+                    logSend(`importing address ${ourAddress} with rescan: ${rescan} to Doichain node`) 
                     importAddress(SEND_CLIENT,ourAddress,rescan)
                 }
 
@@ -606,18 +605,13 @@ Api.addRoute(DOICHAIN_LIST_UNSPENT, {
             const address = params.address
 
             try {
-                const addressValidation = validateAddress(SEND_CLIENT,address);
+                const addressValidation = getAddressInfo(SEND_CLIENT,address);
 
-                if(!addressValidation.isvalid){
-                    logError('doichain address not valid: '+address);
-                    return {status: 'fail', error: 'doichain address not valid: '+address};
-                }
-
-                if(addressValidation.isvalid && (addressValidation.ismine || addressValidation.iswatchonly))
+                if(addressValidation.ismine || addressValidation.iswatchonly)
                     return listOurUnspent(addressValidation)
-                if(addressValidation.isvalid && (!addressValidation.ismine && addressValidation.iswatchonly))
+                if(!addressValidation.ismine && addressValidation.iswatchonly)
                     return listOurUnspent(addressValidation)
-                if(addressValidation.isvalid && (!addressValidation.ismine && !addressValidation.iswatchonly)){
+                if(!addressValidation.ismine && !addressValidation.iswatchonly){
                     importAddress(SEND_CLIENT,address,false)
                     return listOurUnspent(addressValidation,'address imported sucessfully')
                 }

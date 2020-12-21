@@ -8,7 +8,7 @@ import {
     nameDoi,
     nameShow,
     getRawTransaction,
-    validateAddress
+    getAddressInfo
 } from "../../../../server/api/doichain";
 import {
     API_PATH,
@@ -80,7 +80,7 @@ const update = (data, job) => {
         rawTransaction.vout.forEach(function(output) { //checking out the correct output
             if (!address) {
                 const our_address = output.scriptPubKey.addresses[0]
-                if (validateAddress(CONFIRM_CLIENT, our_address).ismine) {
+                if (getAddressInfo(CONFIRM_CLIENT, our_address).ismine) {
                     address = our_address
                 }
             }

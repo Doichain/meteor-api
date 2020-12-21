@@ -11,7 +11,7 @@ export function getWif(client, address) {
         logBlockchain('address was not defined so getting the first existing one of the wallet:',address);
   }
   if(!address){
-        address = getNewAddress(client,"*");
+        address = getNewAddress(client,"");
         logBlockchain('address was never defined  at all generated new address for this wallet:',address);
   }
   const syncFunc = Meteor.wrapAsync(doichain_dumpprivkey);
@@ -54,7 +54,7 @@ function doichain_generateToAddress(client, blocks, address, callback) {
 }
 
 
-export function validateAddress(client, address) {
+export function getAddressInfo(client, address) {
     const syncFunc = Meteor.wrapAsync(doichain_getaddressinfo);
     return syncFunc(client, address);
 }
@@ -87,6 +87,7 @@ export function getNewAddress(client, account) {
 }
 
 function doichain_getnewaddress(client, account, callback) {
+    if(account===undefined) account = ""
     const ourAccount = account;
     client.cmd('getnewaddress', ourAccount, function(err, data) {
         if(err)  logError('getnewaddress:',err);

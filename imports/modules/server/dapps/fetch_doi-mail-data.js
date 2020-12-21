@@ -15,7 +15,7 @@ import addSendMailJob from '../jobs/add_send_mail.js'
 import {logConfirm, logError} from "../../../startup/server/log-configuration"
 import updateDoichainEntry from "../opt-ins/update_doichain_entry"
 import decryptMessage from "../doichain/decrypt_message";
-import {getRawTransaction, getWif, validateAddress} from "../../../../server/api/doichain";
+import {getRawTransaction, getWif, getAddressInfo} from "../../../../server/api/doichain";
 import getPublicKeyOfOriginTxId from "../doichain/getPublicKeyOfOriginTransaction";
 //import getPrivateKeyFromWif from "../doichain/get_private-key_from_wif";
 import {network, getPrivateKeyFromWif, verifySignature, getSignature, decryptStandardECIES} from "doichain"
@@ -52,6 +52,7 @@ const fetchDoiMailData = (data) => {
         FetchDoiMailDataSchema.validate(ourData);
         if(isRegtest()) ourData.domain = "http://localhost:3000/"
 
+        if(!ourData.domain.endsWith("/")) ourData.domain=ourData.domain+"/"
         const url = ourData.domain + API_PATH + VERSION + "/" + DOI_FETCH_ROUTE
 
         const rawTransaction = getRawTransaction(CONFIRM_CLIENT,ourData.txId)
@@ -60,7 +61,7 @@ const fetchDoiMailData = (data) => {
         rawTransaction.vout.forEach(function (output) {
             if(!address){
                 const our_address = output.scriptPubKey.addresses[0]
-                const validatAddress = validateAddress(CONFIRM_CLIENT,our_address)
+                const validatAddress = getAddressInfo(CONFIRM_CLIENT,our_address)
                 if(validatAddress.ismine){ //TODO please validate more efficiently using own internal publicKeySet
                     address = our_address
                     validatorPublicKey  = validatAddress.pubkey

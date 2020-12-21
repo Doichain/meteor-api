@@ -10,7 +10,7 @@ import { OptIns} from "../../../api/opt-ins/opt-ins";
 import { Transactions} from "../../../api/transactions/transactions";
 import {logConfirm} from "../../../startup/server/log-configuration";
 import storeMeta from "./store_meta";
-import {getBlockHash, getRawMemPool, getWif, listSinceBlock, validateAddress} from "../../../../server/api/doichain";
+import {getBlockHash, getRawMemPool, getWif, listSinceBlock, getAddressInfo} from "../../../../server/api/doichain";
 import {LAST_CHECKED_BLOCK_KEY, BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI} from "../../../startup/both/constants"
 import {
     API_PATH,
@@ -74,22 +74,18 @@ const checkNewTransaction = (txid, block) => {
                         console.log('name',name)
                         console.log('nameValue',nameValue)
                       }
-                      const isOwnerMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
+                      const isOwnerMyMAddress = getAddressInfo(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, address) //address of this output
                   
                       const processedTxInOptIns = OptIns.findOne({txid: tx.txid})
                       if(isOwnerMyMAddress.ismine || isOwnerMyMAddress.iswatchonly){
                           if (nameOp==='name_doi' && name.startsWith(TX_NAME_START)) { //doi permission e/ or email verification es/
                               nameId = name.substring((TX_NAME_START).length,name.length);
                               logConfirm("nameId: " + nameId, tx.txid);
-                             // const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns)
                                   addNameTx(nameId, nameValue, address, tx.txid);
                           } else if (nameOp==='name_doi' && name.startsWith(TX_VERIFIED_EMAIL_NAME_START)) {
                               nameId = name.substring((TX_VERIFIED_EMAIL_NAME_START).length,name.length);
-                            //  const nameRawTxVouts = getRawTransaction(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT,tx.txid).vout[n]
-                            //  nameValue  = nameRawTxVouts.scriptPubKey.nameOp.value
                               logConfirm("nameValue: " + nameValue, nameValue);
                               if (!processedTxInOptIns){
                                   addVerifyEmailTx(nameId, nameValue, address, tx.txid)
@@ -98,7 +94,6 @@ const checkNewTransaction = (txid, block) => {
                       }
                   })
                   addCoinTx(tx,tx.confirmations) //we store all coin transactions which the node notifies  
-                  //console.log('end checking tx',tx.txid)
           }) //foreach tx
 
          // addOrUpdateMeta({key: LAST_CHECKED_BLOCK_KEY, value: lastCheckedBlock});
@@ -122,7 +117,7 @@ const addVerifyEmailTx = async (nameId,nameValue,validatorAddress,txid) => {
         privateKey: privateKey
     })
 
-    const publicKey = validateAddress(CONFIRM_CLIENT, validatorAddress).pubkey
+    const publicKey = getAddressInfo(CONFIRM_CLIENT, validatorAddress).pubkey
     const confirmationToken = randomBytes(32).toString('hex');
     const dataObjectFromIPFS = JSON.parse(decryptedDataObjectFromIPFS)
     console.log('dataObjectFromIPFS',dataObjectFromIPFS)
@@ -249,7 +244,7 @@ function addCoinTx(tx,confirmations) {
             }
 
             try{
-                const isMyAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, ourTx.senderAddress)
+                const isMyAddress = getAddressInfo(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, ourTx.senderAddress)
                 if (isMyAddress.ismine || isMyAddress.iswatchonly) {
                     insertTx(ourTx)
                 }
@@ -284,7 +279,7 @@ function addCoinTx(tx,confirmations) {
                /// console.log('no time in rawTx',rawTx)
            // }else console.log('no time in rawTx',rawTx.time)
 
-            const isMyMAddress = validateAddress(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
+            const isMyMAddress = getAddressInfo(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, myTx.address)
 
             if(isMyMAddress.ismine || isMyMAddress.iswatchonly) {
                 myTx.category = "receive"
