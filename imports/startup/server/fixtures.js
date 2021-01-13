@@ -4,6 +4,7 @@ import {Meta} from '../../api/meta/meta.js'
 import fs from 'fs'
 import os from 'os'
 import propertiesReader from 'properties-reader'
+import { isRegtest } from './dapp-configuration.js';
 
 Meteor.startup(() => {
   
@@ -14,28 +15,32 @@ Meteor.startup(() => {
     Meta.remove({key:"version"});
   }
 
-    console.log("version from file: ",version)
-   Meta.insert({key:"version", value: version});
+  console.log("version from file: ",version)
+  Meta.insert({key:"version", value: version});
   
   if(Meteor.users.find().count() === 0) {
 
     let rpcpassword = 'password'
     const homedir = os.homedir()
-    console.log('homedir',homedir)
-    const doichainConfPath = homedir+'/.doichain/doichain.conf'
-    try {
-      const properties = propertiesReader(doichainConfPath)
-      rpcpassword =  properties.get('rpcpassword')
-      console.log('password from doichain.conf',rpcpassword)
-    }catch(e){
-      console.log('problem reading doichain.conf in ',doichainConfPath)
+
+    if (!isRegtest()) {
+        console.info('homedir', homedir)
+        const doichainConfPath = homedir + '/.doichain/doichain.conf'
+        try {
+            const properties = propertiesReader(doichainConfPath)
+            rpcpassword = properties.get('rpcpassword')
+            console.info('password from doichain.conf', rpcpassword)
+        } catch (e) {
+            console.error('problem reading doichain.conf in ', doichainConfPath)
+        }
     }
 
     const id = Accounts.createUser({
-      username: 'admin',
-      email: 'admin@doichain.org',
-      password: rpcpassword
+        username: 'admin',
+        email: 'admin@doichain.org',
+        password: rpcpassword
     });
+    
     Roles.addUsersToRoles(id, 'admin');
   }
 });
