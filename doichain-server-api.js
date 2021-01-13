@@ -32,8 +32,7 @@ Meteor.startup(() => {
         if(isTestnet()) network.changeNetwork('testnet')
         else if(isRegtest()) network.changeNetwork('regtest')
         else network.changeNetwork('mainnet')
-
-        console.log("dapp running " + (isTestnet() ? 'testnet' : '') + '' + (isRegtest() ? 'regtest' : ''));
+        console.info("dapp running " + (isTestnet() ? 'testnet' : '') + '' + (isRegtest() ? 'regtest' : ''));
     }
 });
 

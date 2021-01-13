@@ -19,7 +19,7 @@ import exportDois from "../../../../imports/modules/server/dapps/export_dois";
 import {OptIns} from "../../../../imports/api/opt-ins/opt-ins";
 import {Transactions} from "../../../../imports/api/transactions/transactions";
 import {OPT_IN_KEY, OPT_IN_KEY_TESTNET, } from "../../dns";
-import {isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
+import {isDebug, isRegtest, isTestnet} from "../../../../imports/startup/server/dapp-configuration";
 import {SEND_CLIENT} from "../../../../imports/startup/server/doichain-configuration";
 // import verifySignature from "../../../../imports/modules/server/doichain/verify_signature";
 import getOptInKey from "../../../../imports/modules/server/dns/get_opt-in-key";
@@ -558,20 +558,20 @@ Api.addRoute(DOICHAIN_LIST_TXS, {
         authRequired: false,
         action: function() {
             const params = this.queryParams;
-            console.log("DOICHAIN_LIST_TXS",params)
+            if(isDebug().indexOf('rpc')!=-1)console.info("DOICHAIN_LIST_TXS called",params)
             let ourAddress = params.address?params.address:'undefined';
             const rescan =  params.rescan?JSON.parse(params.rescan):false
-            console.log('rescan is:',rescan)
+            if(isDebug().indexOf('rpc')!=-1)console.log('rescan is:',rescan)
             try {
                 const addressValidation = getAddressInfo(SEND_CLIENT,ourAddress);
 
                 if(rescan || (!addressValidation.ismine && !addressValidation.iswatchonly)){
-                    logSend(`importing address ${ourAddress} with rescan: ${rescan} to Doichain node`) 
+                    if(isDebug().indexOf('rpc')!=-1)logSend(`importing address ${ourAddress} with rescan: ${rescan} to Doichain node`) 
                     importAddress(SEND_CLIENT,ourAddress,rescan)
                 }
 
                 if(addressValidation.ismine || addressValidation.iswatchonly){
-                    const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1 }}).fetch()
+                    const data = Transactions.find({address:ourAddress},{sort: { createdAt: -1, type: -1 }}).fetch()
                     if(data)
                         return {status: 'success',data};
                     else

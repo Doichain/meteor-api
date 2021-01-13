@@ -1,6 +1,6 @@
 Package.describe({
   name: 'doichain:doichain-meteor-api',
-  version: '0.5.13',
+  version: '0.5.14',
   summary: 'Implements the Doichain Protocoll and provides a Doichain RPC API for Doichain nodes',
   git: 'https://github.com/Doichain/meteor-api.git',
   documentation: 'README.md'
@@ -50,7 +50,7 @@ Npm.depends({
     'eccrypto':'1.1.2',
     'crypto':'1.0.1',
     "bitcoinjs-lib":"5.1.7",
-    "doichain":"0.1.3",
+    "doichain":"0.1.12",
     'properties-reader':'2.1.1'
 });
 

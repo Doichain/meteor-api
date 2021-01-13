@@ -79,12 +79,18 @@ Transactions.schema = new SimpleSchema({
     },
     createdAt: {
         type: Date
+    },
+    createdAtTime: {
+        type: Date,
+        optional:true
     }
+    
 });
 
 Transactions.attachSchema(Transactions.schema);
 
 Transactions.publicFields = {
     txid: 1,
-    createdAt: 1
+    createdAt: 1,
+    createdAtTime:1
 };

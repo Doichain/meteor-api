@@ -24,11 +24,11 @@ function updateMeta(){
         storeMeta(BLOCKCHAIN_INFO_VAL_UNCONFIRMED_DOI,unconfirmedBalance)
         const addresses_by_account=getaddressesbylabel(SEND_CLIENT?SEND_CLIENT:CONFIRM_CLIENT);
         storeMeta(ADDRESSES_BY_ACCOUNT,addresses_by_account)
-        logBlockchain('updated meta data blocks:',data)
+        logBlockchain(`checked chain:${data.chain} data block: ${data.blocks}`)
     }catch (e) {
         logError("error while updating blockchain meta data",e)
     }
-
 }
+updateMeta()
 
 export default updateMeta

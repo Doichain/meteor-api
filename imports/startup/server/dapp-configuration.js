@@ -3,7 +3,6 @@ import { getSettings} from "meteor/doichain:settings";
 import {CONFIRM_CLIENT, SEND_CLIENT} from "./doichain-configuration";
 import {getInfo} from "../../../server/api/doichain";
 
-
 export function isDebug() {
     return getSettings('app.debug',true);
 }

@@ -2,7 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import SimpleSchema from 'simpl-schema';
 import CryptoJS from 'crypto-js';
 import Base58 from 'bs58';
-import { isRegtest } from '../../../startup/server/dapp-configuration.js';
+import {isRegtest } from '../../../startup/server/dapp-configuration.js';
 import {isTestnet} from "../../../startup/server/dapp-configuration";
 
 const VERSION_BYTE = 0x34;
