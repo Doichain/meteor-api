@@ -10,7 +10,7 @@ import { getHttpGET } from '../../../../server/api/http.js';
 import { DOI_MAIL_FETCH_URL } from '../../../startup/server/email-configuration.js';
 import { logSend } from "../../../startup/server/log-configuration";
 import { Accounts } from 'meteor/accounts-base'
-import {getUrl} from "../../../startup/server/dapp-configuration";
+import { getUrl } from "../../../startup/server/dapp-configuration";
 import getDataHash from "../doichain/get_data-hash";
 
 const GetDoiMailDataSchema = new SimpleSchema({
@@ -22,29 +22,29 @@ const GetDoiMailDataSchema = new SimpleSchema({
   },
   validatorPublicKey: {
     type: String,
-    optional:true
+    optional: true
   }
 });
 
 const userProfileSchema = new SimpleSchema({
   subject: {
     type: String,
-    optional:true
+    optional: true
   },
   redirect: {
     type: String,
     regEx: "@(https?|ftp)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
-    optional:true
+    optional: true
   },
   returnPath: {
     type: String,
     regEx: SimpleSchema.RegEx.Email,
-    optional:true
+    optional: true
   },
   templateURL: {
     type: String,
     regEx: "@(https?|ftp)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?$@",
-    optional:true
+    optional: true
   }
 });
 
@@ -65,32 +65,32 @@ const getDoiMailData = (data) => {
   try {
 
     const ourData = data;
-    console.log('GetDoiMailDataSchema',data)
+    console.log('GetDoiMailDataSchema', data)
     GetDoiMailDataSchema.validate(ourData);
-    optIn = OptIns.findOne({nameId: ourData.name_id});
+    optIn = OptIns.findOne({ nameId: ourData.name_id });
 
     if (optIn === undefined) throw "Opt-In with name_id: " + ourData.name_id + " not found";
-    OptIns.update({_id: optIn._id}, {$push: {status: 'template requested'}})
+    OptIns.update({ _id: optIn._id }, { $push: { status: 'template requested' } })
     logSend('Opt-In found', optIn);
 
-    const sender = Senders.findOne({_id: optIn.sender});
+    const sender = Senders.findOne({ _id: optIn.sender });
     if (sender === undefined) throw "Sender not found";
 
-    const recipient = Recipients.findOne({_id: optIn.recipient});
+    const recipient = Recipients.findOne({ _id: optIn.recipient });
     if (recipient === undefined) throw "Recipient not found";
     logSend('Recipient found', recipient);
 
     //TODO the following 13 lines are obviously more then one time implemented in the code - needs to be abstracted
     const parts = recipient.email.split("@");
     const domain = parts[parts.length - 1];
-    let optInKeyData = getOptInKey({domain: domain});
+    let optInKeyData = getOptInKey({ domain: domain });
     let publicKey = optInKeyData.key;
     let optInType = optInKeyData.type;
 
     if (!publicKey) {
-      const provider = getOptInProvider({domain: ourData.domain});
-      logSend("using doichain provider instead of directly configured publicKey:", {provider: provider});
-      optInKeyData = getOptInKey({domain: provider}).key; //get public key from provider or fallback if publickey was not set in dns
+      const provider = getOptInProvider({ domain: ourData.domain });
+      logSend("using doichain provider instead of directly configured publicKey:", { provider: provider });
+      optInKeyData = getOptInKey({ domain: provider }).key; //get public key from provider or fallback if publickey was not set in dns
       publicKey = optInKeyData.key;
       optInType = optInKeyData.type;
     }
@@ -138,17 +138,18 @@ const getDoiMailData = (data) => {
 
       //in case we don't send data to a fallback server, send sender email to destination fallback.
       if (optInType === "default") {
-        defaultReturnData.verifyLocalHash = getDataHash({data: (sender.email + recipient.email)}); //verifyLocalHash = verifyLocalHash
+        defaultReturnData.verifyLocalHash = getDataHash({ data: (sender.email + recipient.email) }); //verifyLocalHash = verifyLocalHash
       }
-      OptIns.update({_id: optIn._id}, {$push: {status: 'email configured'}})
+      OptIns.update({ _id: optIn._id }, { $push: { status: 'email configured' } })
       logSend('defaultReturnData:', defaultReturnData);
 
       let returnData = defaultReturnData;
 
       try {
 
-        let owner = Accounts.users.findOne({_id: optIn.ownerId});
+        let owner = Accounts.users.findOne({ _id: optIn.ownerId });
         let mailTemplate = owner.profile.mailTemplate;
+        logSend('found mamilTemplate:', owner);
         let redirParamString = null;
         let templParamString = null;
 
@@ -179,7 +180,7 @@ const getDoiMailData = (data) => {
         } catch (e) {
           logSend("Couldn't retrieve parameters")
         }
-        userProfileSchema.validate(mailTemplate);
+
 
         //Appends parameter to redirect-url
         let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?") == -1 ? mailTemplate["redirect"] + "?" + redirParamString : mailTemplate["redirect"] + "&" + redirParamString)) : null;
@@ -219,10 +220,11 @@ const getDoiMailData = (data) => {
         logSend("Template Url set to:", (tmpTemplate ? tmpTemplate : "Default"));
 
       } catch (error) {
+        logSend("error during mailTemlate reading", error);
         returnData = defaultReturnData;
       }
 
-      OptIns.update({_id: optIn._id}, {$push: {status: 'template fetched'}})  //TODO please abstract status changes of an OptIn
+      OptIns.update({ _id: optIn._id }, { $push: { status: 'template fetched' } })  //TODO please abstract status changes of an OptIn
       logSend('doiMailData and url:', DOI_MAIL_FETCH_URL, returnData);
       return returnData
 
@@ -231,7 +233,7 @@ const getDoiMailData = (data) => {
     }
 
   } catch (exception) {
-    if (optIn !== undefined) OptIns.update({_id: optIn._id}, {
+    if (optIn !== undefined) OptIns.update({ _id: optIn._id }, {
       $push: {
         status: 'problem template fetch',
         error: exception
@@ -239,7 +241,7 @@ const getDoiMailData = (data) => {
     })
     throw new Meteor.Error('dapps.getDoiMailData.exception', exception);
   }
-  if (optIn !== undefined) OptIns.update({_id: optIn._id}, {$push: {status: 'template fetched'}})
+  if (optIn !== undefined) OptIns.update({ _id: optIn._id }, { $push: { status: 'template fetched' } })
 };
 
 export default getDoiMailData;
