@@ -181,7 +181,6 @@ const getDoiMailData = (data) => {
           logSend("Couldn't retrieve parameters")
         }
 
-
         //Appends parameter to redirect-url
         let tmpRedirect = mailTemplate["redirect"] ? (redirParamString === null ? mailTemplate["redirect"] : (mailTemplate["redirect"].indexOf("?") == -1 ? mailTemplate["redirect"] + "?" + redirParamString : mailTemplate["redirect"] + "&" + redirParamString)) : null;
         let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?") == -1 ? mailTemplate["templateURL"] + "?" + templParamString : mailTemplate["templateURL"] + "&" + templParamString)) : null;

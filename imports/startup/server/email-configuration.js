@@ -57,7 +57,7 @@ if (isAppType(CONFIRM_APP)) {
                 const url = getUrl()
                 let hostname = getSettings('app.host','localhost');
                 const from = defaultFrom
-                const to = 'nico@le-space.de'
+                const to = defaultFrom //
                 console.info(`sending email from:${from}, to:${to}`);
 
                 let emailSubject = `Doichain ${type} dApp ${process.env.NODE_ENV} on ${hostname}`;
