@@ -51,7 +51,7 @@ Npm.depends({
     'crypto':'1.0.1',
     "bitcoinjs-lib":"5.1.7",
     "doichain":"0.1.12",
-    'properties-reader':'2.1.1'
+    'properties-reader':'2.2.0'    
 });
 
 

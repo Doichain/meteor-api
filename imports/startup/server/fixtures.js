@@ -17,7 +17,7 @@ Meteor.startup(() => {
 
   console.log("version from file: ",version)
   Meta.insert({key:"version", value: version});
-  
+
   if(Meteor.users.find().count() === 0) {
 
     let rpcpassword = 'password'
@@ -28,8 +28,12 @@ Meteor.startup(() => {
         const doichainConfPath = homedir + '/.doichain/doichain.conf'
         try {
             const properties = propertiesReader(doichainConfPath)
-            rpcpassword = properties.get('rpcpassword')
-            console.info('password from doichain.conf', rpcpassword)
+            if (properties.get("testnet")) {
+              rpcpassword = properties.get("test.rpcpassword")
+            } else {
+              rpcpassword = properties.get("main.rpcpassword")
+            }
+            console.info("password from doichain.conf", rpcpassword)
         } catch (e) {
             console.error('problem reading doichain.conf in ', doichainConfPath)
         }
@@ -40,7 +44,7 @@ Meteor.startup(() => {
         email: 'admin@doichain.org',
         password: rpcpassword
     });
-    
+
     Roles.addUsersToRoles(id, 'admin');
   }
 });
