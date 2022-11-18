@@ -122,8 +122,8 @@ const fetchDoiMailData = (data) => {
             throw responseData.error;
         }
         OptIns.upsert({nameId: ourData.name},{$push:{status:'mail data fetched'}});
-        logConfirm('DOI Mail data fetched - recipient:',
-            (responseData.data&&responseData.data.recipient)?responseData.data.recipient:decryptedData?decryptedData.to:'unknown');
+        // logConfirm('DOI Mail data fetched - recipient:',
+        //     (responseData.data&&responseData.data.recipient)?responseData.data.recipient:decryptedData?decryptedData.to:'unknown');
 
         //in case this is the responsible doichain node for this email domain store the hash between the recipient and sender email
         //don't safe anything on fallback servers (nothing should arrive here)
@@ -177,8 +177,9 @@ const fetchDoiMailData = (data) => {
                 }
             });
         }
-        console.log("responseData.data",responseData.data)
-        logConfirm('sending email to peter for confirmation over bobs dApp',responseData);
+
+        // console.log("responseData.data",responseData.data)
+        logConfirm('sending email to peter for confirmation over bobs dApp');
 
         //TODO please fix (conventional dApp requests use responseData.data and direct txs of mobile clients use the other
 
@@ -188,6 +189,8 @@ const fetchDoiMailData = (data) => {
         const from = responseData.data.sender?responseData.data.sender:responseData.sender?responseData.sender:defaultFrom
         const to = responseData.data.recipient?responseData.data.recipient:responseData.recipient
         const senderName = responseData.data.senderName?responseData.data.senderName:responseData.senderName
+        
+        console.log("responseData.data.senderName",responseData.data.senderName)
 
         addSendMailJob({
             from: from,

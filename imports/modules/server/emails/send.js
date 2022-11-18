@@ -79,6 +79,7 @@ const sendMail = (mail) => {
     //overwrite from with from from validator (right now we use the validators email address to send the email)
     mail.from = getSettings('confirm.smtp.defaultFrom','doichain@localhost')
     const from = mail.senderName?mail.senderName+"<"+mail.from+">":mail.from //use a senderName if given
+    console.log("from",from)
 
     let emailToSend={
       from: from,
@@ -115,7 +116,7 @@ const sendMail = (mail) => {
     if(emailToSend){
       Email.send(emailToSend);
       OptIns.update({nameId: mail.nameId},{$push:{status:'email sent'}});
-      console.log(emailToSend)
+      // console.log(emailToSend)
     }
     else{
       const error = 'Error creating email'

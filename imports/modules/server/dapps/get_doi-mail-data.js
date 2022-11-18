@@ -117,6 +117,7 @@ const getDoiMailData = (data) => {
     try {
 
       doiMailData = getHttpGET(DOI_MAIL_FETCH_URL, "").data;
+      // logSend('doiMailData:', doiMailData);
       let redirectUrl = doiMailData.data.redirect;
 
       if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
@@ -186,8 +187,10 @@ const getDoiMailData = (data) => {
         let tmpTemplate = mailTemplate["templateURL"] ? (templParamString === null ? mailTemplate["templateURL"] : (mailTemplate["templateURL"].indexOf("?") == -1 ? mailTemplate["templateURL"] + "?" + templParamString : mailTemplate["templateURL"] + "&" + templParamString)) : null;
 
         returnData["redirect"] = tmpRedirect || defaultReturnData["redirect"];
+        returnData["senderName"] = mailTemplate["senderName"] || defaultReturnData["senderName"];
         returnData["subject"] = mailTemplate["subject"] || defaultReturnData["subject"];
         returnData["returnPath"] = mailTemplate["returnPath"] || defaultReturnData["returnPath"];
+        
         let templateResult = getHttpGET(tmpTemplate);
         let message = false;
         let contentType = templateResult.headers["content-type"];
@@ -213,7 +216,8 @@ const getDoiMailData = (data) => {
         }
         logSend("contentType", contentType);
         //returnData["content"] = tmpTemplate ? (templateResult.content || defaultReturnData["content"]) : defaultReturnData["content"];
-        returnData["content"] = tmpTemplate ? (message || defaultReturnData["content"]) : defaultReturnData["content"];
+        // returnData["content"] = tmpTemplate ? message || defaultReturnData["content"] : defaultReturnData["content"];
+        returnData["content"] = tmpTemplate ? message : defaultReturnData["content"];
         returnData["contentType"] = contentType && message ? contentType : "html";
         logSend("Redirect Url set to:", returnData["redirect"]);
         logSend("Template Url set to:", (tmpTemplate ? tmpTemplate : "Default"));

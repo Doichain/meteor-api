@@ -61,11 +61,11 @@ const checkNewTransaction = (txid, block) => {
                 }); //TODO if dapp gets initialized first time nothing gets called
                 if (lastCheckedBlock) lastCheckedBlock = lastCheckedBlock.value;
                 else lastCheckedBlock = getBlockHash(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, 1)
-                logConfirm("lastCheckedBlock", lastCheckedBlock);
+                // logConfirm("lastCheckedBlock", lastCheckedBlock);
                 const ret = listSinceBlock(SEND_CLIENT ? SEND_CLIENT : CONFIRM_CLIENT, lastCheckedBlock);
                 txs = ret.transactions;
                 lastCheckedBlock = ret.lastblock;
-                logConfirm('updating meta lastCheckedBlock', lastCheckedBlock)
+                // logConfirm('updating meta lastCheckedBlock', lastCheckedBlock)
                 addOrUpdateMeta({
                     key: LAST_CHECKED_BLOCK_KEY,
                     value: lastCheckedBlock
@@ -76,7 +76,7 @@ const checkNewTransaction = (txid, block) => {
                 // console.log("tx",tx)
                 tx.vout.forEach((vout) => { //each tx can have many outputs
                     const address = vout.scriptPubKey.addresses[0]
-                    console.log(address)
+                    // console.log(address)
                     // const n = vout.n
                     let nameOp
                     let nameId
