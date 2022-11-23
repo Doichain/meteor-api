@@ -76,7 +76,7 @@ const fetchDoiMailData = (data) => {
         const privateKeyWif = getWif(CONFIRM_CLIENT,address)
         console.log('privateKeyWif',privateKeyWif)
        // const privateKey = getPrivateKeyFromWif(privateKeyWif)
-        const keyPair = bitcoin.ECPair.fromWIF(privateKeyWif,GLOBAL.DEFAULT_NETWORK)
+        const keyPair = bitcoin.ECPair.fromWIF(privateKeyWif,global.DEFAULT_NETWORK)
         const signature = getSignature(ourData.name,keyPair)
         const valid = verifySignature(ourData.name, address, signature)
         console.log("outOfVerifySignature", valid)

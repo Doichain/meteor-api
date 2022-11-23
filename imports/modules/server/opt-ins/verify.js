@@ -44,7 +44,7 @@ const verifyOptIn = (data) => {
     var publicKeyBuffer = Buffer.from(publicKey, 'hex')
     var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
     logVerify("publicKey",keyPair.publicKey.toString('hex'))
-    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: global.DEFAULT_NETWORK  });
 
     console.log('address from publicKey',address)
     console.info('ourData.recipient_mail+ourData.sender_mail',(ourData.recipient_mail+ourData.sender_mail))

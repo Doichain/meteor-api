@@ -288,9 +288,9 @@ function addCoinTx(tx, confirmations) {
                 const senderPublicKey = (indexOfPubKey != -1) ? asm.substring(indexOfPubKey + 6, lengthOfAsm) : undefined
                 // ourTx.senderAddress = senderPublicKey ? getAddress({publicKey: senderPublicKey}) : senderPublicKey
                 console.info(`input has a public key: ${senderPublicKey}`)
-                //console.log('global.network', GLOBAL.DEFAULT_NETWORK)
+                //console.log('global.network', global.DEFAULT_NETWORK)
                 try{
-                    //console.info(getAddress(senderPublicKey, GLOBAL.DEFAULT_NETWORK))
+                    //console.info(getAddress(senderPublicKey, global.DEFAULT_NETWORK))
                     ourTx.senderAddress = getAddress({publicKey:senderPublicKey})
                     console.info('senderAddress:',ourTx.senderAddress)
                 }catch(ex){

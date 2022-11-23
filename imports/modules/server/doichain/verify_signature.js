@@ -25,11 +25,11 @@ const verifySignature = (data) => {
         var publicKeyBuffer = Buffer.from(ourData.publicKey, 'hex')
         var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
         logVerify("publicKey",keyPair.publicKey.toString('hex'))
-      //  logVerify('GLOBAL.DEFAULT_NETWORK',GLOBAL.DEFAULT_NETWORK)
-        const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
+      //  logVerify('global.DEFAULT_NETWORK',global.DEFAULT_NETWORK)
+        const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: global.DEFAULT_NETWORK  });
         logVerify('address',address)
-        logVerify('doichain.network.DEFAULT_NETWORK.messagePrefix',GLOBAL.DEFAULT_NETWORK.messagePrefix)
-        const verified = bitcoinMessage.verify(ourData.data, address, ourData.signature, GLOBAL.DEFAULT_NETWORK.messagePrefix) //doichainVerifySignature(ourData.data,address,ourData.signature)
+        logVerify('doichain.network.DEFAULT_NETWORK.messagePrefix',global.DEFAULT_NETWORK.messagePrefix)
+        const verified = bitcoinMessage.verify(ourData.data, address, ourData.signature, global.DEFAULT_NETWORK.messagePrefix) //doichainVerifySignature(ourData.data,address,ourData.signature)
         logVerify("verified",'_'+verified+'_')
         return verified
     } catch (exception) {

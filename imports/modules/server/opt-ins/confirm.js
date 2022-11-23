@@ -46,7 +46,7 @@ const confirmOptIn = (request) => {
         logConfirm('getSignature', value);
         logConfirm('creating DOI signature with soi signature '+entry.address,value.signature);
         const wif = getWif(CONFIRM_CLIENT, entry.address);
-        const keyPair = bitcoin.ECPair.fromWIF(wif, GLOBAL.DEFAULT_NETWORK);
+        const keyPair = bitcoin.ECPair.fromWIF(wif, global.DEFAULT_NETWORK);
         const doiSignature = getSignature(value.signature, keyPair)
        // const doiSignature = signMessage(CONFIRM_CLIENT, entry.address, value.signature); //signature over signature
         logConfirm('got doiSignature:',doiSignature);

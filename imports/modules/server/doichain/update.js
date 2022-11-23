@@ -106,7 +106,7 @@ const update = (data, job) => {
 
         logConfirm('creating signature with ADDRESS ' + CONFIRM_ADDRESS + " nameId:", ourData.value); //TODO CONFIRM_ADDRESS should be the related to the public key configured in the DNS
         // const signature = signMessage(CONFIRM_CLIENT, CONFIRM_ADDRESS, ourData.nameId); //second signature here over nameId
-        const keyPair = bitcoin.ECPair.fromWIF(wif, GLOBAL.DEFAULT_NETWORK);
+        const keyPair = bitcoin.ECPair.fromWIF(wif, global.DEFAULT_NETWORK);
         const signature = getSignature(ourData.nameId, keyPair)
         logConfirm('signature created:', signature);
 

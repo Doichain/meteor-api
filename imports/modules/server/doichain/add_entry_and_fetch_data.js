@@ -84,7 +84,7 @@ const addDoichainEntry = (entry) => {
               logConfirm("no name op transaction")
           }
       })
-      const keypair = bitcoin.ECPair.fromWIF(privateKeyWif, GLOBAL.DEFAULT_NETWORK)
+      const keypair = bitcoin.ECPair.fromWIF(privateKeyWif, global.DEFAULT_NETWORK)
       const privateKey = keypair.privateKey.toString('hex')
       const doichainhostUrl = decryptStandardECIES(privateKey, value.from)
       logConfirm('decrypted message from doichainhostUrl: ', doichainhostUrl);

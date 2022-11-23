@@ -426,8 +426,8 @@ Api.addRoute(DOI_FETCH_ROUTE, {authRequired: false}, {
             var publicKeyBuffer = Buffer.from(validatorPublicKey, 'hex')
             var keyPair = bitcoin.ECPair.fromPublicKey(publicKeyBuffer)
             logSend("publicKey",keyPair.publicKey.toString('hex'))
-          //  logVerify('GLOBAL.DEFAULT_NETWORK',GLOBAL.DEFAULT_NETWORK)
-            const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: GLOBAL.DEFAULT_NETWORK  });
+          //  logVerify('global.DEFAULT_NETWORK',global.DEFAULT_NETWORK)
+            const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network: global.DEFAULT_NETWORK  });
               if(!verifySignature(optIn.nameId, address, params.signature)) throw "validator signature incorrect - template access denied";
 
               logSend("alice: return encrypted template data for nameId",{nameId:optIn.nameId});
