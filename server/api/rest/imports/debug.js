@@ -4,7 +4,7 @@ Api.addRoute('debug/mail', {authRequired: false}, {
     action: function() {
       const data = {
         "from": "noreply@doichain.org",
-        "senderName": "Julian Assange",
+        "senderName": "Doichain Request",
         "subject": "Doichain.org Email Permission Request",
         "redirect": "thank-you-de.html",
         "contentType": "html",
